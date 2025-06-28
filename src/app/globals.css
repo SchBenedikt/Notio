@@ -83,18 +83,93 @@ body {
   .theme-zinc {
     --primary: 240 5.2% 33.9%;
     --ring: 240 5.2% 33.9%;
+    --background: 240 5% 96%;
+    --card: 240 5% 100%;
+    --secondary: 240 4.8% 95.9%;
+    --muted: 240 4.8% 95.9%;
+    --accent: 240 4.8% 95.9%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
   }
+  .dark .theme-zinc {
+    --primary: 240 5% 75%;
+    --ring: 240 5% 75%;
+    --background: 240 6% 10%;
+    --card: 240 6% 12%;
+    --secondary: 240 5% 18%;
+    --muted: 240 5% 18%;
+    --accent: 240 5% 18%;
+    --border: 240 5% 25%;
+    --input: 240 5% 25%;
+  }
+
   .theme-rose {
     --primary: 346.8 77.2% 49.8%;
     --ring: 346.8 77.2% 49.8%;
+    --background: 340 20% 96.5%;
+    --card: 340 20% 99%;
+    --secondary: 340 15% 95%;
+    --muted: 340 15% 95%;
+    --accent: 340 15% 95%;
+    --border: 340 15% 88%;
+    --input: 340 15% 88%;
   }
+  .dark .theme-rose {
+    --primary: 346.8 77.2% 65%;
+    --ring: 346.8 77.2% 65%;
+    --background: 340 10% 10%;
+    --card: 340 10% 12%;
+    --secondary: 340 8% 18%;
+    --muted: 340 8% 18%;
+    --accent: 340 8% 18%;
+    --border: 340 8% 25%;
+    --input: 340 8% 25%;
+  }
+
   .theme-green {
     --primary: 142.1 76.2% 36.3%;
     --ring: 142.1 76.2% 36.3%;
+    --background: 140 20% 96.5%;
+    --card: 140 20% 99%;
+    --secondary: 140 15% 95%;
+    --muted: 140 15% 95%;
+    --accent: 140 15% 95%;
+    --border: 140 15% 88%;
+    --input: 140 15% 88%;
   }
+  .dark .theme-green {
+    --primary: 142.1 60% 55%;
+    --ring: 142.1 60% 55%;
+    --background: 140 10% 10%;
+    --card: 140 10% 12%;
+    --secondary: 140 8% 18%;
+    --muted: 140 8% 18%;
+    --accent: 140 8% 18%;
+    --border: 140 8% 25%;
+    --input: 140 8% 25%;
+  }
+  
   .theme-violet {
     --primary: 262.1 83.3% 57.8%;
     --ring: 262.1 83.3% 57.8%;
+    --background: 260 25% 96.5%;
+    --card: 260 25% 99%;
+    --secondary: 260 20% 95%;
+    --muted: 260 20% 95%;
+    --accent: 260 20% 95%;
+    --border: 260 20% 88%;
+    --input: 260 20% 88%;
+  }
+  .dark .theme-violet {
+    --primary: 262.1 83.3% 65%;
+    --ring: 262.1 83.3% 65%;
+    --background: 260 12% 10%;
+    --card: 260 12% 12%;
+    --secondary: 260 10% 18%;
+    --muted: 260 10% 18%;
+    --accent: 260 10% 18%;
+    --border: 260 10% 25%;
+    --input: 260 10% 25%;
   }
 }
 
