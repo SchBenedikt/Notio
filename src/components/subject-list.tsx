@@ -12,6 +12,7 @@ type SubjectListProps = {
   onAddGrade: (subjectId: string, values: AddGradeData) => void;
   onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
+  onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   onAddSubject: () => void;
 };
 
@@ -22,6 +23,7 @@ export function SubjectList({
   onAddGrade, 
   onDeleteGrade, 
   onDeleteSubject, 
+  onUpdateSubject,
   onAddSubject 
 }: SubjectListProps) {
   
@@ -51,6 +53,7 @@ export function SubjectList({
           onAddGrade={onAddGrade}
           onDeleteGrade={onDeleteGrade}
           onDeleteSubject={onDeleteSubject}
+          onUpdateSubject={onUpdateSubject}
           animationIndex={startIndex + index}
         />
       ))}

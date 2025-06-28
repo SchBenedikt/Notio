@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, BrainCircuit } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, BrainCircuit, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -16,6 +16,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
@@ -25,6 +30,8 @@ import { calculateFinalGrade } from "@/lib/utils";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
 import { StudyCoachDialog } from "./study-coach-dialog";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
 
 type SubjectCardProps = {
   subject: Subject;
@@ -32,19 +39,31 @@ type SubjectCardProps = {
   onAddGrade: (subjectId: string, values: AddGradeData) => void;
   onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
+  onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDeleteSubject, animationIndex }: SubjectCardProps) {
+export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
   const [isAddGradeOpen, setIsAddGradeOpen] = useState(false);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
-  const finalGrade = calculateFinalGrade(grades);
+  const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
+  
+  // Default to 2:1 for main subjects if not set
+  const [writtenWeight, setWrittenWeight] = useState(subject.writtenWeight ?? 2);
+  const [oralWeight, setOralWeight] = useState(subject.oralWeight ?? 1);
+  
+  const finalGrade = calculateFinalGrade(grades, subject);
 
   const writtenGrades = grades.filter((g) => g.type === "Schulaufgabe");
   const oralGrades = grades.filter((g) => g.type === "mündliche Note");
 
   const handleAddGradeSubmit = (values: AddGradeData) => {
     onAddGrade(subject.id, values);
+  };
+
+  const handleWeightSave = () => {
+    onUpdateSubject(subject.id, { writtenWeight, oralWeight });
+    setIsWeightPopoverOpen(false);
   };
 
   const getGradeColor = (grade: number) => {
@@ -167,6 +186,53 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
                     <BrainCircuit className="mr-2 h-4 w-4" />
                     Lern-Coach
                 </Button>
+                {subject.category === 'Hauptfach' && (
+                    <Popover open={isWeightPopoverOpen} onOpenChange={setIsWeightPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Gewichtung
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Notengewichtung</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Passe die Gewichtung von schriftlichen zu mündlichen Noten für dieses Fach an.
+                                    </p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label htmlFor="written-weight">Schriftlich</Label>
+                                        <Input
+                                            id="written-weight"
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            value={writtenWeight}
+                                            onChange={(e) => setWrittenWeight(Number(e.target.value))}
+                                            className="col-span-2 h-8"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label htmlFor="oral-weight">Mündlich</Label>
+                                        <Input
+                                            id="oral-weight"
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            value={oralWeight}
+                                            onChange={(e) => setOralWeight(Number(e.target.value))}
+                                            className="col-span-2 h-8"
+                                        />
+                                    </div>
+                                    <Button size="sm" onClick={handleWeightSave}>Speichern</Button>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                )}
             </div>
             <Button size="sm" onClick={() => setIsAddGradeOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />

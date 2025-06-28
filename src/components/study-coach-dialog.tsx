@@ -40,7 +40,13 @@ export function StudyCoachDialog({ isOpen, onOpenChange, subject, grades }: Stud
           name: g.name
       }));
 
-      getStudyCoachTips({ subjectName: subject.name, grades: mappedGrades })
+      getStudyCoachTips({ 
+        subjectName: subject.name, 
+        subjectCategory: subject.category,
+        writtenWeight: subject.writtenWeight,
+        oralWeight: subject.oralWeight,
+        grades: mappedGrades 
+      })
         .then(res => {
           setResponse(res);
         })

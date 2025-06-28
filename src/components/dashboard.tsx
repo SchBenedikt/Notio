@@ -78,11 +78,24 @@ export default function Dashboard() {
       id: crypto.randomUUID(),
       gradeLevel: selectedGradeLevel,
       ...values,
+      ...(values.category === 'Hauptfach' && { writtenWeight: 2, oralWeight: 1 }),
     };
     setSubjects([...subjects, newSubject]);
     toast({
       title: "Fach hinzugefügt",
       description: `Das Fach "${newSubject.name}" wurde erfolgreich erstellt.`,
+    });
+  };
+
+  const handleUpdateSubject = (subjectId: string, updatedValues: Partial<Subject>) => {
+    setSubjects(currentSubjects => 
+        currentSubjects.map(s => 
+            s.id === subjectId ? { ...s, ...updatedValues } : s
+        )
+    );
+    toast({
+      title: "Fach aktualisiert",
+      description: `Die Einstellungen für das Fach wurden gespeichert.`,
     });
   };
 
@@ -153,6 +166,7 @@ export default function Dashboard() {
             onAddGrade={handleAddGrade}
             onDeleteGrade={handleDeleteGrade}
             onDeleteSubject={handleDeleteSubject}
+            onUpdateSubject={handleUpdateSubject}
             onAddSubject={() => setIsAddSubjectOpen(true)}
           />
         </main>

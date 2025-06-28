@@ -12,6 +12,9 @@ import {z} from 'genkit';
 
 const StudyCoachInputSchema = z.object({
   subjectName: z.string().describe('The name of the subject.'),
+  subjectCategory: z.string().describe('The category of the subject (Hauptfach or Nebenfach).'),
+  writtenWeight: z.number().optional().describe('The weight for written grades for this subject.'),
+  oralWeight: z.number().optional().describe('The weight for oral grades for this subject.'),
   grades: z
     .array(
       z.object({
@@ -41,10 +44,14 @@ const prompt = ai.definePrompt({
   input: {schema: StudyCoachInputSchema},
   output: {schema: StudyCoachOutputSchema},
   prompt: `Du bist ein positiver und motivierender Lern-Coach für Schüler in Deutschland.
-Analysiere die folgenden Noten für das Fach '{{subjectName}}'.
+Analysiere die folgenden Noten für das Fach '{{subjectName}}' ({{subjectCategory}}).
 Gib eine kurze, aufmunternde Einschätzung der aktuellen Situation und dann 3-5 konkrete, umsetzbare Lerntipps.
 Berücksichtige dabei die Notenwerte (1=sehr gut, 6=ungenügend), die Notentypen ('Schulaufgabe' ist wichtiger als 'mündliche Note') und eventuelle Notizen des Schülers.
-Die Gewichtung gibt an, wie stark eine Note zählt.
+{{#if writtenWeight}}
+Für dieses Hauptfach gilt eine spezielle Gewichtung: Schriftliche Noten zählen {{writtenWeight}}-fach und mündliche Noten {{oralWeight}}-fach.
+{{else}}
+Die einzelne Gewichtung (x-Wert) gibt an, wie stark eine Note zählt.
+{{/if}}
 Sprich den Schüler direkt und freundlich mit 'Du' an. Antworte auf Deutsch.
 
 Hier sind die Noten:

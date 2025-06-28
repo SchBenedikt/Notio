@@ -6,6 +6,8 @@ export interface Subject {
   name: string;
   category: SubjectCategory;
   gradeLevel: number;
+  writtenWeight?: number;
+  oralWeight?: number;
 }
 
 export interface Grade {
