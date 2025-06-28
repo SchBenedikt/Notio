@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { calculateOverallAverage, calculateCategoryAverage, calculateFinalGrade } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { TutorChat } from "./tutor-chat";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { SidebarContent } from "./sidebar-content";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -20,6 +22,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
   
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState<'subjects' | 'tutor'>('subjects');
   const { toast } = useToast();
@@ -193,27 +196,40 @@ export default function Dashboard() {
     });
   };
 
+  const sidebarProps = {
+    subjects: filteredSubjects,
+    overallAverage: overallAverage,
+    onAddSubject: handleAddSubject,
+    onAddGrade: handleAddGrade,
+    mainSubjectsAverage: mainSubjectsAverage,
+    minorSubjectsAverage: minorSubjectsAverage,
+    writtenGradesCount: writtenGradesCount,
+    oralGradesCount: oralGradesCount,
+    totalSubjectsCount: totalSubjectsCount,
+    totalGradesCount: totalGradesCount,
+    currentView: view,
+    onSetView: setView,
+  };
+
   return (
     <div className="flex min-h-screen bg-muted/40">
-      <AppSidebar 
-        subjects={filteredSubjects}
-        overallAverage={overallAverage}
-        onAddSubject={handleAddSubject}
-        onAddGrade={handleAddGrade}
-        mainSubjectsAverage={mainSubjectsAverage}
-        minorSubjectsAverage={minorSubjectsAverage}
-        writtenGradesCount={writtenGradesCount}
-        oralGradesCount={oralGradesCount}
-        totalSubjectsCount={totalSubjectsCount}
-        totalGradesCount={totalGradesCount}
-        currentView={view}
-        onSetView={setView}
-      />
+      <AppSidebar {...sidebarProps} />
+      <Sheet open={isMobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="p-0 lg:hidden w-80">
+            <div className="flex flex-col gap-4 h-full p-6">
+                <SidebarContent
+                    {...sidebarProps}
+                    onClose={() => setMobileSidebarOpen(false)}
+                />
+            </div>
+        </SheetContent>
+      </Sheet>
       <div className="flex-1 lg:pl-80">
         <AppHeader 
           selectedGradeLevel={selectedGradeLevel}
           onGradeLevelChange={setSelectedGradeLevel}
           onAddSubject={() => setIsAddSubjectOpen(true)}
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           overallAverage={overallAverage}
           mainSubjectWeight={mainSubjectWeight}
           onMainSubjectWeightChange={setMainSubjectWeight}

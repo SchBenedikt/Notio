@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Settings, Check } from "lucide-react";
+import { Settings, Check, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -22,6 +22,7 @@ type AppHeaderProps = {
   selectedGradeLevel: number;
   onGradeLevelChange: (gradeLevel: number) => void;
   onAddSubject: () => void;
+  onOpenMobileSidebar: () => void;
   overallAverage: string;
   mainSubjectWeight: number;
   onMainSubjectWeightChange: (weight: number) => void;
@@ -35,6 +36,7 @@ export function AppHeader({
   selectedGradeLevel, 
   onGradeLevelChange, 
   onAddSubject,
+  onOpenMobileSidebar,
   overallAverage,
   mainSubjectWeight,
   onMainSubjectWeightChange,
@@ -63,10 +65,19 @@ export function AppHeader({
   return (
     <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onOpenMobileSidebar}
+          >
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Menü öffnen</span>
+          </Button>
           <h1 className="text-2xl font-bold text-foreground lg:hidden">Noten Meister</h1>
           {overallAverage !== '-' && (
-            <div className="flex sm:hidden items-baseline gap-2 border-l pl-4 sm:pl-6">
+            <div className="flex sm:hidden items-baseline gap-2 border-l pl-2 sm:pl-4">
               <span className="text-sm font-medium text-muted-foreground">Schnitt</span>
               <span className="text-2xl font-bold text-primary">{overallAverage}</span>
             </div>
@@ -155,11 +166,6 @@ export function AppHeader({
               </div>
             </PopoverContent>
           </Popover>
-
-          <Button onClick={onAddSubject} className="lg:hidden">
-            <Plus className="mr-2 h-4 w-4" />
-            Fach
-          </Button>
         </div>
       </div>
     </header>
