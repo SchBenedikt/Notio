@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 
@@ -43,6 +43,8 @@ type AppSidebarProps = {
   minorSubjectsAverage: string;
   writtenGradesCount: number;
   oralGradesCount: number;
+  totalSubjectsCount: number;
+  totalGradesCount: number;
   currentView: 'subjects' | 'tutor';
   onSetView: (view: 'subjects' | 'tutor') => void;
 };
@@ -56,6 +58,8 @@ export function AppSidebar({
   minorSubjectsAverage,
   writtenGradesCount,
   oralGradesCount,
+  totalSubjectsCount,
+  totalGradesCount,
   currentView,
   onSetView,
 }: AppSidebarProps) {
@@ -149,6 +153,20 @@ export function AppSidebar({
                                 <span>Mündlich</span>
                             </div>
                             <p className="text-2xl font-bold">{oralGradesCount}</p>
+                        </div>
+                         <div>
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <BookCopy className="h-4 w-4" />
+                                <span>Fächer</span>
+                            </div>
+                            <p className="text-2xl font-bold">{totalSubjectsCount}</p>
+                        </div>
+                        <div>
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <ClipboardList className="h-4 w-4" />
+                                <span>Noten gesamt</span>
+                            </div>
+                            <p className="text-2xl font-bold">{totalGradesCount}</p>
                         </div>
                     </div>
                 </div>

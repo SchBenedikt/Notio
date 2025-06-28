@@ -105,6 +105,14 @@ export default function Dashboard() {
      return gradesForFilteredSubjects.filter(g => g.type === 'mündliche Note').length;
   }, [gradesForFilteredSubjects]);
 
+  const totalSubjectsCount = useMemo(() => {
+    return filteredSubjects.length;
+  }, [filteredSubjects]);
+
+  const totalGradesCount = useMemo(() => {
+    return gradesForFilteredSubjects.length;
+  }, [gradesForFilteredSubjects]);
+
 
   const handleAddSubject = (values: AddSubjectData) => {
     const newSubject: Subject = {
@@ -177,6 +185,8 @@ export default function Dashboard() {
         minorSubjectsAverage={minorSubjectsAverage}
         writtenGradesCount={writtenGradesCount}
         oralGradesCount={oralGradesCount}
+        totalSubjectsCount={totalSubjectsCount}
+        totalGradesCount={totalGradesCount}
         currentView={view}
         onSetView={setView}
       />
