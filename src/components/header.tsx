@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type AppHeaderProps = {
   selectedGradeLevel: number;
@@ -26,6 +27,8 @@ type AppHeaderProps = {
   onMainSubjectWeightChange: (weight: number) => void;
   minorSubjectWeight: number;
   onMinorSubjectWeightChange: (weight: number) => void;
+  theme: string;
+  onThemeChange: (theme: string) => void;
 };
 
 export function AppHeader({ 
@@ -36,9 +39,19 @@ export function AppHeader({
   mainSubjectWeight,
   onMainSubjectWeightChange,
   minorSubjectWeight,
-  onMinorSubjectWeightChange
+  onMinorSubjectWeightChange,
+  theme,
+  onThemeChange
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
+
+  const themes = [
+    { name: "blue", label: "Blau", color: "hsl(217.2 91.2% 59.8%)" },
+    { name: "zinc", label: "Zink", color: "hsl(240 5.2% 33.9%)" },
+    { name: "rose", label: "Rose", color: "hsl(346.8 77.2% 49.8%)" },
+    { name: "green", label: "Grün", color: "hsl(142.1 76.2% 36.3%)" },
+    { name: "violet", label: "Violett", color: "hsl(262.1 83.3% 57.8%)" },
+  ];
 
   const handleWeightChange = (setter: (weight: number) => void, value: string) => {
     const num = Number(value);
@@ -116,6 +129,28 @@ export function AppHeader({
                       className="col-span-2 h-8"
                     />
                   </div>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <h4 className="font-medium leading-none">Farbschema</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Passe die Akzentfarbe der App an.
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {themes.map((t) => (
+                    <button
+                      key={t.name}
+                      onClick={() => onThemeChange(t.name)}
+                      className={cn(
+                        "h-8 w-8 rounded-full border-2 flex items-center justify-center",
+                        theme === t.name ? "border-ring" : "border-transparent"
+                      )}
+                      style={{ backgroundColor: t.color }}
+                      aria-label={`Farbe ${t.label} auswählen`}
+                    >
+                      {theme === t.name && <Check className="h-4 w-4 text-primary-foreground" />}
+                    </button>
+                  ))}
                 </div>
               </div>
             </PopoverContent>

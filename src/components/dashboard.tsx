@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useLocalStorage from "@/hooks/use-local-storage";
 import { Subject, Grade, AddSubjectData, AddGradeData } from "@/lib/types";
 import { AppHeader } from "./header";
@@ -16,9 +16,19 @@ export default function Dashboard() {
   const [selectedGradeLevel, setSelectedGradeLevel] = useLocalStorage<number>("noten-meister-grade-level", 10);
   const [mainSubjectWeight, setMainSubjectWeight] = useLocalStorage<number>("noten-meister-main-weight", 2);
   const [minorSubjectWeight, setMinorSubjectWeight] = useLocalStorage<number>("noten-meister-minor-weight", 1);
+  const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
   
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove("theme-zinc", "theme-rose", "theme-green", "theme-violet");
+
+    if (theme !== "blue") {
+      root.classList.add(`theme-${theme}`);
+    }
+  }, [theme]);
 
   const filteredSubjects = useMemo(() => {
     return subjects.filter((s) => s.gradeLevel === selectedGradeLevel);
@@ -106,6 +116,8 @@ export default function Dashboard() {
           onMainSubjectWeightChange={setMainSubjectWeight}
           minorSubjectWeight={minorSubjectWeight}
           onMinorSubjectWeightChange={setMinorSubjectWeight}
+          theme={theme}
+          onThemeChange={setTheme}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           <SubjectList
