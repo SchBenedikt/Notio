@@ -6,17 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { getTutorResponse, ChatMessage } from "@/ai/flows/tutor-chat-flow";
+import { getTutorResponse, ChatMessage, TutorChatInput } from "@/ai/flows/tutor-chat-flow";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
 
 type TutorChatProps = {
-  subjects: string[];
+  subjects: TutorChatInput['subjects'];
 };
 
 export function TutorChat({ subjects }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Wie kann ich dir heute helfen?" }
+    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen?" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,7 +60,7 @@ export function TutorChat({ subjects }: TutorChatProps) {
             <Bot className="h-5 w-5 text-primary" />
             KI-Tutor Chat
         </h3>
-        <p className="text-sm text-muted-foreground">Stelle Fragen zu deinen Fächern.</p>
+        <p className="text-sm text-muted-foreground">Stelle Fragen zu deinen Fächern und Noten.</p>
       </div>
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
