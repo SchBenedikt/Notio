@@ -19,6 +19,9 @@ type SubjectListProps = {
   totalSubjectsCount: number;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onAddGradeToSubject: (subjectId: string) => void;
+  onEditGrade: (grade: Grade) => void;
+  onEditSubject: (subject: Subject) => void;
 };
 
 export function SubjectList({ 
@@ -32,7 +35,10 @@ export function SubjectList({
   onAddSubject,
   totalSubjectsCount,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onAddGradeToSubject,
+  onEditGrade,
+  onEditSubject
 }: SubjectListProps) {
   
   if (totalSubjectsCount === 0) {
@@ -61,6 +67,9 @@ export function SubjectList({
           onDeleteSubject={onDeleteSubject}
           onUpdateSubject={onUpdateSubject}
           animationIndex={startIndex + index}
+          onAddGradeToSubject={onAddGradeToSubject}
+          onEditGrade={onEditGrade}
+          onEditSubject={onEditSubject}
         />
       ))}
     </Accordion>

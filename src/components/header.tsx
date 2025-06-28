@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Check, Menu, Download } from "lucide-react";
+import { Settings, Check, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,7 +23,6 @@ import { Separator } from "./ui/separator";
 type AppHeaderProps = {
   selectedGradeLevel: number;
   onGradeLevelChange: (gradeLevel: number) => void;
-  onAddSubject: () => void;
   onOpenMobileSidebar: () => void;
   overallAverage: string;
   mainSubjectWeight: number;
@@ -34,13 +33,12 @@ type AppHeaderProps = {
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
-  onExportCSV: () => void;
+  onOpenCommandPalette: () => void;
 };
 
 export function AppHeader({ 
   selectedGradeLevel, 
   onGradeLevelChange, 
-  onAddSubject,
   onOpenMobileSidebar,
   overallAverage,
   mainSubjectWeight,
@@ -51,7 +49,7 @@ export function AppHeader({
   onThemeChange,
   isDarkMode,
   onIsDarkModeChange,
-  onExportCSV
+  onOpenCommandPalette
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -95,6 +93,12 @@ export function AppHeader({
           )}
         </div>
         <div className="flex items-center gap-2 ml-auto">
+           <Button variant="outline" className="w-full sm:w-48 justify-between text-muted-foreground" onClick={onOpenCommandPalette}>
+            Befehle suchen...
+            <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                <span className="text-xs">⌘</span>K
+            </kbd>
+          </Button>
           <Select
             value={String(selectedGradeLevel)}
             onValueChange={(value) => onGradeLevelChange(Number(value))}
@@ -152,17 +156,6 @@ export function AppHeader({
                     />
                   </div>
                 </div>
-                <Separator />
-                <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Datenexport</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Exportiere deine aktuellen Fächer und Noten als CSV-Datei.
-                  </p>
-                </div>
-                <Button variant="outline" onClick={onExportCSV}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Als CSV exportieren
-                </Button>
                 <Separator />
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">Erscheinungsbild</h4>

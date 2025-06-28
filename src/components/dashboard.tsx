@@ -7,12 +7,15 @@ import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
-import { calculateOverallAverage, calculateCategoryAverage, generateCSV } from "@/lib/utils";
+import { calculateOverallAverage, calculateCategoryAverage, generateCSV, importDataFromCSV } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { TutorChat } from "./tutor-chat";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar-content";
 import { GradeCalculatorPage } from "./grade-calculator-page";
+import { CommandPalette } from "./command-palette";
+import { AddGradeDialog } from "./add-grade-dialog";
+import { EditSubjectDialog } from "./edit-subject-dialog";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -22,15 +25,18 @@ export default function Dashboard() {
   const [minorSubjectWeight, setMinorSubjectWeight] = useLocalStorage<number>("noten-meister-minor-weight", 1);
   const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
   
-  // Stored preference for dark mode: null (system), true (dark), or false (light)
   const [storedDarkMode, setStoredDarkMode] = useLocalStorage<boolean | null>('noten-meister-dark-mode', null);
-  // The actual dark mode state that will be used for rendering and applying styles
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState<'subjects' | 'tutor' | 'calculator'>('subjects');
+  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  
+  const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
+  const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,7 +48,6 @@ export default function Dashboard() {
     }
   }, [theme]);
   
-  // This new effect determines the effective dark mode based on storage or system preference.
   useEffect(() => {
     const handleSystemPreference = (e: MediaQueryListEvent) => {
         if (storedDarkMode === null) {
@@ -51,27 +56,22 @@ export default function Dashboard() {
     };
 
     if (storedDarkMode !== null) {
-        // User has set a preference, so we use it.
         setIsDarkMode(storedDarkMode);
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         mediaQuery.removeEventListener('change', handleSystemPreference);
         return;
     }
 
-    // No user preference, so we follow the system.
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches); // Set initial state
+    setIsDarkMode(mediaQuery.matches);
 
-    // Listen for changes in system preference
     mediaQuery.addEventListener('change', handleSystemPreference);
 
-    // Cleanup listener on component unmount or when storedDarkMode changes.
     return () => {
         mediaQuery.removeEventListener('change', handleSystemPreference);
     };
   }, [storedDarkMode]);
 
-  // This existing effect applies the 'dark' class whenever isDarkMode changes.
   useEffect(() => {
     const root = window.document.documentElement;
     if (isDarkMode) {
@@ -94,12 +94,10 @@ export default function Dashboard() {
     }
 
     return subjectsForGradeLevel.filter((subject) => {
-      // Check subject name
       if (subject.name.toLowerCase().includes(lowercasedQuery)) {
         return true;
       }
 
-      // Check grades associated with the subject
       const subjectGrades = grades.filter((g) => g.subjectId === subject.id);
       return subjectGrades.some((grade) => {
         const gradeName = grade.name || "";
@@ -188,6 +186,7 @@ export default function Dashboard() {
       title: "Fach aktualisiert",
       description: `Die Einstellungen für das Fach wurden gespeichert.`,
     });
+     setEditSubjectState({ isOpen: false, subject: null });
   };
 
   const handleDeleteSubject = (subjectId: string) => {
@@ -203,7 +202,6 @@ export default function Dashboard() {
 
   const handleSaveGrade = (subjectId: string, values: AddGradeData, gradeId?: string) => {
     if (gradeId) {
-      // Edit existing grade
       setGrades(currentGrades =>
         currentGrades.map(g =>
           g.id === gradeId
@@ -216,7 +214,6 @@ export default function Dashboard() {
         description: "Die Änderungen an der Note wurden gespeichert.",
       });
     } else {
-      // Add new grade
       const newGrade: Grade = {
         id: crypto.randomUUID(),
         subjectId,
@@ -240,6 +237,23 @@ export default function Dashboard() {
       variant: "destructive",
     });
   };
+  
+  const handleOpenAddGradeDialog = (subjectId: string) => {
+    setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
+  };
+
+  const handleOpenEditGradeDialog = (grade: Grade) => {
+      setGradeDialogState({ isOpen: true, subjectId: grade.subjectId, gradeToEdit: grade });
+  };
+
+  const handleCloseGradeDialog = () => {
+      setGradeDialogState({ isOpen: false, subjectId: null, gradeToEdit: null });
+  };
+
+  const handleOpenEditSubjectDialog = (subject: Subject) => {
+    setEditSubjectState({ isOpen: true, subject });
+  };
+
 
   const handleExportCSV = () => {
     if (filteredSubjects.length === 0) {
@@ -265,6 +279,31 @@ export default function Dashboard() {
       description: "Deine Noten wurden erfolgreich als CSV-Datei heruntergeladen.",
     });
   };
+  
+  const handleImportCSV = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const csvContent = event.target?.result as string;
+                const { subjects: importedSubjects, grades: importedGrades, importedCount, skippedCount } = importDataFromCSV(csvContent, subjects, grades, selectedGradeLevel);
+                setSubjects(importedSubjects);
+                setGrades(importedGrades);
+                toast({
+                    title: "Import abgeschlossen",
+                    description: `${importedCount} Einträge wurden importiert, ${skippedCount} Duplikate oder fehlerhafte Zeilen übersprungen.`,
+                });
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+  };
+
 
   const sidebarProps = {
     subjects: filteredSubjects,
@@ -299,7 +338,6 @@ export default function Dashboard() {
         <AppHeader 
           selectedGradeLevel={selectedGradeLevel}
           onGradeLevelChange={setSelectedGradeLevel}
-          onAddSubject={() => setIsAddSubjectOpen(true)}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           overallAverage={overallAverage}
           mainSubjectWeight={mainSubjectWeight}
@@ -310,7 +348,7 @@ export default function Dashboard() {
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
           onIsDarkModeChange={(isDark) => setStoredDarkMode(isDark ? isDark : null)}
-          onExportCSV={handleExportCSV}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {view === 'subjects' ? (
@@ -326,6 +364,9 @@ export default function Dashboard() {
               totalSubjectsCount={subjectsForGradeLevel.length}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
+              onAddGradeToSubject={handleOpenAddGradeDialog}
+              onEditGrade={handleOpenEditGradeDialog}
+              onEditSubject={handleOpenEditSubjectDialog}
             />
           ) : view === 'tutor' ? (
             <div className="h-[calc(100vh-10rem)]">
@@ -339,11 +380,40 @@ export default function Dashboard() {
           )}
         </main>
       </div>
+       <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        subjects={subjectsForGradeLevel}
+        onNavigate={setView}
+        onAddSubject={() => setIsAddSubjectOpen(true)}
+        onAddGrade={handleOpenAddGradeDialog}
+        onExport={handleExportCSV}
+        onImport={handleImportCSV}
+      />
       <AddSubjectDialog 
         isOpen={isAddSubjectOpen}
         onOpenChange={setIsAddSubjectOpen}
         onSubmit={handleAddSubject}
       />
+      <AddGradeDialog
+        isOpen={gradeDialogState.isOpen}
+        onOpenChange={(isOpen) => !isOpen && handleCloseGradeDialog()}
+        onSubmit={(values, gradeId) => {
+            if (gradeDialogState.subjectId) {
+                handleSaveGrade(gradeDialogState.subjectId, values, gradeId);
+            }
+        }}
+        subjectName={subjects.find(s => s.id === gradeDialogState.subjectId)?.name || ''}
+        gradeToEdit={gradeDialogState.gradeToEdit}
+      />
+      {editSubjectState.subject && (
+        <EditSubjectDialog
+          isOpen={editSubjectState.isOpen}
+          onOpenChange={(isOpen) => !isOpen && setEditSubjectState({ isOpen: false, subject: null })}
+          onSubmit={handleUpdateSubject}
+          subject={editSubjectState.subject}
+        />
+      )}
     </div>
   );
 }

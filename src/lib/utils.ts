@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { type Grade, type Subject, GradeType } from "@/lib/types";
+import { type Grade, type Subject, GradeType, SubjectCategory } from "@/lib/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -33,7 +33,6 @@ export function calculateFinalGrade(grades: Grade[], subject: Subject): string {
 
     const sums = getGradeSums(grades);
 
-    // New logic for subjects with specific written/oral weighting (typically main subjects)
     if (subject.category === 'Hauptfach' && subject.writtenWeight != null && subject.oralWeight != null && (subject.writtenWeight > 0 || subject.oralWeight > 0)) {
         const { written, oral } = sums;
         const writtenAverage = written.weight > 0 ? written.value / written.weight : 0;
@@ -60,7 +59,6 @@ export function calculateFinalGrade(grades: Grade[], subject: Subject): string {
         }
     }
 
-    // Fallback to old logic (sum of all weighted grades)
     const totalWeightedValue = sums.written.value + sums.oral.value;
     const totalWeight = sums.written.weight + sums.oral.weight;
 
@@ -148,7 +146,6 @@ export function calculateGradeForTarget(
 
   const sums = getGradeSums(grades);
 
-  // Nebenfach or subject without special weighting
   if (subject.category !== 'Hauptfach' || subject.writtenWeight == null || subject.oralWeight == null) {
     const currentSum = sums.written.value + sums.oral.value;
     const currentWeight = sums.written.weight + sums.oral.weight;
@@ -156,11 +153,10 @@ export function calculateGradeForTarget(
     return requiredGrade;
   }
 
-  // Hauptfach with special weighting
   const Ww = subject.writtenWeight;
   const Ow = subject.oralWeight;
 
-  if (Ww + Ow <= 0) return null; // Avoid division by zero
+  if (Ww + Ow <= 0) return null;
 
   const CWS = sums.written.value;
   const CWW = sums.written.weight;
@@ -173,9 +169,9 @@ export function calculateGradeForTarget(
   let requiredGrade;
 
   if (newGradeType === 'Schulaufgabe') {
-     if (Ww <= 0) { // If written grades have no weight, can't influence average with a written grade
-        if (oralAvg > 0) return targetAverage <= oralAvg ? 1.0 : 6.0; // If oral grades exist, check if target is already met
-        return targetAverage; // If no grades exist at all
+     if (Ww <= 0) {
+        if (oralAvg > 0) return targetAverage <= oralAvg ? 1.0 : 6.0;
+        return targetAverage;
      }
     
     let targetWrittenAvg;
@@ -185,8 +181,8 @@ export function calculateGradeForTarget(
         targetWrittenAvg = targetAverage;
     }
     requiredGrade = (targetWrittenAvg * (CWW + newGradeWeight) - CWS) / newGradeWeight;
-  } else { // 'mündliche Note'
-    if (Ow <= 0) { // If oral grades have no weight
+  } else {
+    if (Ow <= 0) {
         if (writtenAvg > 0) return targetAverage <= writtenAvg ? 1.0 : 6.0;
         return targetAverage;
     }
@@ -241,4 +237,95 @@ export function generateCSV(subjects: Subject[], grades: Grade[]): string {
   }).filter(row => row !== null) as string[];
 
   return [headers.join(','), ...rows].join('\n');
+}
+
+const csvRegex = /(?:,|^)("(?:[^"]|"")*"|[^,]*)/g;
+
+function parseCsvLine(line: string): string[] {
+    const fields = [];
+    let match;
+    csvRegex.lastIndex = 0; 
+    while ((match = csvRegex.exec(line))) {
+        let field = match[1];
+        if (field.startsWith('"') && field.endsWith('"')) {
+            field = field.substring(1, field.length - 1).replace(/""/g, '"');
+        }
+        fields.push(field);
+    }
+    return fields;
+}
+
+export function importDataFromCSV(
+    csvContent: string,
+    currentSubjects: Subject[],
+    currentGrades: Grade[],
+    gradeLevel: number
+): { subjects: Subject[], grades: Grade[], importedCount: number, skippedCount: number } {
+    const newSubjects = [...currentSubjects];
+    const newGrades = [...currentGrades];
+    const lines = csvContent.split(/\r?\n/).slice(1);
+
+    let importedCount = 0;
+    let skippedCount = 0;
+
+    lines.forEach(line => {
+        if (line.trim() === '') return;
+        
+        const [subjectName, category, type, name, valueStr, weightStr, dateStr, notes] = parseCsvLine(line);
+
+        if (!subjectName || !category || !type || !valueStr || !weightStr || !dateStr) {
+            console.warn("Skipping invalid CSV line:", line);
+            skippedCount++;
+            return;
+        }
+        
+        const value = parseFloat(valueStr);
+        const weight = parseFloat(weightStr);
+        if (isNaN(value) || isNaN(weight)) {
+            console.warn("Skipping line with invalid number:", line);
+            skippedCount++;
+            return;
+        }
+
+        let subject = newSubjects.find(s => s.name.toLowerCase() === subjectName.toLowerCase() && s.gradeLevel === gradeLevel);
+
+        if (!subject) {
+            subject = {
+                id: crypto.randomUUID(),
+                gradeLevel,
+                name: subjectName,
+                category: category as SubjectCategory,
+            };
+            newSubjects.push(subject);
+            importedCount++;
+        }
+
+        const newGrade: Grade = {
+            id: crypto.randomUUID(),
+            subjectId: subject.id,
+            type: type as GradeType,
+            name: name || undefined,
+            value,
+            weight,
+            date: new Date(dateStr.split('.').reverse().join('-')).toISOString(), 
+            notes: notes || undefined,
+        };
+
+        const gradeExists = newGrades.some(g => 
+            g.subjectId === newGrade.subjectId &&
+            g.value === newGrade.value &&
+            g.weight === newGrade.weight &&
+            new Date(g.date).toDateString() === new Date(newGrade.date).toDateString() &&
+            (g.name || '') === (newGrade.name || '')
+        );
+        
+        if (!gradeExists) {
+            newGrades.push(newGrade);
+            if (!subject) importedCount++; // Only count grade as new import if subject wasn't also new
+        } else {
+            skippedCount++;
+        }
+    });
+
+    return { subjects: newSubjects, grades: newGrades, importedCount, skippedCount };
 }

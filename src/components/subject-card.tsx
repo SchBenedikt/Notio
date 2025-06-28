@@ -27,13 +27,11 @@ import {
 } from "@/components/ui/accordion";
 import { Grade, Subject, AddGradeData } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
-import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { GradeDistributionChart } from "./grade-distribution-chart";
 import { GradeTrendChart } from "./grade-trend-chart";
-import { EditSubjectDialog } from "./edit-subject-dialog";
 import { Progress } from "./ui/progress";
 
 const GoalProgress = ({ finalGrade, targetGrade }: { finalGrade: string; targetGrade: number }) => {
@@ -64,13 +62,13 @@ type SubjectCardProps = {
   onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
+  onAddGradeToSubject: (subjectId: string) => void;
+  onEditGrade: (grade: Grade) => void;
+  onEditSubject: (subject: Subject) => void;
   animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
-  const [isGradeDialogOpen, setIsGradeDialogOpen] = useState(false);
-  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
-  const [isEditSubjectOpen, setIsEditSubjectOpen] = useState(false);
+export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditGrade, onEditSubject, animationIndex }: SubjectCardProps) {
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   
   const [writtenWeight, setWrittenWeight] = useState(subject.writtenWeight ?? 2);
@@ -80,26 +78,6 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
 
   const writtenGrades = grades.filter((g) => g.type === "Schulaufgabe");
   const oralGrades = grades.filter((g) => g.type === "mündliche Note");
-
-  const handleGradeDialogSubmit = (values: AddGradeData, gradeId?: string) => {
-    onSaveGrade(subject.id, values, gradeId);
-  };
-
-  const handleOpenGradeDialog = (grade?: Grade) => {
-    setEditingGrade(grade || null);
-    setIsGradeDialogOpen(true);
-  }
-
-  const handleCloseGradeDialog = (open: boolean) => {
-    if (!open) {
-      setEditingGrade(null);
-    }
-    setIsGradeDialogOpen(open);
-  }
-
-  const handleUpdateSubjectSubmit = (values: Partial<Subject>) => {
-    onUpdateSubject(subject.id, values);
-  };
 
   const handleWeightSave = () => {
     onUpdateSubject(subject.id, { writtenWeight, oralWeight });
@@ -156,7 +134,7 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
         <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
           {grade.value.toFixed(0)}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => handleOpenGradeDialog(grade)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => onEditGrade(grade)}>
             <Pencil className="h-4 w-4"/>
         </Button>
         <AlertDialog>
@@ -229,7 +207,7 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
           ) : (
             <div className="text-center text-muted-foreground py-8 flex flex-col items-center gap-4">
                 <p className="font-medium">Keine Noten für dieses Fach erfasst.</p>
-                <Button onClick={() => handleOpenGradeDialog()}>
+                <Button onClick={() => onAddGradeToSubject(subject.id)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Erste Note hinzufügen
                 </Button>
@@ -238,7 +216,7 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
           <Separator className="my-4" />
           <div className="flex justify-between items-center gap-2 flex-wrap">
              <div className="flex items-center gap-2 flex-wrap">
-                <Button size="sm" onClick={() => handleOpenGradeDialog()}>
+                <Button size="sm" onClick={() => onAddGradeToSubject(subject.id)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Note hinzufügen
                 </Button>
@@ -291,7 +269,7 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
                 )}
             </div>
             <div className="flex items-center gap-2">
-                 <Button variant="ghost" size="sm" onClick={() => setIsEditSubjectOpen(true)}>
+                 <Button variant="ghost" size="sm" onClick={() => onEditSubject(subject)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Bearbeiten
                  </Button>
@@ -319,19 +297,6 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
           </div>
         </AccordionContent>
       </AccordionItem>
-      <AddGradeDialog 
-        isOpen={isGradeDialogOpen}
-        onOpenChange={handleCloseGradeDialog}
-        onSubmit={handleGradeDialogSubmit}
-        subjectName={subject.name}
-        gradeToEdit={editingGrade}
-      />
-      <EditSubjectDialog 
-        isOpen={isEditSubjectOpen}
-        onOpenChange={setIsEditSubjectOpen}
-        onSubmit={handleUpdateSubjectSubmit}
-        subject={subject}
-      />
     </>
   );
 }

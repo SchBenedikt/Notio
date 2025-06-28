@@ -39,7 +39,7 @@ const formSchema = z.object({
 type EditSubjectFormProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmit: (values: z.infer<typeof formSchema>) => void;
+  onSubmit: (subjectId: string, values: z.infer<typeof formSchema>) => void;
   subject: Subject;
 };
 
@@ -59,7 +59,7 @@ export function EditSubjectDialog({ isOpen, onOpenChange, onSubmit, subject }: E
   }, [isOpen, subject, form])
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
+    onSubmit(subject.id, values);
     onOpenChange(false);
   };
 
