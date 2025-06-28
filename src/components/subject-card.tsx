@@ -36,8 +36,6 @@ import { GradeTrendChart } from "./grade-trend-chart";
 import { EditSubjectDialog } from "./edit-subject-dialog";
 import { Progress } from "./ui/progress";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-import { FormItem, FormLabel } from "./ui/form";
-import { FormControl } from "@radix-ui/react-form";
 
 const GoalProgress = ({ finalGrade, targetGrade }: { finalGrade: string; targetGrade: number }) => {
     if (finalGrade === "-") return null;
@@ -127,14 +125,14 @@ const WhatIfCalculator = ({ subject, grades }: { subject: Subject; grades: Grade
                     onValueChange={(type) => setHypotheticalGrade(prev => ({...prev, type: type as GradeType}))}
                     className="flex space-x-4 pt-1"
                   >
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+                    <div className="flex items-center space-x-2 space-y-0">
                         <RadioGroupItem value="Schulaufgabe" id={`if-type-written-${subject.id}`} />
-                        <FormLabel htmlFor={`if-type-written-${subject.id}`} className="font-normal text-sm">Schulaufgabe</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+                        <Label htmlFor={`if-type-written-${subject.id}`} className="font-normal text-sm">Schulaufgabe</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-y-0">
                         <RadioGroupItem value="mündliche Note" id={`if-type-oral-${subject.id}`} />
-                        <FormLabel htmlFor={`if-type-oral-${subject.id}`} className="font-normal text-sm">Mündliche Note</FormLabel>
-                    </FormItem>
+                        <Label htmlFor={`if-type-oral-${subject.id}`} className="font-normal text-sm">Mündliche Note</Label>
+                    </div>
                   </RadioGroup>
                 </div>
               )}
