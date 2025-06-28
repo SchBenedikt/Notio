@@ -39,14 +39,14 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
 
   return (
     <>
-      <Card className="flex flex-col transition-all hover:shadow-lg">
+      <Card className="flex flex-col transition-all hover:shadow-md">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-lg">
-               <BookOpen className="h-6 w-6 text-primary" />
+            <div className="p-1">
+               <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl font-headline">{subject.name}</CardTitle>
+              <CardTitle className="text-xl font-semibold">{subject.name}</CardTitle>
               <CardDescription className="flex items-center gap-2 pt-1">
                 {subject.category === "Hauptfach" ? <Star className="h-4 w-4 text-amber-500 fill-amber-400" /> : null}
                 <span>{subject.category}</span>
@@ -74,7 +74,7 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      <p className={cn("text-lg font-semibold w-8 text-center", grade.value <= 2 ? "text-green-600" : grade.value >= 4 ? "text-red-600" : "text-foreground")}>{grade.value.toFixed(0)}</p>
+                      <p className="text-lg font-semibold w-8 text-center text-foreground">{grade.value.toFixed(0)}</p>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">

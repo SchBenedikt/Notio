@@ -17,7 +17,7 @@ export function SubjectList({ subjects, grades, onAddGrade, onDeleteGrade, onDel
   if (subjects.length === 0) {
     return (
       <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] bg-muted/30 rounded-lg border border-dashed">
-        <h2 className="text-2xl font-semibold font-headline">Willkommen bei Noten Meister!</h2>
+        <h2 className="text-2xl font-semibold">Willkommen bei Noten Meister!</h2>
         <p className="text-muted-foreground mt-2 max-w-md">
           Du hast noch keine Fächer für diese Jahrgangsstufe angelegt. Erstelle dein erstes Fach, um Noten hinzuzufügen.
         </p>

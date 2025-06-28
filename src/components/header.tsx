@@ -48,13 +48,13 @@ export function AppHeader({
   };
 
   return (
-    <header className="sticky top-0 z-10 w-full bg-background/80 backdrop-blur-sm border-b">
+    <header className="sticky top-0 z-10 w-full bg-background border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 gap-2">
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <h1 className="text-xl font-bold text-primary sm:text-2xl font-headline truncate">Noten Meister</h1>
+          <h1 className="text-xl font-bold text-primary sm:text-2xl truncate">Noten Meister</h1>
           {overallAverage !== '-' && (
-            <div className="flex items-baseline gap-2 bg-primary/10 px-3 py-1 rounded-full">
-              <span className="text-sm font-medium text-primary/80 hidden sm:inline">Schnitt:</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Schnitt:</span>
               <span className="text-xl font-bold text-primary">{overallAverage}</span>
             </div>
           )}
@@ -123,7 +123,7 @@ export function AppHeader({
             </PopoverContent>
           </Popover>
 
-          <Button onClick={onAddSubject} className="bg-accent hover:bg-accent/90">
+          <Button onClick={onAddSubject}>
             <PlusCircle className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Neues Fach</span>
             <span className="sm:hidden">Fach</span>
