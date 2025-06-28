@@ -1,0 +1,29 @@
+export type SubjectCategory = "Hauptfach" | "Nebenfach";
+export type GradeType = "Schulaufgabe" | "mündliche Note";
+
+export interface Subject {
+  id: string;
+  name: string;
+  category: SubjectCategory;
+  gradeLevel: number;
+}
+
+export interface Grade {
+  id: string;
+  subjectId: string;
+  type: GradeType;
+  value: number;
+  weight: number;
+  date: string;
+}
+
+export type AddGradeData = {
+  type: GradeType;
+  value: number;
+  weight: number;
+}
+
+export type AddSubjectData = {
+  name: string;
+  category: SubjectCategory;
+};
