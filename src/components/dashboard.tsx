@@ -12,6 +12,7 @@ import { AppSidebar } from "./app-sidebar";
 import { TutorChat } from "./tutor-chat";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar-content";
+import { GradeCalculatorPage } from "./grade-calculator-page";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -29,7 +30,7 @@ export default function Dashboard() {
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [view, setView] = useState<'subjects' | 'tutor'>('subjects');
+  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator'>('subjects');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -300,10 +301,15 @@ export default function Dashboard() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
-          ) : (
+          ) : view === 'tutor' ? (
             <div className="h-[calc(100vh-10rem)]">
               <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
             </div>
+          ) : (
+             <GradeCalculatorPage 
+                subjects={subjectsForGradeLevel} 
+                allGrades={grades} 
+             />
           )}
         </main>
       </div>

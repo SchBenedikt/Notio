@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject, Grade } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -58,8 +58,8 @@ type SidebarContentProps = {
   oralGradesCount: number;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  currentView: 'subjects' | 'tutor';
-  onSetView: (view: 'subjects' | 'tutor') => void;
+  currentView: 'subjects' | 'tutor' | 'calculator';
+  onSetView: (view: 'subjects' | 'tutor' | 'calculator') => void;
   onClose?: () => void;
 };
 
@@ -91,7 +91,7 @@ export function SidebarContent({
         defaultValues: { date: new Date(), type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" },
     });
 
-    const handleViewChange = (view: 'subjects' | 'tutor') => {
+    const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator') => {
         onSetView(view);
         if (onClose) onClose();
     }
@@ -129,6 +129,13 @@ export function SidebarContent({
                     onClick={() => handleViewChange('subjects')}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Fächerübersicht
+                </Button>
+                <Button 
+                    variant={currentView === 'calculator' ? "secondary" : "ghost"} 
+                    className="justify-start w-full"
+                    onClick={() => handleViewChange('calculator')}>
+                    <Calculator className="mr-2 h-4 w-4" />
+                    Notenrechner
                 </Button>
                 <Button 
                     variant={currentView === 'tutor' ? "secondary" : "ghost"} 

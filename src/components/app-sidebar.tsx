@@ -15,8 +15,8 @@ type AppSidebarProps = {
   oralGradesCount: number;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  currentView: 'subjects' | 'tutor';
-  onSetView: (view: 'subjects' | 'tutor') => void;
+  currentView: 'subjects' | 'tutor' | 'calculator';
+  onSetView: (view: 'subjects' | 'tutor' | 'calculator') => void;
 };
 
 export function AppSidebar(props: AppSidebarProps) {
