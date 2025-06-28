@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, BookCopy, ClipboardList } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 const addSubjectSchema = z.object({
@@ -84,15 +84,21 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade,
                   <p className="text-4xl font-bold text-primary">{overallAverage}</p>
                 </div>
                 <Separator className="my-4" />
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Fächer</span>
-                      <span className="font-semibold text-base bg-muted px-2 py-0.5 rounded-md">{subjectCount}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Erfasste Noten</span>
-                      <span className="font-semibold text-base bg-muted px-2 py-0.5 rounded-md">{gradeCount}</span>
-                  </div>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <BookCopy className="h-4 w-4" />
+                            <span>Fächer</span>
+                        </div>
+                        <p className="text-2xl font-bold">{subjectCount}</p>
+                    </div>
+                    <div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <ClipboardList className="h-4 w-4" />
+                            <span>Noten</span>
+                        </div>
+                        <p className="text-2xl font-bold">{gradeCount}</p>
+                    </div>
                 </div>
             </div>
             
