@@ -57,7 +57,7 @@ export function SubjectList({
   );
 
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       {mainSubjects.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold tracking-tight mb-4">Hauptfächer</h2>
