@@ -15,12 +15,14 @@ export interface Grade {
   value: number;
   weight: number;
   date: string;
+  notes?: string;
 }
 
 export type AddGradeData = {
   type: GradeType;
   value: number;
   weight: number;
+  notes?: string;
 }
 
 export type AddSubjectData = {

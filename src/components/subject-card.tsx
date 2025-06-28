@@ -64,15 +64,16 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                <ul className="space-y-1">
                 {grades.map((grade) => (
-                  <li key={grade.id} className="flex items-center justify-between transition-colors hover:bg-muted/50 p-2 rounded-md">
-                    <div className="flex items-center gap-3">
-                      {grade.type === "Schulaufgabe" ? <PenLine className="h-5 w-5 text-muted-foreground" /> : <MessageSquareText className="h-5 w-5 text-muted-foreground" />}
-                      <div>
+                  <li key={grade.id} className="flex items-start justify-between transition-colors hover:bg-muted/50 p-2 rounded-md">
+                    <div className="flex items-start gap-3 flex-grow">
+                      {grade.type === "Schulaufgabe" ? <PenLine className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" /> : <MessageSquareText className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />}
+                      <div className="flex-grow">
                         <p className="font-medium">{grade.type}</p>
                         <p className="text-sm text-muted-foreground">Gewichtung: {grade.weight} &middot; {new Date(grade.date).toLocaleDateString('de-DE')}</p>
+                        {grade.notes && <p className="text-xs text-muted-foreground pt-1 italic">Notiz: {grade.notes}</p>}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                       <p className={cn("text-lg font-semibold w-8 text-center", grade.value <= 2 ? "text-green-600" : grade.value >= 4 ? "text-red-600" : "text-foreground")}>{grade.value.toFixed(0)}</p>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

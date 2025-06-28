@@ -2,16 +2,19 @@
 
 import { useState, useMemo } from "react";
 import useLocalStorage from "@/hooks/use-local-storage";
-import { Subject, Grade, SubjectCategory, AddSubjectData, AddGradeData } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
+import { calculateOverallAverage } from "@/lib/utils";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
   const [grades, setGrades] = useLocalStorage<Grade[]>("noten-meister-grades", []);
   const [selectedGradeLevel, setSelectedGradeLevel] = useLocalStorage<number>("noten-meister-grade-level", 10);
+  const [mainSubjectWeight, setMainSubjectWeight] = useLocalStorage<number>("noten-meister-main-weight", 2);
+  const [minorSubjectWeight, setMinorSubjectWeight] = useLocalStorage<number>("noten-meister-minor-weight", 1);
   
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const { toast } = useToast();
@@ -25,6 +28,10 @@ export default function Dashboard() {
         return a.name.localeCompare(b.name);
       });
   }, [subjects, selectedGradeLevel]);
+
+  const overallAverage = useMemo(() => {
+    return calculateOverallAverage(filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight);
+  }, [filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight]);
 
   const handleAddSubject = (values: AddSubjectData) => {
     const newSubject: Subject = {
@@ -79,6 +86,11 @@ export default function Dashboard() {
         selectedGradeLevel={selectedGradeLevel}
         onGradeLevelChange={setSelectedGradeLevel}
         onAddSubject={() => setIsAddSubjectOpen(true)}
+        overallAverage={overallAverage}
+        mainSubjectWeight={mainSubjectWeight}
+        onMainSubjectWeightChange={setMainSubjectWeight}
+        minorSubjectWeight={minorSubjectWeight}
+        onMinorSubjectWeightChange={setMinorSubjectWeight}
       />
       <main className="container mx-auto p-4 md:p-6">
         <SubjectList

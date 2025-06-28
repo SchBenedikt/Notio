@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { AddGradeData } from "@/lib/types";
+import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
   type: z.enum(["Schulaufgabe", "mündliche Note"], {
@@ -30,6 +31,7 @@ const formSchema = z.object({
   }),
   value: z.coerce.number().min(1, "Note muss 1-6 sein.").max(6, "Note muss 1-6 sein."),
   weight: z.coerce.number().min(0.1, "Gewichtung muss positiv sein.").default(1),
+  notes: z.string().max(100, "Notiz darf nicht länger als 100 Zeichen sein.").optional(),
 });
 
 type AddGradeFormProps = {
@@ -46,18 +48,19 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: 
       type: "mündliche Note",
       value: undefined,
       weight: 1,
+      notes: "",
     },
   });
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values);
-    form.reset({type: "mündliche Note", value: undefined, weight: 1});
+    form.reset({type: "mündliche Note", value: undefined, weight: 1, notes: ""});
     onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-        if(!open) form.reset({type: "mündliche Note", value: undefined, weight: 1});
+        if(!open) form.reset({type: "mündliche Note", value: undefined, weight: 1, notes: ""});
         onOpenChange(open);
     }}>
       <DialogContent className="sm:max-w-[425px]">
@@ -90,6 +93,23 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: 
                   <FormLabel>Gewichtung</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.5" placeholder="z.B. 1 oder 2" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notiz (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="z.B. Thema der Ex, Vokabeltest..."
+                      className="resize-none"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
