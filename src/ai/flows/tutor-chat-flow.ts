@@ -45,13 +45,14 @@ Der Schüler hat folgende Fächer: ${input.subjects.join(', ')}.
 
 Sei ermutigend, geduldig und sprich den Schüler mit "Du" an. Antworte immer auf Deutsch.`;
 
-    const historyForGenkit = input.history.map((msg) => ({
+    const lastMessage = input.history[input.history.length - 1];
+    const historyForGenkit = input.history.slice(0, -1).map((msg) => ({
         role: msg.role,
         content: [{ text: msg.content }],
     }));
     
     const response = await ai.generate({
-        prompt: "", // Prompt is empty because the query is the last message in history
+        prompt: lastMessage.content,
         history: historyForGenkit,
         system: systemPrompt,
         output: {
@@ -63,7 +64,7 @@ Sei ermutigend, geduldig und sprich den Schüler mit "Du" an. Antworte immer auf
         }
     });
 
-    const output = response.output();
+    const output = response.output;
     if (!output) {
       throw new Error("AI did not return a valid response.");
     }
