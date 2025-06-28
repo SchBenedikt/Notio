@@ -12,6 +12,7 @@ export interface Grade {
   id: string;
   subjectId: string;
   type: GradeType;
+  name?: string;
   value: number;
   weight: number;
   date: string;
@@ -20,6 +21,7 @@ export interface Grade {
 
 export type AddGradeData = {
   type: GradeType;
+  name?: string;
   value: number;
   weight: number;
   notes?: string;

@@ -29,6 +29,7 @@ const formSchema = z.object({
   type: z.enum(["Schulaufgabe", "mündliche Note"], {
     required_error: "Du musst einen Notentyp auswählen.",
   }),
+  name: z.string().max(50, "Name darf nicht länger als 50 Zeichen sein.").optional(),
   value: z.coerce.number().min(1, "Note muss 1-6 sein.").max(6, "Note muss 1-6 sein."),
   weight: z.coerce.number().min(0.1, "Gewichtung muss positiv sein.").default(1),
   notes: z.string().max(100, "Notiz darf nicht länger als 100 Zeichen sein.").optional(),
@@ -41,26 +42,29 @@ type AddGradeFormProps = {
   subjectName: string;
 };
 
+const defaultFormValues = {
+  type: "mündliche Note" as const,
+  name: "",
+  value: undefined,
+  weight: 1,
+  notes: "",
+}
+
 export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: AddGradeFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      type: "mündliche Note",
-      value: undefined,
-      weight: 1,
-      notes: "",
-    },
+    defaultValues: defaultFormValues,
   });
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values);
-    form.reset({type: "mündliche Note", value: undefined, weight: 1, notes: ""});
+    form.reset(defaultFormValues);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-        if(!open) form.reset({type: "mündliche Note", value: undefined, weight: 1, notes: ""});
+        if(!open) form.reset(defaultFormValues);
         onOpenChange(open);
     }}>
       <DialogContent className="sm:max-w-[425px]">
@@ -72,6 +76,49 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pt-4">
+             <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Notentyp</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex space-x-4"
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="Schulaufgabe" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Schulaufgabe</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="mündliche Note" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Mündliche Note</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bezeichnung (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="z.B. Vokabeltest, Referat" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="value"
@@ -106,40 +153,11 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: 
                   <FormLabel>Notiz (optional)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="z.B. Thema der Ex, Vokabeltest..."
+                      placeholder="z.B. Thema der Ex, Schwierigkeiten..."
                       className="resize-none"
                       {...field}
+                      value={field.value ?? ""}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Notentyp</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="Schulaufgabe" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Schulaufgabe</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="mündliche Note" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Mündliche Note</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

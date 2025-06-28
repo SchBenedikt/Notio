@@ -24,6 +24,7 @@ const addSubjectSchema = z.object({
 
 const addGradeSchema = z.object({
   subjectId: z.string({ required_error: "Bitte wähle ein Fach aus." }),
+  name: z.string().max(50, "Name darf nicht länger als 50 Zeichen sein.").optional(),
   type: z.enum(["Schulaufgabe", "mündliche Note"], {
     required_error: "Du musst einen Notentyp auswählen.",
   }),
@@ -49,7 +50,7 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
 
     const gradeForm = useForm<z.infer<typeof addGradeSchema>>({
         resolver: zodResolver(addGradeSchema),
-        defaultValues: { type: "mündliche Note", value: undefined, weight: 1, notes: "" },
+        defaultValues: { type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" },
     });
 
     const handleSubjectSubmit = (values: z.infer<typeof addSubjectSchema>) => {
@@ -61,7 +62,7 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
     const handleGradeSubmit = (values: z.infer<typeof addGradeSchema>) => {
         const { subjectId, ...gradeValues } = values;
         onAddGrade(subjectId, gradeValues);
-        gradeForm.reset({ type: "mündliche Note", value: undefined, weight: 1, notes: "" });
+        gradeForm.reset({ type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" });
         setOpenView(null);
     };
 
@@ -122,6 +123,14 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
                               <FormField control={gradeForm.control} name="subjectId" render={({ field }) => (
                                   <FormItem><FormLabel>Fach</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Fach auswählen" /></SelectTrigger></FormControl><SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                               )} />
+                              <FormField control={gradeForm.control} name="type" render={({ field }) => (
+                                  <FormItem><FormLabel>Notentyp</FormLabel><FormControl>
+                                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Schulaufgabe" /></FormControl><FormLabel className="font-normal">Schulaufgabe</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="mündliche Note" /></FormControl><FormLabel className="font-normal">Mündliche Note</FormLabel></FormItem></RadioGroup>
+                                  </FormControl><FormMessage /></FormItem>
+                              )} />
+                              <FormField control={gradeForm.control} name="name" render={({ field }) => (
+                                  <FormItem><FormLabel>Bezeichnung (optional)</FormLabel><FormControl><Input placeholder="z.B. Vokabeltest" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
+                              )} />
                               <FormField control={gradeForm.control} name="value" render={({ field }) => (
                                   <FormItem><FormLabel>Note (1-6)</FormLabel><FormControl><Input type="number" step="1" placeholder="z.B. 2" {...field} /></FormControl><FormMessage /></FormItem>
                               )} />
@@ -129,12 +138,7 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
                                   <FormItem><FormLabel>Gewichtung</FormLabel><FormControl><Input type="number" step="0.5" placeholder="z.B. 1" {...field} /></FormControl><FormMessage /></FormItem>
                               )} />
                               <FormField control={gradeForm.control} name="notes" render={({ field }) => (
-                                  <FormItem><FormLabel>Notiz (optional)</FormLabel><FormControl><Textarea placeholder="Thema der Ex..." className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>
-                              )} />
-                              <FormField control={gradeForm.control} name="type" render={({ field }) => (
-                                  <FormItem><FormLabel>Notentyp</FormLabel><FormControl>
-                                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Schulaufgabe" /></FormControl><FormLabel className="font-normal">Schulaufgabe</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="mündliche Note" /></FormControl><FormLabel className="font-normal">Mündliche Note</FormLabel></FormItem></RadioGroup>
-                                  </FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>Notiz (optional)</FormLabel><FormControl><Textarea placeholder="Thema der Ex..." className="resize-none" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
                               )} />
                               <Button type="submit" className="w-full">Note speichern</Button>
                           </form>

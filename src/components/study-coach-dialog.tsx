@@ -36,7 +36,8 @@ export function StudyCoachDialog({ isOpen, onOpenChange, subject, grades }: Stud
           value: g.value,
           type: g.type,
           notes: g.notes,
-          weight: g.weight
+          weight: g.weight,
+          name: g.name
       }));
 
       getStudyCoachTips({ subjectName: subject.name, grades: mappedGrades })

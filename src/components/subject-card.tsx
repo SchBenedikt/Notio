@@ -40,6 +40,9 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
   const [isCoachOpen, setIsCoachOpen] = useState(false);
   const finalGrade = calculateFinalGrade(grades);
 
+  const writtenGrades = grades.filter((g) => g.type === "Schulaufgabe");
+  const oralGrades = grades.filter((g) => g.type === "mündliche Note");
+
   const handleAddGradeSubmit = (values: AddGradeData) => {
     onAddGrade(subject.id, values);
   };
@@ -58,6 +61,44 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
     return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
   }
 
+  const renderGradeItem = (grade: Grade) => (
+    <li key={grade.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+      <div className="flex items-center gap-3">
+        {grade.type === "Schulaufgabe" ? <PenLine className="h-5 w-5 text-muted-foreground" /> : <MessageSquareText className="h-5 w-5 text-muted-foreground" />}
+        <div className="flex-1">
+          <p className="font-medium text-sm">
+            {grade.name || grade.type} <span className="text-xs text-muted-foreground">(x{grade.weight})</span>
+          </p>
+          <p className="text-xs text-muted-foreground">{new Date(grade.date).toLocaleDateString('de-DE')}</p>
+          {grade.notes && <p className="text-xs text-muted-foreground pt-1 italic">"{grade.notes}"</p>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
+          {grade.value.toFixed(0)}
+        </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+              <Trash2 className="h-4 w-4"/>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Note löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Diese Aktion kann nicht rückgängig gemacht werden. Möchtest du diese Note wirklich dauerhaft löschen?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDeleteGrade(grade.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </li>
+  );
 
   return (
     <>
@@ -81,45 +122,19 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
         <AccordionContent className="px-6 pb-4">
           <Separator className="mb-4" />
           {grades.length > 0 ? (
-            <div className="space-y-3">
-               <ul className="space-y-2">
-                {grades.map((grade) => (
-                  <li key={grade.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      {grade.type === "Schulaufgabe" ? <PenLine className="h-5 w-5 text-muted-foreground" /> : <MessageSquareText className="h-5 w-5 text-muted-foreground" />}
-                      <div>
-                        <p className="font-medium text-sm">{grade.type} <span className="text-xs text-muted-foreground">(x{grade.weight})</span></p>
-                        <p className="text-xs text-muted-foreground">{new Date(grade.date).toLocaleDateString('de-DE')}</p>
-                        {grade.notes && <p className="text-xs text-muted-foreground pt-1 italic">"{grade.notes}"</p>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
-                        {grade.value.toFixed(0)}
-                      </div>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                             <Trash2 className="h-4 w-4"/>
-                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Note löschen?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Diese Aktion kann nicht rückgängig gemacht werden. Möchtest du diese Note wirklich dauerhaft löschen?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDeleteGrade(grade.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-4">
+              {writtenGrades.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">Schulaufgaben</h4>
+                  <ul className="space-y-2">{writtenGrades.map(renderGradeItem)}</ul>
+                </div>
+              )}
+              {oralGrades.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">Mündliche & sonstige Noten</h4>
+                  <ul className="space-y-2">{oralGrades.map(renderGradeItem)}</ul>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-8">

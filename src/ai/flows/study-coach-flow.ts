@@ -15,6 +15,7 @@ const StudyCoachInputSchema = z.object({
   grades: z
     .array(
       z.object({
+        name: z.string().optional(),
         value: z.number(),
         type: z.string(),
         notes: z.string().optional(),
@@ -48,7 +49,7 @@ Sprich den Schüler direkt und freundlich mit 'Du' an. Antworte auf Deutsch.
 
 Hier sind die Noten:
 {{#each grades}}
-- Note: {{value}}, Typ: {{type}}, Gewichtung: {{weight}}{{#if notes}}, Notiz: "{{notes}}"{{/if}}
+- Bezeichnung: {{#if name}}{{name}}{{else}}{{type}}{{/if}}, Note: {{value}}, Gewichtung: {{weight}}{{#if notes}}, Notiz: "{{notes}}"{{/if}}
 {{/each}}
 
 Gib deine Antwort im vorgegebenen JSON-Format.`,
