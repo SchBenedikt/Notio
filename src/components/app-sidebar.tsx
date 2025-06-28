@@ -119,57 +119,62 @@ export function AppSidebar({
             <Separator />
             
             <div className="flex-1 overflow-y-auto space-y-6">
-                <div className="bg-card border rounded-lg shadow-sm p-4">
-                    <div className="flex justify-between items-baseline">
-                    <p className="text-sm font-medium text-muted-foreground">Gesamtschnitt</p>
-                    <p className="text-4xl font-bold text-primary">{overallAverage}</p>
-                    </div>
-                    <Separator className="my-4" />
-                    <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-center">
-                        <div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                <Award className="h-4 w-4" />
-                                <span>Hauptfächer</span>
-                            </div>
-                            <p className="text-2xl font-bold">{mainSubjectsAverage}</p>
+                <Collapsible className="border bg-card rounded-lg shadow-sm">
+                    <CollapsibleTrigger className="p-4 w-full flex items-center justify-between hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                        <div className="flex items-baseline gap-3">
+                            <span className="text-sm font-medium text-muted-foreground">Gesamtschnitt</span>
+                            <span className="text-4xl font-bold text-primary">{overallAverage}</span>
                         </div>
-                        <div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                <BookOpen className="h-4 w-4" />
-                                <span>Nebenfächer</span>
+                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-4 pb-4">
+                        <Separator className="mb-4" />
+                        <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-center">
+                            <div>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <Award className="h-4 w-4" />
+                                    <span>Hauptfächer</span>
+                                </div>
+                                <p className="text-2xl font-bold">{mainSubjectsAverage}</p>
                             </div>
-                            <p className="text-2xl font-bold">{minorSubjectsAverage}</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                <PenLine className="h-4 w-4" />
-                                <span>Schriftlich</span>
+                            <div>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <BookOpen className="h-4 w-4" />
+                                    <span>Nebenfächer</span>
+                                </div>
+                                <p className="text-2xl font-bold">{minorSubjectsAverage}</p>
                             </div>
-                            <p className="text-2xl font-bold">{writtenGradesCount}</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                <MessageSquare className="h-4 w-4" />
-                                <span>Mündlich</span>
+                            <div>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <PenLine className="h-4 w-4" />
+                                    <span>Schriftlich</span>
+                                </div>
+                                <p className="text-2xl font-bold">{writtenGradesCount}</p>
                             </div>
-                            <p className="text-2xl font-bold">{oralGradesCount}</p>
-                        </div>
-                         <div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                <BookCopy className="h-4 w-4" />
-                                <span>Fächer</span>
+                            <div>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span>Mündlich</span>
+                                </div>
+                                <p className="text-2xl font-bold">{oralGradesCount}</p>
                             </div>
-                            <p className="text-2xl font-bold">{totalSubjectsCount}</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                <ClipboardList className="h-4 w-4" />
-                                <span>Noten gesamt</span>
+                             <div>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <BookCopy className="h-4 w-4" />
+                                    <span>Fächer</span>
+                                </div>
+                                <p className="text-2xl font-bold">{totalSubjectsCount}</p>
                             </div>
-                            <p className="text-2xl font-bold">{totalGradesCount}</p>
+                            <div>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <ClipboardList className="h-4 w-4" />
+                                    <span>Noten gesamt</span>
+                                </div>
+                                <p className="text-2xl font-bold">{totalGradesCount}</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </CollapsibleContent>
+                </Collapsible>
                 
                 <div className="flex flex-col gap-4">
                 <Collapsible open={openView === 'subject'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'subject' : null)} className="border bg-card rounded-lg shadow-sm">
