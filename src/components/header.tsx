@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Check, Menu } from "lucide-react";
+import { Settings, Check, Menu, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -34,6 +34,7 @@ type AppHeaderProps = {
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
+  onExportCSV: () => void;
 };
 
 export function AppHeader({ 
@@ -49,7 +50,8 @@ export function AppHeader({
   theme,
   onThemeChange,
   isDarkMode,
-  onIsDarkModeChange
+  onIsDarkModeChange,
+  onExportCSV
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -150,6 +152,17 @@ export function AppHeader({
                     />
                   </div>
                 </div>
+                <Separator />
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Datenexport</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Exportiere deine aktuellen Fächer und Noten als CSV-Datei.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={onExportCSV}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Als CSV exportieren
+                </Button>
                 <Separator />
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">Erscheinungsbild</h4>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,9 +10,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { AddGradeData, AddSubjectData, Subject, Grade } from '@/lib/types';
+import { AddGradeData, AddSubjectData, Subject, Grade, Attachment } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -44,6 +44,10 @@ const addGradeSchema = z.object({
   value: z.coerce.number().min(1, "Note muss 1-6 sein.").max(6, "Note muss 1-6 sein."),
   weight: z.coerce.number().min(0.1, "Gewichtung muss positiv sein.").default(1),
   notes: z.string().max(100, "Notiz darf nicht länger als 100 Zeichen sein.").optional(),
+  attachments: z.array(z.object({
+    name: z.string(),
+    dataUrl: z.string(),
+  })).optional(),
 });
 
 type SidebarContentProps = {
@@ -80,6 +84,7 @@ export function SidebarContent({
   onClose,
 }: SidebarContentProps) {
     const [openView, setOpenView] = useState<'subject' | 'grade' | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const subjectForm = useForm<z.infer<typeof addSubjectSchema>>({
         resolver: zodResolver(addSubjectSchema),
@@ -88,8 +93,11 @@ export function SidebarContent({
 
     const gradeForm = useForm<z.infer<typeof addGradeSchema>>({
         resolver: zodResolver(addGradeSchema),
-        defaultValues: { date: new Date(), type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" },
+        defaultValues: { date: new Date(), type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "", attachments: [] },
     });
+    
+    const gradeAttachments = gradeForm.watch('attachments');
+
 
     const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator') => {
         onSetView(view);
@@ -106,7 +114,16 @@ export function SidebarContent({
     const handleGradeSubmit = (values: z.infer<typeof addGradeSchema>) => {
         const { subjectId, ...gradeValues } = values;
         onAddGrade(subjectId, gradeValues);
-        gradeForm.reset({ date: new Date(), type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" });
+        gradeForm.reset({ 
+            subjectId: undefined,
+            date: new Date(), 
+            type: "mündliche Note", 
+            name: "", 
+            value: undefined, 
+            weight: 1, 
+            notes: "", 
+            attachments: [] 
+        });
         setOpenView(null);
         if (onClose) onClose();
     };
@@ -114,6 +131,36 @@ export function SidebarContent({
     const handleTriggerClick = (view: 'subject' | 'grade') => {
       setOpenView(current => current === view ? null : view);
     }
+    
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+
+        const filePromises = Array.from(files).map(file => {
+        return new Promise<Attachment>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+            resolve({ name: file.name, dataUrl: e.target?.result as string });
+            };
+            reader.readAsDataURL(file);
+        });
+        });
+
+        Promise.all(filePromises).then(results => {
+        const currentAttachments = gradeForm.getValues('attachments') || [];
+        gradeForm.setValue('attachments', [...currentAttachments, ...results]);
+        });
+
+        if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+        }
+    };
+
+    const removeAttachment = (indexToRemove: number) => {
+        const currentAttachments = gradeForm.getValues('attachments') || [];
+        gradeForm.setValue('attachments', currentAttachments.filter((_, index) => index !== indexToRemove));
+    };
+
 
     return (
         <>
@@ -319,6 +366,41 @@ export function SidebarContent({
                                 <FormField control={gradeForm.control} name="notes" render={({ field }) => (
                                     <FormItem><FormLabel>Notiz (optional)</FormLabel><FormControl><Textarea placeholder="Thema der Ex..." className="resize-none" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
                                 )} />
+                                
+                                <div className="space-y-2">
+                                    <FormLabel>Anhänge (optional)</FormLabel>
+                                    <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                                        <UploadCloud className="mr-2 h-4 w-4" />
+                                        Dateien auswählen
+                                    </Button>
+                                    <Input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        className="hidden"
+                                        multiple
+                                        onChange={handleFileChange}
+                                    />
+                                    <div className="space-y-2">
+                                        {gradeAttachments?.map((attachment, index) => (
+                                        <div key={index} className="flex items-center justify-between rounded-md border p-2 bg-muted/50 text-xs">
+                                            <div className="flex items-center gap-2 truncate">
+                                            <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                            <span className="truncate">{attachment.name}</span>
+                                            </div>
+                                            <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-5 w-5"
+                                            onClick={() => removeAttachment(index)}
+                                            >
+                                            <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
                                 <Button type="submit" className="w-full">Note speichern</Button>
                             </form>
                         </Form>

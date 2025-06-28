@@ -202,3 +202,43 @@ export function calculateGradeForTarget(
 
   return requiredGrade;
 }
+
+
+function escapeCsvField(field: any): string {
+  const str = String(field ?? '');
+  if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+export function generateCSV(subjects: Subject[], grades: Grade[]): string {
+  const headers = [
+    'Fachname',
+    'Kategorie',
+    'Notentyp',
+    'Bezeichnung',
+    'Note',
+    'Gewichtung',
+    'Datum',
+    'Notizen',
+  ].map(escapeCsvField);
+
+  const rows = grades.map(grade => {
+    const subject = subjects.find(s => s.id === grade.subjectId);
+    if (!subject) return null;
+
+    return [
+      subject.name,
+      subject.category,
+      grade.type,
+      grade.name || '',
+      grade.value,
+      grade.weight,
+      new Date(grade.date).toLocaleDateString('de-DE'),
+      grade.notes || '',
+    ].map(escapeCsvField).join(',');
+  }).filter(row => row !== null) as string[];
+
+  return [headers.join(','), ...rows].join('\n');
+}

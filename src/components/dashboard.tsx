@@ -7,7 +7,7 @@ import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
-import { calculateOverallAverage, calculateCategoryAverage } from "@/lib/utils";
+import { calculateOverallAverage, calculateCategoryAverage, generateCSV } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { TutorChat } from "./tutor-chat";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -241,6 +241,31 @@ export default function Dashboard() {
     });
   };
 
+  const handleExportCSV = () => {
+    if (filteredSubjects.length === 0) {
+      toast({
+        title: "Keine Daten zum Exportieren",
+        description: "Für die ausgewählte Klassenstufe gibt es keine Fächer.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const csvContent = generateCSV(filteredSubjects, gradesForFilteredSubjects);
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `noten-meister-export-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+     toast({
+      title: "Daten exportiert",
+      description: "Deine Noten wurden erfolgreich als CSV-Datei heruntergeladen.",
+    });
+  };
+
   const sidebarProps = {
     subjects: filteredSubjects,
     grades: gradesForFilteredSubjects,
@@ -285,6 +310,7 @@ export default function Dashboard() {
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
           onIsDarkModeChange={(isDark) => setStoredDarkMode(isDark ? isDark : null)}
+          onExportCSV={handleExportCSV}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {view === 'subjects' ? (
