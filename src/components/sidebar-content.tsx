@@ -12,9 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, CalendarIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 const addSubjectSchema = z.object({
   name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein.").max(50),
@@ -25,6 +30,9 @@ const addSubjectSchema = z.object({
 
 const addGradeSchema = z.object({
   subjectId: z.string({ required_error: "Bitte wähle ein Fach aus." }),
+  date: z.date({
+    required_error: "Ein Datum ist erforderlich.",
+  }),
   name: z.string().max(50, "Name darf nicht länger als 50 Zeichen sein.").optional(),
   type: z.enum(["Schulaufgabe", "mündliche Note"], {
     required_error: "Du musst einen Notentyp auswählen.",
@@ -74,7 +82,7 @@ export function SidebarContent({
 
     const gradeForm = useForm<z.infer<typeof addGradeSchema>>({
         resolver: zodResolver(addGradeSchema),
-        defaultValues: { type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" },
+        defaultValues: { date: new Date(), type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" },
     });
 
     const handleViewChange = (view: 'subjects' | 'tutor') => {
@@ -92,7 +100,7 @@ export function SidebarContent({
     const handleGradeSubmit = (values: z.infer<typeof addGradeSchema>) => {
         const { subjectId, ...gradeValues } = values;
         onAddGrade(subjectId, gradeValues);
-        gradeForm.reset({ type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" });
+        gradeForm.reset({ date: new Date(), type: "mündliche Note", name: "", value: undefined, weight: 1, notes: "" });
         setOpenView(null);
         if (onClose) onClose();
     };
@@ -227,6 +235,47 @@ export function SidebarContent({
                                 <FormField control={gradeForm.control} name="subjectId" render={({ field }) => (
                                     <FormItem><FormLabel>Fach</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Fach auswählen" /></SelectTrigger></FormControl><SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )} />
+                                <FormField
+                                  control={gradeForm.control}
+                                  name="date"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Datum</FormLabel>
+                                       <Popover>
+                                        <PopoverTrigger asChild>
+                                          <FormControl>
+                                            <Button
+                                              variant={"outline"}
+                                              className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !field.value && "text-muted-foreground"
+                                              )}
+                                            >
+                                              <CalendarIcon className="mr-2 h-4 w-4" />
+                                              {field.value ? (
+                                                format(field.value, "PPP", { locale: de })
+                                              ) : (
+                                                <span>Wähle ein Datum</span>
+                                              )}
+                                            </Button>
+                                          </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                          <Calendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={field.onChange}
+                                             disabled={(date) =>
+                                              date > new Date() || date < new Date("2000-01-01")
+                                            }
+                                            initialFocus
+                                          />
+                                        </PopoverContent>
+                                      </Popover>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                                 <FormField control={gradeForm.control} name="type" render={({ field }) => (
                                     <FormItem><FormLabel>Notentyp</FormLabel><FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Schulaufgabe" /></FormControl><FormLabel className="font-normal">Schulaufgabe</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="mündliche Note" /></FormControl><FormLabel className="font-normal">Mündliche Note</FormLabel></FormItem></RadioGroup>
