@@ -1,3 +1,8 @@
+export interface Attachment {
+  name: string;
+  dataUrl: string;
+}
+
 export type SubjectCategory = "Hauptfach" | "Nebenfach";
 export type GradeType = "Schulaufgabe" | "mündliche Note";
 
@@ -20,6 +25,7 @@ export interface Grade {
   weight: number;
   date: string;
   notes?: string;
+  attachments?: Attachment[];
 }
 
 export type AddGradeData = {
@@ -29,6 +35,7 @@ export type AddGradeData = {
   value: number;
   weight: number;
   notes?: string;
+  attachments?: Attachment[];
 }
 
 export type AddSubjectData = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -23,13 +23,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type { AddGradeData, Grade } from "@/lib/types";
+import type { AddGradeData, Grade, Attachment } from "@/lib/types";
 import { Textarea } from "./ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, UploadCloud, File as FileIcon, X } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 
 
@@ -44,6 +44,10 @@ const formSchema = z.object({
   value: z.coerce.number().min(1, "Note muss 1-6 sein.").max(6, "Note muss 1-6 sein."),
   weight: z.coerce.number().min(0.1, "Gewichtung muss positiv sein.").default(1),
   notes: z.string().max(100, "Notiz darf nicht länger als 100 Zeichen sein.").optional(),
+  attachments: z.array(z.object({
+    name: z.string(),
+    dataUrl: z.string(),
+  })).optional(),
 });
 
 type AddGradeFormProps = {
@@ -61,12 +65,14 @@ const defaultFormValues = {
   value: undefined,
   weight: 1,
   notes: "",
+  attachments: [],
 }
 
 export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gradeToEdit }: AddGradeFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -74,12 +80,44 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
         form.reset({
           ...gradeToEdit,
           date: new Date(gradeToEdit.date),
+          attachments: gradeToEdit.attachments || [],
         });
       } else {
         form.reset(defaultFormValues);
       }
     }
   }, [isOpen, gradeToEdit, form]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const filePromises = Array.from(files).map(file => {
+      return new Promise<Attachment>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({ name: file.name, dataUrl: e.target?.result as string });
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(filePromises).then(results => {
+      const currentAttachments = form.getValues('attachments') || [];
+      form.setValue('attachments', [...currentAttachments, ...results]);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeAttachment = (indexToRemove: number) => {
+    const currentAttachments = form.getValues('attachments') || [];
+    form.setValue('attachments', currentAttachments.filter((_, index) => index !== indexToRemove));
+  };
+  
+  const attachments = form.watch('attachments');
 
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values, gradeToEdit?.id);
@@ -227,6 +265,41 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
                 </FormItem>
               )}
             />
+
+            <div className="space-y-2">
+              <FormLabel>Anhänge (optional)</FormLabel>
+              <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                <UploadCloud className="mr-2 h-4 w-4" />
+                Dateien auswählen
+              </Button>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                multiple
+                onChange={handleFileChange}
+              />
+              <div className="space-y-2">
+                {attachments?.map((attachment, index) => (
+                  <div key={index} className="flex items-center justify-between rounded-md border p-2 bg-muted/50">
+                    <div className="flex items-center gap-2 truncate">
+                      <FileIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm truncate">{attachment.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => removeAttachment(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Abbrechen</Button>
               <Button type="submit">{gradeToEdit ? 'Änderungen speichern' : 'Note speichern'}</Button>
