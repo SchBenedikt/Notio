@@ -17,6 +17,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Switch } from "./ui/switch";
+import { Separator } from "./ui/separator";
 
 type AppHeaderProps = {
   selectedGradeLevel: number;
@@ -30,6 +32,8 @@ type AppHeaderProps = {
   onMinorSubjectWeightChange: (weight: number) => void;
   theme: string;
   onThemeChange: (theme: string) => void;
+  isDarkMode: boolean;
+  onIsDarkModeChange: (isDark: boolean) => void;
 };
 
 export function AppHeader({ 
@@ -43,7 +47,9 @@ export function AppHeader({
   minorSubjectWeight,
   onMinorSubjectWeightChange,
   theme,
-  onThemeChange
+  onThemeChange,
+  isDarkMode,
+  onIsDarkModeChange
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -110,9 +116,9 @@ export function AppHeader({
             <PopoverContent className="w-80" align="end">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Gewichtung</h4>
+                  <h4 className="font-medium leading-none">Allgemeine Gewichtung</h4>
                   <p className="text-sm text-muted-foreground">
-                    Passe die Gewichtung für Haupt- und Nebenfächer an.
+                    Passe die globale Gewichtung für Haupt- und Nebenfächer an.
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -141,10 +147,11 @@ export function AppHeader({
                     />
                   </div>
                 </div>
-                <div className="space-y-2 pt-2">
-                  <h4 className="font-medium leading-none">Farbschema</h4>
+                <Separator />
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Erscheinungsbild</h4>
                   <p className="text-sm text-muted-foreground">
-                    Passe die Akzentfarbe der App an.
+                    Passe das Farbschema und den Dark Mode an.
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -162,6 +169,16 @@ export function AppHeader({
                       {theme === t.name && <Check className="h-4 w-4 text-primary-foreground" />}
                     </button>
                   ))}
+                </div>
+                 <div className="flex items-center justify-between pt-2">
+                    <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
+                        <span>Dark Mode</span>
+                    </Label>
+                    <Switch
+                        id="dark-mode"
+                        checked={isDarkMode}
+                        onCheckedChange={onIsDarkModeChange}
+                    />
                 </div>
               </div>
             </PopoverContent>

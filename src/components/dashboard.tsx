@@ -20,7 +20,8 @@ export default function Dashboard() {
   const [mainSubjectWeight, setMainSubjectWeight] = useLocalStorage<number>("noten-meister-main-weight", 2);
   const [minorSubjectWeight, setMinorSubjectWeight] = useLocalStorage<number>("noten-meister-minor-weight", 1);
   const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
-  
+  const [isDarkMode, setIsDarkMode] = useLocalStorage<boolean>('noten-meister-dark-mode', false);
+
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +36,16 @@ export default function Dashboard() {
       root.classList.add(`theme-${theme}`);
     }
   }, [theme]);
+  
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
 
   const subjectsForGradeLevel = useMemo(() => {
     return subjects.filter((s) => s.gradeLevel === selectedGradeLevel);
@@ -237,6 +248,8 @@ export default function Dashboard() {
           onMinorSubjectWeightChange={setMinorSubjectWeight}
           theme={theme}
           onThemeChange={setTheme}
+          isDarkMode={isDarkMode}
+          onIsDarkModeChange={setIsDarkMode}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {view === 'subjects' ? (

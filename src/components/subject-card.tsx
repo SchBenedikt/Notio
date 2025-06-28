@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { StudyCoachDialog } from "./study-coach-dialog";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
+import { GradeDistributionChart } from "./grade-distribution-chart";
 
 type SubjectCardProps = {
   subject: Subject;
@@ -140,19 +141,24 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
         <AccordionContent className="px-6 pb-4">
           <Separator className="mb-4" />
           {grades.length > 0 ? (
-            <div className="space-y-4">
-              {writtenGrades.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">Schulaufgaben</h4>
-                  <ul className="space-y-2">{writtenGrades.map(renderGradeItem)}</ul>
+             <div className="grid md:grid-cols-2 md:gap-x-8 items-start">
+                <div className="space-y-4">
+                  {writtenGrades.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">Schulaufgaben</h4>
+                      <ul className="space-y-2">{writtenGrades.map(renderGradeItem)}</ul>
+                    </div>
+                  )}
+                  {oralGrades.length > 0 && (
+                     <div className={writtenGrades.length > 0 ? 'mt-4' : ''}>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2">Mündliche & sonstige Noten</h4>
+                      <ul className="space-y-2">{oralGrades.map(renderGradeItem)}</ul>
+                    </div>
+                  )}
                 </div>
-              )}
-              {oralGrades.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">Mündliche & sonstige Noten</h4>
-                  <ul className="space-y-2">{oralGrades.map(renderGradeItem)}</ul>
+                <div className="mt-6 md:mt-0">
+                    <GradeDistributionChart grades={grades} />
                 </div>
-              )}
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-8">
@@ -161,7 +167,7 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
           )}
           <Separator className="my-4" />
           <div className="flex justify-between items-center gap-2 flex-wrap">
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2 flex-wrap">
                 <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
