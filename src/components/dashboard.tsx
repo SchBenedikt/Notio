@@ -9,6 +9,7 @@ import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
 import { calculateOverallAverage, calculateCategoryAverage } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
+import { TutorChat } from "./tutor-chat";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -20,6 +21,7 @@ export default function Dashboard() {
   
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [view, setView] = useState<'subjects' | 'tutor'>('subjects');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -175,6 +177,8 @@ export default function Dashboard() {
         minorSubjectsAverage={minorSubjectsAverage}
         writtenGradesCount={writtenGradesCount}
         oralGradesCount={oralGradesCount}
+        currentView={view}
+        onSetView={setView}
       />
       <div className="flex-1 lg:pl-80">
         <AppHeader 
@@ -190,19 +194,25 @@ export default function Dashboard() {
           onThemeChange={setTheme}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
-          <SubjectList
-            mainSubjects={mainSubjects}
-            minorSubjects={minorSubjects}
-            grades={grades}
-            onAddGrade={handleAddGrade}
-            onDeleteGrade={handleDeleteGrade}
-            onDeleteSubject={handleDeleteSubject}
-            onUpdateSubject={handleUpdateSubject}
-            onAddSubject={() => setIsAddSubjectOpen(true)}
-            totalSubjectsCount={subjectsForGradeLevel.length}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
+          {view === 'subjects' ? (
+            <SubjectList
+              mainSubjects={mainSubjects}
+              minorSubjects={minorSubjects}
+              grades={grades}
+              onAddGrade={handleAddGrade}
+              onDeleteGrade={handleDeleteGrade}
+              onDeleteSubject={handleDeleteSubject}
+              onUpdateSubject={handleUpdateSubject}
+              onAddSubject={() => setIsAddSubjectOpen(true)}
+              totalSubjectsCount={subjectsForGradeLevel.length}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          ) : (
+            <div className="h-[calc(100vh-10rem)]">
+              <TutorChat subjects={subjectsForGradeLevel.map(s => s.name)} />
+            </div>
+          )}
         </main>
       </div>
       <AddSubjectDialog 
