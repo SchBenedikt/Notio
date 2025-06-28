@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil, Crosshair, Award, Calculator, ArrowRight, Target, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -66,8 +66,24 @@ const GradeCalculator = ({ subject, grades, finalGrade: finalGradeString }: { su
     // State for "Target" and "Maintain" tabs
     const [futureGradeWeight, setFutureGradeWeight] = useState('1');
     const [futureGradeType, setFutureGradeType] = useState<GradeType>('mündliche Note');
+    // New state for the custom target grade input
+    const [targetGradeInput, setTargetGradeInput] = useState('');
 
     const finalGrade = finalGradeString === '-' ? null : parseFloat(finalGradeString);
+
+    // Effect to pre-fill the target grade input with a sensible default
+    useEffect(() => {
+        if (finalGrade) {
+            let autoTarget = Math.floor(finalGrade * 2) / 2;
+            if (autoTarget >= finalGrade) {
+                autoTarget = parseFloat((autoTarget - 0.5).toFixed(1));
+            }
+            if (autoTarget < 1.0) autoTarget = 1.0;
+            setTargetGradeInput(autoTarget.toFixed(1));
+        } else {
+            setTargetGradeInput('');
+        }
+    }, [finalGrade]);
 
     // What-if calculation
     const newAverage = useMemo(() => {
@@ -93,15 +109,14 @@ const GradeCalculator = ({ subject, grades, finalGrade: finalGradeString }: { su
 
     const { requiredGradeResult, targetAverageDisplay } = useMemo(() => {
         if (!finalGrade) return { requiredGradeResult: "Kein Schnitt", targetAverageDisplay: null };
-        const weight = parseFloat(futureGradeWeight);
-        if (isNaN(weight) || weight <= 0) return { requiredGradeResult: "-", targetAverageDisplay: null };
         
-        let targetAverage = Math.floor(finalGrade * 2) / 2;
-        if (targetAverage >= finalGrade) {
-            targetAverage = parseFloat((targetAverage - 0.5).toFixed(1));
+        const targetAverage = parseFloat(targetGradeInput);
+        if (isNaN(targetAverage) || targetAverage < 1.0 || targetAverage > 6.0) {
+             return { requiredGradeResult: "Ungültiges Ziel", targetAverageDisplay: targetGradeInput || "-" };
         }
 
-        if (targetAverage < 1.0) return { requiredGradeResult: "Top-Schnitt!", targetAverageDisplay: "1,0" };
+        const weight = parseFloat(futureGradeWeight);
+        if (isNaN(weight) || weight <= 0) return { requiredGradeResult: "-", targetAverageDisplay: targetGradeInput };
         
         const result = calculateGradeForTarget(grades, subject, targetAverage, weight, futureGradeType);
         
@@ -111,8 +126,8 @@ const GradeCalculator = ({ subject, grades, finalGrade: finalGradeString }: { su
         else if (result > 6.0) requiredGradeResult = `Nicht möglich`;
         else requiredGradeResult = `Note ${result.toFixed(2)}`;
         
-        return { requiredGradeResult, targetAverageDisplay: targetAverage.toFixed(1) };
-    }, [finalGrade, grades, subject, futureGradeWeight, futureGradeType]);
+        return { requiredGradeResult, targetAverageDisplay: targetGradeInput };
+    }, [finalGrade, grades, subject, futureGradeWeight, futureGradeType, targetGradeInput]);
     
     const { maintainGradeResult, maintainAverageDisplay } = useMemo(() => {
         if (!finalGrade) return { maintainGradeResult: "Kein Schnitt", maintainAverageDisplay: null };
@@ -246,7 +261,50 @@ const GradeCalculator = ({ subject, grades, finalGrade: finalGradeString }: { su
                 </TabsContent>
                 <TabsContent value="reach-goal" className="mt-4">
                      <div className="space-y-3">
-                        {renderFutureGradeInputs()}
+                        <div className="space-y-3">
+                             <div>
+                                <Label htmlFor={`target-grade-input-${subject.id}`} className="text-xs">Wunschnote</Label>
+                                <Input 
+                                    id={`target-grade-input-${subject.id}`}
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="z.B. 2,5"
+                                    value={targetGradeInput}
+                                    onChange={(e) => setTargetGradeInput(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor={`future-weight-reach-${subject.id}`} className="text-xs">Gewichtung der nächsten Note</Label>
+                                <Input 
+                                    id={`future-weight-reach-${subject.id}`}
+                                    type="number"
+                                    placeholder="z.B. 1"
+                                    value={futureGradeWeight}
+                                    onChange={(e) => setFutureGradeWeight(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+                            {subject.category === "Hauptfach" && (
+                              <div>
+                                <Label className="text-xs">Art der nächsten Note</Label>
+                                <RadioGroup
+                                  value={futureGradeType}
+                                  onValueChange={(type) => setFutureGradeType(type as GradeType)}
+                                  className="flex space-x-4 pt-1"
+                                >
+                                  <div className="flex items-center space-x-2 space-y-0">
+                                      <RadioGroupItem value="Schulaufgabe" id={`reach-type-written-${subject.id}`} />
+                                      <Label htmlFor={`reach-type-written-${subject.id}`} className="font-normal text-sm">Schulaufgabe</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2 space-y-0">
+                                      <RadioGroupItem value="mündliche Note" id={`reach-type-oral-${subject.id}`} />
+                                      <Label htmlFor={`reach-type-oral-${subject.id}`} className="font-normal text-sm">Mündliche Note</Label>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                            )}
+                        </div>
                         <div className="text-center bg-background p-3 rounded-md">
                             <p className="text-xs text-muted-foreground">Um Schnitt <span className="font-bold text-primary">{targetAverageDisplay}</span> zu erreichen:</p>
                             <p className="text-lg font-bold text-primary">{requiredGradeResult}</p>
