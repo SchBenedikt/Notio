@@ -20,7 +20,11 @@ export default function Dashboard() {
   const [mainSubjectWeight, setMainSubjectWeight] = useLocalStorage<number>("noten-meister-main-weight", 2);
   const [minorSubjectWeight, setMinorSubjectWeight] = useLocalStorage<number>("noten-meister-minor-weight", 1);
   const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
-  const [isDarkMode, setIsDarkMode] = useLocalStorage<boolean>('noten-meister-dark-mode', false);
+  
+  // Stored preference for dark mode: null (system), true (dark), or false (light)
+  const [storedDarkMode, setStoredDarkMode] = useLocalStorage<boolean | null>('noten-meister-dark-mode', null);
+  // The actual dark mode state that will be used for rendering and applying styles
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -37,6 +41,32 @@ export default function Dashboard() {
     }
   }, [theme]);
   
+  // This new effect determines the effective dark mode based on storage or system preference.
+  useEffect(() => {
+    const handleSystemPreference = (e: MediaQueryListEvent) => {
+        setIsDarkMode(e.matches);
+    };
+
+    if (storedDarkMode !== null) {
+        // User has set a preference, so we use it.
+        setIsDarkMode(storedDarkMode);
+        return; // No need to listen for system changes.
+    }
+
+    // No user preference, so we follow the system.
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mediaQuery.matches); // Set initial state
+
+    // Listen for changes in system preference
+    mediaQuery.addEventListener('change', handleSystemPreference);
+
+    // Cleanup listener on component unmount or when storedDarkMode changes.
+    return () => {
+        mediaQuery.removeEventListener('change', handleSystemPreference);
+    };
+  }, [storedDarkMode]);
+
+  // This existing effect applies the 'dark' class whenever isDarkMode changes.
   useEffect(() => {
     const root = window.document.documentElement;
     if (isDarkMode) {
@@ -249,7 +279,7 @@ export default function Dashboard() {
           theme={theme}
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
-          onIsDarkModeChange={setIsDarkMode}
+          onIsDarkModeChange={setStoredDarkMode}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {view === 'subjects' ? (
