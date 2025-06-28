@@ -22,6 +22,7 @@ export interface Grade {
 }
 
 export type AddGradeData = {
+  date: Date;
   type: GradeType;
   name?: string;
   value: number;

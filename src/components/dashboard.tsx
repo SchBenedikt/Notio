@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import useLocalStorage from "@/hooks/use-local-storage";
-import { Subject, Grade, AddSubjectData } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -218,8 +218,8 @@ export default function Dashboard() {
     const newGrade: Grade = {
       id: crypto.randomUUID(),
       subjectId,
-      date: new Date().toISOString(),
       ...values,
+      date: values.date.toISOString(),
     };
     setGrades([...grades, newGrade]);
      toast({

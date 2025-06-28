@@ -33,6 +33,7 @@ import { StudyCoachDialog } from "./study-coach-dialog";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { GradeDistributionChart } from "./grade-distribution-chart";
+import { GradeTrendChart } from "./grade-trend-chart";
 
 type SubjectCardProps = {
   subject: Subject;
@@ -156,8 +157,9 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
                     </div>
                   )}
                 </div>
-                <div className="mt-6 md:mt-0">
+                <div className="mt-6 md:mt-0 space-y-4">
                     <GradeDistributionChart grades={grades} />
+                    <GradeTrendChart grades={grades} />
                 </div>
             </div>
           ) : (
