@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type { AddGradeData } from "@/lib/types";
+import type { AddGradeData, Grade } from "@/lib/types";
 import { Textarea } from "./ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
@@ -48,8 +49,9 @@ const formSchema = z.object({
 type AddGradeFormProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmit: (values: AddGradeData) => void;
+  onSubmit: (values: AddGradeData, gradeId?: string) => void;
   subjectName: string;
+  gradeToEdit?: Grade | null;
 };
 
 const defaultFormValues = {
@@ -61,28 +63,36 @@ const defaultFormValues = {
   notes: "",
 }
 
-export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: AddGradeFormProps) {
+export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gradeToEdit }: AddGradeFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultFormValues,
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      if (gradeToEdit) {
+        form.reset({
+          ...gradeToEdit,
+          date: new Date(gradeToEdit.date),
+        });
+      } else {
+        form.reset(defaultFormValues);
+      }
+    }
+  }, [isOpen, gradeToEdit, form]);
+
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
-    form.reset(defaultFormValues);
+    onSubmit(values, gradeToEdit?.id);
     onOpenChange(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-        if(!open) form.reset(defaultFormValues);
-        onOpenChange(open);
-    }}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Neue Note für {subjectName}</DialogTitle>
+          <DialogTitle>{gradeToEdit ? 'Note bearbeiten' : `Neue Note für ${subjectName}`}</DialogTitle>
           <DialogDescription>
-            Gib die Details für die neue Note ein.
+            {gradeToEdit ? 'Ändere die Details für die Note.' : 'Gib die Details für die neue Note ein.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -219,7 +229,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName }: 
             />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-              <Button type="submit">Note speichern</Button>
+              <Button type="submit">{gradeToEdit ? 'Änderungen speichern' : 'Note speichern'}</Button>
             </DialogFooter>
           </form>
         </Form>

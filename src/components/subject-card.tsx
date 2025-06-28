@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -25,7 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Grade, Subject, AddGradeData } from "@/lib/types";
+import { Grade, Subject, AddGradeData, AddSubjectData } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -33,19 +33,22 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { GradeDistributionChart } from "./grade-distribution-chart";
 import { GradeTrendChart } from "./grade-trend-chart";
+import { EditSubjectDialog } from "./edit-subject-dialog";
 
 type SubjectCardProps = {
   subject: Subject;
   grades: Grade[];
-  onAddGrade: (subjectId: string, values: AddGradeData) => void;
+  onSaveGrade: (subjectId: string, values: AddGradeData, gradeId?: string) => void;
   onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
-  const [isAddGradeOpen, setIsAddGradeOpen] = useState(false);
+export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
+  const [isGradeDialogOpen, setIsGradeDialogOpen] = useState(false);
+  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
+  const [isEditSubjectOpen, setIsEditSubjectOpen] = useState(false);
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   
   // Default to 2:1 for main subjects if not set
@@ -57,8 +60,24 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
   const writtenGrades = grades.filter((g) => g.type === "Schulaufgabe");
   const oralGrades = grades.filter((g) => g.type === "mündliche Note");
 
-  const handleAddGradeSubmit = (values: AddGradeData) => {
-    onAddGrade(subject.id, values);
+  const handleGradeDialogSubmit = (values: AddGradeData, gradeId?: string) => {
+    onSaveGrade(subject.id, values, gradeId);
+  };
+
+  const handleOpenGradeDialog = (grade?: Grade) => {
+    setEditingGrade(grade || null);
+    setIsGradeDialogOpen(true);
+  }
+
+  const handleCloseGradeDialog = (open: boolean) => {
+    if (!open) {
+      setEditingGrade(null);
+    }
+    setIsGradeDialogOpen(open);
+  }
+
+  const handleUpdateSubjectSubmit = (values: AddSubjectData) => {
+    onUpdateSubject(subject.id, values);
   };
 
   const handleWeightSave = () => {
@@ -92,10 +111,13 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
           {grade.notes && <p className="text-xs text-muted-foreground pt-1 italic">"{grade.notes}"</p>}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
           {grade.value.toFixed(0)}
         </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => handleOpenGradeDialog(grade)}>
+            <Pencil className="h-4 w-4"/>
+        </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
@@ -188,6 +210,10 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
                     </AlertDialogFooter>
                 </AlertDialogContent>
                 </AlertDialog>
+                 <Button variant="ghost" size="sm" onClick={() => setIsEditSubjectOpen(true)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Fach bearbeiten
+                 </Button>
                 {subject.category === 'Hauptfach' && (
                     <Popover open={isWeightPopoverOpen} onOpenChange={setIsWeightPopoverOpen}>
                         <PopoverTrigger asChild>
@@ -236,7 +262,7 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
                     </Popover>
                 )}
             </div>
-            <Button size="sm" onClick={() => setIsAddGradeOpen(true)}>
+            <Button size="sm" onClick={() => handleOpenGradeDialog()}>
               <Plus className="mr-2 h-4 w-4" />
               Note hinzufügen
             </Button>
@@ -244,10 +270,17 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
         </AccordionContent>
       </AccordionItem>
       <AddGradeDialog 
-        isOpen={isAddGradeOpen}
-        onOpenChange={setIsAddGradeOpen}
-        onSubmit={handleAddGradeSubmit}
+        isOpen={isGradeDialogOpen}
+        onOpenChange={handleCloseGradeDialog}
+        onSubmit={handleGradeDialogSubmit}
         subjectName={subject.name}
+        gradeToEdit={editingGrade}
+      />
+      <EditSubjectDialog 
+        isOpen={isEditSubjectOpen}
+        onOpenChange={setIsEditSubjectOpen}
+        onSubmit={handleUpdateSubjectSubmit}
+        subject={subject}
       />
     </>
   );

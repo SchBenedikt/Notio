@@ -171,7 +171,7 @@ export default function Dashboard() {
     });
   };
 
-  const handleUpdateSubject = (subjectId: string, updatedValues: Partial<Subject>) => {
+  const handleUpdateSubject = (subjectId: string, updatedValues: Partial<Omit<Subject, 'id' | 'gradeLevel'>>) => {
     setSubjects(currentSubjects => 
         currentSubjects.map(s => 
             s.id === subjectId ? { ...s, ...updatedValues } : s
@@ -194,19 +194,36 @@ export default function Dashboard() {
     });
   };
 
-  const handleAddGrade = (subjectId: string, values: AddGradeData) => {
-    const newGrade: Grade = {
-      id: crypto.randomUUID(),
-      subjectId,
-      ...values,
-      date: values.date.toISOString(),
-    };
-    setGrades([...grades, newGrade]);
-     toast({
-      title: "Note hinzugefügt",
-      description: `Eine neue Note wurde erfolgreich gespeichert.`,
-    });
+  const handleSaveGrade = (subjectId: string, values: AddGradeData, gradeId?: string) => {
+    if (gradeId) {
+      // Edit existing grade
+      setGrades(currentGrades =>
+        currentGrades.map(g =>
+          g.id === gradeId
+            ? { ...g, ...values, date: values.date.toISOString() }
+            : g
+        )
+      );
+      toast({
+        title: "Note aktualisiert",
+        description: "Die Änderungen an der Note wurden gespeichert.",
+      });
+    } else {
+      // Add new grade
+      const newGrade: Grade = {
+        id: crypto.randomUUID(),
+        subjectId,
+        ...values,
+        date: values.date.toISOString(),
+      };
+      setGrades([...grades, newGrade]);
+      toast({
+        title: "Note hinzugefügt",
+        description: `Eine neue Note wurde erfolgreich gespeichert.`,
+      });
+    }
   };
+
 
   const handleDeleteGrade = (gradeId: string) => {
     setGrades(grades.filter((g) => g.id !== gradeId));
@@ -222,7 +239,7 @@ export default function Dashboard() {
     grades: gradesForFilteredSubjects,
     overallAverage: overallAverage,
     onAddSubject: handleAddSubject,
-    onAddGrade: handleAddGrade,
+    onAddGrade: (subjectId: string, values: AddGradeData) => handleSaveGrade(subjectId, values),
     mainSubjectsAverage: mainSubjectsAverage,
     minorSubjectsAverage: minorSubjectsAverage,
     writtenGradesCount: writtenGradesCount,
@@ -268,7 +285,7 @@ export default function Dashboard() {
               mainSubjects={mainSubjects}
               minorSubjects={minorSubjects}
               grades={grades}
-              onAddGrade={handleAddGrade}
+              onSaveGrade={handleSaveGrade}
               onDeleteGrade={handleDeleteGrade}
               onDeleteSubject={handleDeleteSubject}
               onUpdateSubject={handleUpdateSubject}

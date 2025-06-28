@@ -11,7 +11,7 @@ type SubjectListProps = {
   mainSubjects: Subject[];
   minorSubjects: Subject[];
   grades: Grade[];
-  onAddGrade: (subjectId: string, values: AddGradeData) => void;
+  onSaveGrade: (subjectId: string, values: AddGradeData, gradeId?: string) => void;
   onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
@@ -25,7 +25,7 @@ export function SubjectList({
   mainSubjects, 
   minorSubjects, 
   grades, 
-  onAddGrade, 
+  onSaveGrade, 
   onDeleteGrade, 
   onDeleteSubject, 
   onUpdateSubject,
@@ -56,7 +56,7 @@ export function SubjectList({
           key={subject.id}
           subject={subject}
           grades={grades.filter((g) => g.subjectId === subject.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
-          onAddGrade={onAddGrade}
+          onSaveGrade={onSaveGrade}
           onDeleteGrade={onDeleteGrade}
           onDeleteSubject={onDeleteSubject}
           onUpdateSubject={onUpdateSubject}
