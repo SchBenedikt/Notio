@@ -26,6 +26,10 @@ const addSubjectSchema = z.object({
   category: z.enum(["Hauptfach", "Nebenfach"], {
     required_error: "Du musst eine Kategorie auswählen.",
   }),
+  targetGrade: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({invalid_type_error: "Muss eine Zahl sein"}).min(1, "Note muss 1-6 sein").max(6, "Note muss 1-6 sein").optional()
+  ),
 });
 
 const addGradeSchema = z.object({
@@ -79,7 +83,7 @@ export function SidebarContent({
 
     const subjectForm = useForm<z.infer<typeof addSubjectSchema>>({
         resolver: zodResolver(addSubjectSchema),
-        defaultValues: { name: "", category: "Nebenfach" },
+        defaultValues: { name: "", category: "Nebenfach", targetGrade: undefined },
     });
 
     const gradeForm = useForm<z.infer<typeof addGradeSchema>>({
@@ -216,6 +220,19 @@ export function SidebarContent({
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Hauptfach" /></FormControl><FormLabel className="font-normal">Hauptfach</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Nebenfach" /></FormControl><FormLabel className="font-normal">Nebenfach</FormLabel></FormItem></RadioGroup>
                                     </FormControl><FormMessage /></FormItem>
                                 )} />
+                                <FormField
+                                  control={subjectForm.control}
+                                  name="targetGrade"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Wunschnote (optional)</FormLabel>
+                                      <FormControl>
+                                        <Input type="number" step="0.1" placeholder="z.B. 2,5" {...field} value={field.value ?? ''} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                                 <Button type="submit" className="w-full">Fach speichern</Button>
                             </form>
                         </Form>
