@@ -10,9 +10,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { AddGradeData, AddSubjectData, Subject } from '@/lib/types';
+import { AddGradeData, AddSubjectData, Subject, Grade } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, CalendarIcon } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, CalendarIcon, BrainCircuit } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -20,6 +20,7 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { StudyCoachDialog } from './study-coach-dialog';
 
 const addSubjectSchema = z.object({
   name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein.").max(50),
@@ -44,6 +45,7 @@ const addGradeSchema = z.object({
 
 type SidebarContentProps = {
   subjects: Subject[];
+  grades: Grade[];
   overallAverage: string;
   onAddSubject: (values: AddSubjectData) => void;
   onAddGrade: (subjectId: string, values: Omit<AddGradeData, 'subjectId'>) => void;
@@ -60,6 +62,7 @@ type SidebarContentProps = {
 
 export function SidebarContent({ 
   subjects, 
+  grades,
   overallAverage, 
   onAddSubject, 
   onAddGrade, 
@@ -73,7 +76,9 @@ export function SidebarContent({
   onSetView,
   onClose,
 }: SidebarContentProps) {
-    const [openView, setOpenView] = useState<'subject' | 'grade' | null>(null);
+    const [openView, setOpenView] = useState<'subject' | 'grade' | 'coach' | null>(null);
+    const [coachSubjectId, setCoachSubjectId] = useState<string | undefined>();
+    const [isCoachOpen, setIsCoachOpen] = useState(false);
 
     const subjectForm = useForm<z.infer<typeof addSubjectSchema>>({
         resolver: zodResolver(addSubjectSchema),
@@ -105,9 +110,18 @@ export function SidebarContent({
         if (onClose) onClose();
     };
 
-    const handleTriggerClick = (view: 'subject' | 'grade') => {
-      setOpenView(current => current === view ? null : view);
+    const handleTriggerClick = (view: 'subject' | 'grade' | 'coach') => {
+      setOpenView(current => {
+        const newView = current === view ? null : view;
+        if (newView !== 'coach') {
+            setCoachSubjectId(undefined);
+        }
+        return newView;
+      });
     }
+
+    const selectedCoachSubject = coachSubjectId ? subjects.find(s => s.id === coachSubjectId) : undefined;
+    const selectedCoachGrades = selectedCoachSubject ? grades.filter(g => g.subjectId === selectedCoachSubject.id) : [];
 
     return (
         <>
@@ -298,8 +312,52 @@ export function SidebarContent({
                         </Form>
                     </CollapsibleContent>
                 </Collapsible>
+
+                <Collapsible open={openView === 'coach'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'coach' : null)} className="border bg-card rounded-lg shadow-sm">
+                    <CollapsibleTrigger onClick={() => handleTriggerClick('coach')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                        <div className="flex items-center gap-3">
+                            <BrainCircuit className="h-5 w-5 text-muted-foreground" />
+                            <span>Lern-Coach</span>
+                        </div>
+                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-4 pb-4">
+                        <Separator className="mb-4" />
+                        <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground">Wähle ein Fach, um eine KI-basierte Analyse und Lerntipps zu erhalten.</p>
+                            <Select onValueChange={setCoachSubjectId} value={coachSubjectId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Fach auswählen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {subjects.length > 0 ?
+                                        subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)
+                                        : <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">Keine Fächer vorhanden.</div>
+                                    }
+                                </SelectContent>
+                            </Select>
+                            <Button onClick={() => setIsCoachOpen(true)} disabled={!coachSubjectId} className="w-full">
+                                Analyse starten
+                            </Button>
+                        </div>
+                    </CollapsibleContent>
+                </Collapsible>
                 </div>
             </div>
+
+            {selectedCoachSubject && (
+                <StudyCoachDialog
+                    isOpen={isCoachOpen}
+                    onOpenChange={(isOpen) => {
+                        setIsCoachOpen(isOpen);
+                        if (!isOpen) {
+                            setCoachSubjectId(undefined); 
+                        }
+                    }}
+                    subject={selectedCoachSubject}
+                    grades={selectedCoachGrades}
+                />
+            )}
         </>
     );
 }

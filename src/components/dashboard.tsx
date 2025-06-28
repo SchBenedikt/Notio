@@ -239,6 +239,7 @@ export default function Dashboard() {
 
   const sidebarProps = {
     subjects: filteredSubjects,
+    grades: gradesForFilteredSubjects,
     overallAverage: overallAverage,
     onAddSubject: handleAddSubject,
     onAddGrade: handleAddGrade,
