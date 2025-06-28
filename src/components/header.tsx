@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Check, Menu } from "lucide-react";
+import { Settings, Check, Menu, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -33,7 +33,8 @@ type AppHeaderProps = {
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
-  onOpenCommandPalette: () => void;
+  onExport: () => void;
+  onImport: () => void;
 };
 
 export function AppHeader({ 
@@ -49,7 +50,8 @@ export function AppHeader({
   onThemeChange,
   isDarkMode,
   onIsDarkModeChange,
-  onOpenCommandPalette
+  onExport,
+  onImport,
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -93,12 +95,6 @@ export function AppHeader({
           )}
         </div>
         <div className="flex items-center gap-2 ml-auto">
-           <Button variant="outline" className="w-full sm:w-48 justify-between text-muted-foreground" onClick={onOpenCommandPalette}>
-            Befehle suchen...
-            <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                <span className="text-xs">⌘</span>K
-            </kbd>
-          </Button>
           <Select
             value={String(selectedGradeLevel)}
             onValueChange={(value) => onGradeLevelChange(Number(value))}
@@ -155,6 +151,21 @@ export function AppHeader({
                       className="col-span-2 h-8"
                     />
                   </div>
+                </div>
+                <Separator />
+                 <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Datenverwaltung</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Exportiere deine Noten oder importiere sie aus einer CSV-Datei.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="w-full" onClick={onImport}>
+                      <Upload className="mr-2 h-4 w-4" /> Importieren
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full" onClick={onExport}>
+                      <Download className="mr-2 h-4 w-4" /> Exportieren
+                  </Button>
                 </div>
                 <Separator />
                 <div className="space-y-2">

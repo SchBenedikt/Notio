@@ -13,9 +13,9 @@ import { TutorChat } from "./tutor-chat";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar-content";
 import { GradeCalculatorPage } from "./grade-calculator-page";
-import { CommandPalette } from "./command-palette";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { EditSubjectDialog } from "./edit-subject-dialog";
+import { StudyCoachPage } from "./study-coach-page";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -31,8 +31,7 @@ export default function Dashboard() {
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator'>('subjects');
-  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator' | 'coach'>('subjects');
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
@@ -320,6 +319,52 @@ export default function Dashboard() {
     currentView: view,
     onSetView: setView,
   };
+  
+  const renderView = () => {
+    switch (view) {
+      case 'subjects':
+        return (
+          <SubjectList
+            mainSubjects={mainSubjects}
+            minorSubjects={minorSubjects}
+            grades={grades}
+            onSaveGrade={handleSaveGrade}
+            onDeleteGrade={handleDeleteGrade}
+            onDeleteSubject={handleDeleteSubject}
+            onUpdateSubject={handleUpdateSubject}
+            onAddSubject={() => setIsAddSubjectOpen(true)}
+            totalSubjectsCount={subjectsForGradeLevel.length}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onAddGradeToSubject={handleOpenAddGradeDialog}
+            onEditGrade={handleOpenEditGradeDialog}
+            onEditSubject={handleOpenEditSubjectDialog}
+          />
+        );
+      case 'tutor':
+        return (
+          <div className="h-[calc(100vh-10rem)]">
+            <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
+          </div>
+        );
+      case 'calculator':
+        return (
+          <GradeCalculatorPage 
+              subjects={subjectsForGradeLevel} 
+              allGrades={grades} 
+          />
+        );
+      case 'coach':
+        return (
+          <StudyCoachPage
+            subjects={subjectsForGradeLevel}
+            allGrades={grades}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-muted/40">
@@ -348,48 +393,13 @@ export default function Dashboard() {
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
           onIsDarkModeChange={(isDark) => setStoredDarkMode(isDark ? isDark : null)}
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onExport={handleExportCSV}
+          onImport={handleImportCSV}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
-          {view === 'subjects' ? (
-            <SubjectList
-              mainSubjects={mainSubjects}
-              minorSubjects={minorSubjects}
-              grades={grades}
-              onSaveGrade={handleSaveGrade}
-              onDeleteGrade={handleDeleteGrade}
-              onDeleteSubject={handleDeleteSubject}
-              onUpdateSubject={handleUpdateSubject}
-              onAddSubject={() => setIsAddSubjectOpen(true)}
-              totalSubjectsCount={subjectsForGradeLevel.length}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onAddGradeToSubject={handleOpenAddGradeDialog}
-              onEditGrade={handleOpenEditGradeDialog}
-              onEditSubject={handleOpenEditSubjectDialog}
-            />
-          ) : view === 'tutor' ? (
-            <div className="h-[calc(100vh-10rem)]">
-              <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
-            </div>
-          ) : (
-             <GradeCalculatorPage 
-                subjects={subjectsForGradeLevel} 
-                allGrades={grades} 
-             />
-          )}
+          {renderView()}
         </main>
       </div>
-       <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onOpenChange={setCommandPaletteOpen}
-        subjects={subjectsForGradeLevel}
-        onNavigate={setView}
-        onAddSubject={() => setIsAddSubjectOpen(true)}
-        onAddGrade={handleOpenAddGradeDialog}
-        onExport={handleExportCSV}
-        onImport={handleImportCSV}
-      />
       <AddSubjectDialog 
         isOpen={isAddSubjectOpen}
         onOpenChange={setIsAddSubjectOpen}
