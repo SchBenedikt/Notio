@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import useLocalStorage from "@/hooks/use-local-storage";
-import { Subject, Grade, AddSubjectData, AddGradeData } from "@/lib/types";
+import { Subject, Grade, AddSubjectData } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
   
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,9 +31,39 @@ export default function Dashboard() {
     }
   }, [theme]);
 
-  const filteredSubjects = useMemo(() => {
+  const subjectsForGradeLevel = useMemo(() => {
     return subjects.filter((s) => s.gradeLevel === selectedGradeLevel);
   }, [subjects, selectedGradeLevel]);
+
+  const filteredSubjects = useMemo(() => {
+    const lowercasedQuery = searchQuery.toLowerCase().trim();
+
+    if (!lowercasedQuery) {
+      return subjectsForGradeLevel;
+    }
+
+    return subjectsForGradeLevel.filter((subject) => {
+      // Check subject name
+      if (subject.name.toLowerCase().includes(lowercasedQuery)) {
+        return true;
+      }
+
+      // Check grades associated with the subject
+      const subjectGrades = grades.filter((g) => g.subjectId === subject.id);
+      return subjectGrades.some((grade) => {
+        const gradeName = grade.name || "";
+        const gradeNotes = grade.notes || "";
+        const gradeValueStr = String(grade.value);
+        
+        return (
+          gradeName.toLowerCase().includes(lowercasedQuery) ||
+          gradeNotes.toLowerCase().includes(lowercasedQuery) ||
+          gradeValueStr.includes(lowercasedQuery)
+        );
+      });
+    });
+  }, [subjectsForGradeLevel, grades, searchQuery]);
+
 
   const gradesForFilteredSubjects = useMemo(() => {
     const filteredSubjectIds = new Set(filteredSubjects.map(s => s.id));
@@ -168,6 +199,9 @@ export default function Dashboard() {
             onDeleteSubject={handleDeleteSubject}
             onUpdateSubject={handleUpdateSubject}
             onAddSubject={() => setIsAddSubjectOpen(true)}
+            totalSubjectsCount={subjectsForGradeLevel.length}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         </main>
       </div>
