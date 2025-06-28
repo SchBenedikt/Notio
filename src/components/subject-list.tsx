@@ -29,7 +29,7 @@ export function SubjectList({
 
   if (allSubjects.length === 0) {
     return (
-      <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] bg-muted/50 rounded-lg border border-dashed">
+      <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] bg-background/50 rounded-lg border border-dashed">
         <h2 className="text-2xl font-semibold">Willkommen bei Noten Meister!</h2>
         <p className="text-muted-foreground mt-2 max-w-md">
           Du hast noch keine Fächer für diese Jahrgangsstufe angelegt. Erstelle dein erstes Fach, um Noten hinzuzufügen.
@@ -57,7 +57,7 @@ export function SubjectList({
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+    <div className="grid grid-cols-1 gap-8 items-start">
       {mainSubjects.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold tracking-tight mb-4">Hauptfächer</h2>

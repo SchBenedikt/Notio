@@ -51,15 +51,15 @@ export function AppHeader({
     <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
         <div className="flex items-center gap-4 sm:gap-6">
-          <h1 className="text-2xl font-bold text-foreground">Noten Meister</h1>
+          <h1 className="text-2xl font-bold text-foreground lg:hidden">Noten Meister</h1>
           {overallAverage !== '-' && (
-            <div className="hidden sm:flex items-baseline gap-2 border-l pl-4 sm:pl-6">
-              <span className="text-sm font-medium text-muted-foreground">Gesamtschnitt</span>
+            <div className="flex sm:hidden items-baseline gap-2 border-l pl-4 sm:pl-6">
+              <span className="text-sm font-medium text-muted-foreground">Schnitt</span>
               <span className="text-2xl font-bold text-primary">{overallAverage}</span>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           <Select
             value={String(selectedGradeLevel)}
             onValueChange={(value) => onGradeLevelChange(Number(value))}
@@ -121,7 +121,7 @@ export function AppHeader({
             </PopoverContent>
           </Popover>
 
-          <Button onClick={onAddSubject}>
+          <Button onClick={onAddSubject} className="lg:hidden">
             <Plus className="mr-2 h-4 w-4" />
             Fach
           </Button>

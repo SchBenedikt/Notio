@@ -8,6 +8,7 @@ import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
 import { calculateOverallAverage } from "@/lib/utils";
+import { AppSidebar } from "./app-sidebar";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -88,33 +89,41 @@ export default function Dashboard() {
   };
 
   return (
-    <>
-      <AppHeader 
-        selectedGradeLevel={selectedGradeLevel}
-        onGradeLevelChange={setSelectedGradeLevel}
-        onAddSubject={() => setIsAddSubjectOpen(true)}
+    <div className="flex min-h-screen bg-muted/40">
+      <AppSidebar 
+        subjects={filteredSubjects}
         overallAverage={overallAverage}
-        mainSubjectWeight={mainSubjectWeight}
-        onMainSubjectWeightChange={setMainSubjectWeight}
-        minorSubjectWeight={minorSubjectWeight}
-        onMinorSubjectWeightChange={setMinorSubjectWeight}
+        onAddSubject={handleAddSubject}
+        onAddGrade={handleAddGrade}
       />
-      <main className="container mx-auto p-4 md:p-6 lg:p-8">
-        <SubjectList
-          mainSubjects={mainSubjects}
-          minorSubjects={minorSubjects}
-          grades={grades}
-          onAddGrade={handleAddGrade}
-          onDeleteGrade={handleDeleteGrade}
-          onDeleteSubject={handleDeleteSubject}
+      <div className="flex-1 lg:pl-80">
+        <AppHeader 
+          selectedGradeLevel={selectedGradeLevel}
+          onGradeLevelChange={setSelectedGradeLevel}
           onAddSubject={() => setIsAddSubjectOpen(true)}
+          overallAverage={overallAverage}
+          mainSubjectWeight={mainSubjectWeight}
+          onMainSubjectWeightChange={setMainSubjectWeight}
+          minorSubjectWeight={minorSubjectWeight}
+          onMinorSubjectWeightChange={setMinorSubjectWeight}
         />
-      </main>
+        <main className="container mx-auto p-4 md:p-6 lg:p-8">
+          <SubjectList
+            mainSubjects={mainSubjects}
+            minorSubjects={minorSubjects}
+            grades={grades}
+            onAddGrade={handleAddGrade}
+            onDeleteGrade={handleDeleteGrade}
+            onDeleteSubject={handleDeleteSubject}
+            onAddSubject={() => setIsAddSubjectOpen(true)}
+          />
+        </main>
+      </div>
       <AddSubjectDialog 
         isOpen={isAddSubjectOpen}
         onOpenChange={setIsAddSubjectOpen}
         onSubmit={handleAddSubject}
       />
-    </>
+    </div>
   );
 }
