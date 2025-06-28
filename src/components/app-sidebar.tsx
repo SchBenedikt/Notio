@@ -12,9 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { cn } from '@/lib/utils';
 
 const addSubjectSchema = z.object({
   name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein.").max(50),
@@ -76,21 +75,22 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
               <h1 className="text-2xl font-bold text-foreground">Noten Meister</h1>
             </div>
             
-            <div className="bg-muted p-4 rounded-lg">
+            <div className="bg-card border rounded-lg shadow-sm p-4">
                 <p className="text-sm font-medium text-muted-foreground">Gesamtschnitt</p>
                 <p className="text-4xl font-bold text-primary">{overallAverage}</p>
             </div>
             
-            <Separator />
-
-            <div className="flex flex-col gap-2">
-              <Collapsible open={openView === 'subject'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'subject' : null)}>
-                  <CollapsibleTrigger asChild>
-                      <Button variant="ghost" onClick={() => handleTriggerClick('subject')} className={cn("w-full justify-start text-base p-4 h-14", openView === 'subject' && 'bg-accent')}>
-                          <BookUp className="mr-3 h-5 w-5" /> Neues Fach erstellen
-                      </Button>
+            <div className="flex flex-col gap-4">
+              <Collapsible open={openView === 'subject'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'subject' : null)} className="border bg-card rounded-lg shadow-sm">
+                  <CollapsibleTrigger onClick={() => handleTriggerClick('subject')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                      <div className="flex items-center gap-3">
+                          <BookUp className="h-5 w-5 text-muted-foreground" /> 
+                          <span>Neues Fach erstellen</span>
+                      </div>
+                      <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="p-4 bg-muted/50 rounded-b-lg">
+                  <CollapsibleContent className="px-4 pb-4">
+                      <Separator className="mb-4" />
                       <Form {...subjectForm}>
                           <form onSubmit={subjectForm.handleSubmit(handleSubjectSubmit)} className="space-y-4">
                               <FormField control={subjectForm.control} name="name" render={({ field }) => (
@@ -101,19 +101,22 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
                                       <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Hauptfach" /></FormControl><FormLabel className="font-normal">Hauptfach</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Nebenfach" /></FormControl><FormLabel className="font-normal">Nebenfach</FormLabel></FormItem></RadioGroup>
                                   </FormControl><FormMessage /></FormItem>
                               )} />
-                              <Button type="submit" className="w-full">Speichern</Button>
+                              <Button type="submit" className="w-full">Fach speichern</Button>
                           </form>
                       </Form>
                   </CollapsibleContent>
               </Collapsible>
 
-              <Collapsible open={openView === 'grade'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'grade' : null)}>
-                  <CollapsibleTrigger asChild>
-                       <Button variant="ghost" onClick={() => handleTriggerClick('grade')} className={cn("w-full justify-start text-base p-4 h-14", openView === 'grade' && 'bg-accent')}>
-                          <ListPlus className="mr-3 h-5 w-5" /> Neue Note hinzufügen
-                      </Button>
+              <Collapsible open={openView === 'grade'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'grade' : null)} className="border bg-card rounded-lg shadow-sm">
+                  <CollapsibleTrigger onClick={() => handleTriggerClick('grade')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                      <div className="flex items-center gap-3">
+                          <ListPlus className="h-5 w-5 text-muted-foreground" />
+                          <span>Neue Note hinzufügen</span>
+                      </div>
+                      <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="p-4 bg-muted/50 rounded-b-lg">
+                  <CollapsibleContent className="px-4 pb-4">
+                       <Separator className="mb-4" />
                        <Form {...gradeForm}>
                           <form onSubmit={gradeForm.handleSubmit(handleGradeSubmit)} className="space-y-4">
                               <FormField control={gradeForm.control} name="subjectId" render={({ field }) => (
