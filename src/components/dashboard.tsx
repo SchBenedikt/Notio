@@ -34,6 +34,11 @@ export default function Dashboard() {
     return subjects.filter((s) => s.gradeLevel === selectedGradeLevel);
   }, [subjects, selectedGradeLevel]);
 
+  const gradesForFilteredSubjects = useMemo(() => {
+    const filteredSubjectIds = new Set(filteredSubjects.map(s => s.id));
+    return grades.filter(g => filteredSubjectIds.has(g.subjectId));
+  }, [grades, filteredSubjects]);
+
   const mainSubjects = useMemo(() => {
     return filteredSubjects
       .filter((s) => s.category === 'Hauptfach')
@@ -105,6 +110,8 @@ export default function Dashboard() {
         overallAverage={overallAverage}
         onAddSubject={handleAddSubject}
         onAddGrade={handleAddGrade}
+        subjectCount={filteredSubjects.length}
+        gradeCount={gradesForFilteredSubjects.length}
       />
       <div className="flex-1 lg:pl-80">
         <AppHeader 

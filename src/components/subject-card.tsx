@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Star, Trash2, ChevronDown, BrainCircuit } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -109,7 +109,6 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
       >
         <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
           <div className="flex items-center gap-4">
-             {subject.category === "Hauptfach" && <Star className="h-5 w-5 text-amber-500 fill-amber-400" />}
             <span>{subject.name}</span>
           </div>
           <div className="flex items-center gap-4">

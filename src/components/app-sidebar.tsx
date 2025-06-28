@@ -38,9 +38,11 @@ type AppSidebarProps = {
   overallAverage: string;
   onAddSubject: (values: AddSubjectData) => void;
   onAddGrade: (subjectId: string, values: Omit<AddGradeData, 'subjectId'>) => void;
+  subjectCount: number;
+  gradeCount: number;
 };
 
-export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade }: AppSidebarProps) {
+export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade, subjectCount, gradeCount }: AppSidebarProps) {
     const [openView, setOpenView] = useState<'subject' | 'grade' | null>(null);
 
     const subjectForm = useForm<z.infer<typeof addSubjectSchema>>({
@@ -77,8 +79,21 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade 
             </div>
             
             <div className="bg-card border rounded-lg shadow-sm p-4">
-                <p className="text-sm font-medium text-muted-foreground">Gesamtschnitt</p>
-                <p className="text-4xl font-bold text-primary">{overallAverage}</p>
+                <div className="flex justify-between items-baseline">
+                  <p className="text-sm font-medium text-muted-foreground">Gesamtschnitt</p>
+                  <p className="text-4xl font-bold text-primary">{overallAverage}</p>
+                </div>
+                <Separator className="my-4" />
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Fächer</span>
+                      <span className="font-semibold text-base bg-muted px-2 py-0.5 rounded-md">{subjectCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Erfasste Noten</span>
+                      <span className="font-semibold text-base bg-muted px-2 py-0.5 rounded-md">{gradeCount}</span>
+                  </div>
+                </div>
             </div>
             
             <div className="flex flex-col gap-4">
