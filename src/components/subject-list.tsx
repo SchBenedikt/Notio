@@ -41,9 +41,9 @@ export function SubjectList({
     );
   }
 
-  const renderSubjectList = (subjects: Subject[]) => (
+  const renderSubjectList = (subjects: Subject[], startIndex: number = 0) => (
     <Accordion type="multiple" className="w-full space-y-2">
-      {subjects.map((subject) => (
+      {subjects.map((subject, index) => (
         <SubjectCard
           key={subject.id}
           subject={subject}
@@ -51,6 +51,7 @@ export function SubjectList({
           onAddGrade={onAddGrade}
           onDeleteGrade={onDeleteGrade}
           onDeleteSubject={onDeleteSubject}
+          animationIndex={startIndex + index}
         />
       ))}
     </Accordion>
@@ -61,14 +62,14 @@ export function SubjectList({
       {mainSubjects.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold tracking-tight mb-4">Hauptfächer</h2>
-          {renderSubjectList(mainSubjects)}
+          {renderSubjectList(mainSubjects, 0)}
         </section>
       )}
       
       {minorSubjects.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold tracking-tight mb-4">Nebenfächer</h2>
-          {renderSubjectList(minorSubjects)}
+          {renderSubjectList(minorSubjects, mainSubjects.length)}
         </section>
       )}
     </div>

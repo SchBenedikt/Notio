@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Star, Trash2, ChevronDown } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, Star, Trash2, ChevronDown, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -24,6 +24,7 @@ import { Grade, Subject, AddGradeData } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
+import { StudyCoachDialog } from "./study-coach-dialog";
 
 type SubjectCardProps = {
   subject: Subject;
@@ -31,10 +32,12 @@ type SubjectCardProps = {
   onAddGrade: (subjectId: string, values: AddGradeData) => void;
   onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
+  animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDeleteSubject }: SubjectCardProps) {
+export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDeleteSubject, animationIndex }: SubjectCardProps) {
   const [isAddGradeOpen, setIsAddGradeOpen] = useState(false);
+  const [isCoachOpen, setIsCoachOpen] = useState(false);
   const finalGrade = calculateFinalGrade(grades);
 
   const handleAddGradeSubmit = (values: AddGradeData) => {
@@ -58,7 +61,11 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
 
   return (
     <>
-      <AccordionItem value={subject.id} className="border bg-card rounded-lg shadow-sm">
+      <AccordionItem 
+        value={subject.id} 
+        className="border bg-card rounded-lg shadow-sm animate-fade-in-down transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+        style={{ animationDelay: `${animationIndex * 75}ms`, opacity: 0 }}
+      >
         <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
           <div className="flex items-center gap-4">
              {subject.category === "Hauptfach" && <Star className="h-5 w-5 text-amber-500 fill-amber-400" />}
@@ -120,28 +127,34 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
             </div>
           )}
           <Separator className="my-4" />
-          <div className="flex justify-between items-center">
-             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                   <Trash2 className="mr-2 h-4 w-4" />
-                   Fach löschen
-                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Fach löschen?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Diese Aktion kann nicht rückgängig gemacht werden. Alle Noten in diesem Fach werden ebenfalls gelöscht.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDeleteSubject(subject.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button onClick={() => setIsAddGradeOpen(true)}>
+          <div className="flex justify-between items-center gap-2 flex-wrap">
+             <div className="flex items-center gap-2">
+                <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Fach löschen
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Fach löschen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Diese Aktion kann nicht rückgängig gemacht werden. Alle Noten in diesem Fach werden ebenfalls gelöscht.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDeleteSubject(subject.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
+                <Button variant="outline" size="sm" onClick={() => setIsCoachOpen(true)}>
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    Lern-Coach
+                </Button>
+            </div>
+            <Button size="sm" onClick={() => setIsAddGradeOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Note hinzufügen
             </Button>
@@ -154,6 +167,12 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
         onSubmit={handleAddGradeSubmit}
         subjectName={subject.name}
       />
+      <StudyCoachDialog
+        isOpen={isCoachOpen}
+        onOpenChange={setIsCoachOpen}
+        subject={subject}
+        grades={grades}
+       />
     </>
   );
 }
