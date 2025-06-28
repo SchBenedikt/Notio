@@ -20,14 +20,21 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   const filteredSubjects = useMemo(() => {
-    return subjects
-      .filter((s) => s.gradeLevel === selectedGradeLevel)
-      .sort((a, b) => {
-        if (a.category === 'Hauptfach' && b.category !== 'Hauptfach') return -1;
-        if (a.category !== 'Hauptfach' && b.category === 'Hauptfach') return 1;
-        return a.name.localeCompare(b.name);
-      });
+    return subjects.filter((s) => s.gradeLevel === selectedGradeLevel);
   }, [subjects, selectedGradeLevel]);
+
+  const mainSubjects = useMemo(() => {
+    return filteredSubjects
+      .filter((s) => s.category === 'Hauptfach')
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredSubjects]);
+
+  const minorSubjects = useMemo(() => {
+    return filteredSubjects
+      .filter((s) => s.category === 'Nebenfach')
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredSubjects]);
+
 
   const overallAverage = useMemo(() => {
     return calculateOverallAverage(filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight);
@@ -92,9 +99,10 @@ export default function Dashboard() {
         minorSubjectWeight={minorSubjectWeight}
         onMinorSubjectWeightChange={setMinorSubjectWeight}
       />
-      <main className="container mx-auto p-4 md:p-6">
+      <main className="container mx-auto p-4 md:p-6 lg:p-8">
         <SubjectList
-          subjects={filteredSubjects}
+          mainSubjects={mainSubjects}
+          minorSubjects={minorSubjects}
           grades={grades}
           onAddGrade={handleAddGrade}
           onDeleteGrade={handleDeleteGrade}

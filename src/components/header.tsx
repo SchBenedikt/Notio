@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusCircle, Settings } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -48,44 +48,42 @@ export function AppHeader({
   };
 
   return (
-    <header className="sticky top-0 z-10 w-full bg-background border-b">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 gap-2">
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <h1 className="text-xl font-bold text-primary sm:text-2xl truncate">Noten Meister</h1>
+    <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <h1 className="text-2xl font-bold text-foreground">Noten Meister</h1>
           {overallAverage !== '-' && (
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Schnitt:</span>
-              <span className="text-xl font-bold text-primary">{overallAverage}</span>
+            <div className="hidden sm:flex items-baseline gap-2 border-l pl-4 sm:pl-6">
+              <span className="text-sm font-medium text-muted-foreground">Gesamtschnitt</span>
+              <span className="text-2xl font-bold text-primary">{overallAverage}</span>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Stufe:</span>
-            <Select
-              value={String(selectedGradeLevel)}
-              onValueChange={(value) => onGradeLevelChange(Number(value))}
-            >
-              <SelectTrigger className="w-[80px]">
-                <SelectValue placeholder="Stufe" />
-              </SelectTrigger>
-              <SelectContent>
-                {gradeLevels.map((level) => (
-                  <SelectItem key={level} value={String(level)}>
-                    {level}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={String(selectedGradeLevel)}
+            onValueChange={(value) => onGradeLevelChange(Number(value))}
+          >
+            <SelectTrigger className="w-[110px]">
+              <SelectValue placeholder="Klasse" />
+            </SelectTrigger>
+            <SelectContent>
+              {gradeLevels.map((level) => (
+                <SelectItem key={level} value={String(level)}>
+                  Klasse {level}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0">
+              <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />
+                <span className="sr-only">Einstellungen</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
+            <PopoverContent className="w-80" align="end">
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">Gewichtung</h4>
@@ -124,9 +122,8 @@ export function AppHeader({
           </Popover>
 
           <Button onClick={onAddSubject}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Neues Fach</span>
-            <span className="sm:hidden">Fach</span>
+            <Plus className="mr-2 h-4 w-4" />
+            Fach
           </Button>
         </div>
       </div>

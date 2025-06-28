@@ -1,11 +1,13 @@
 "use client";
 
-import { Subject, Grade, AddGradeData, AddSubjectData } from "@/lib/types";
+import { Subject, Grade, AddGradeData } from "@/lib/types";
 import { SubjectCard } from "./subject-card";
 import { Button } from "@/components/ui/button";
+import { Accordion } from "@/components/ui/accordion";
 
 type SubjectListProps = {
-  subjects: Subject[];
+  mainSubjects: Subject[];
+  minorSubjects: Subject[];
   grades: Grade[];
   onAddGrade: (subjectId: string, values: AddGradeData) => void;
   onDeleteGrade: (gradeId: string) => void;
@@ -13,10 +15,21 @@ type SubjectListProps = {
   onAddSubject: () => void;
 };
 
-export function SubjectList({ subjects, grades, onAddGrade, onDeleteGrade, onDeleteSubject, onAddSubject }: SubjectListProps) {
-  if (subjects.length === 0) {
+export function SubjectList({ 
+  mainSubjects, 
+  minorSubjects, 
+  grades, 
+  onAddGrade, 
+  onDeleteGrade, 
+  onDeleteSubject, 
+  onAddSubject 
+}: SubjectListProps) {
+  
+  const allSubjects = [...mainSubjects, ...minorSubjects];
+
+  if (allSubjects.length === 0) {
     return (
-      <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] bg-muted/30 rounded-lg border border-dashed">
+      <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] bg-muted/50 rounded-lg border border-dashed">
         <h2 className="text-2xl font-semibold">Willkommen bei Noten Meister!</h2>
         <p className="text-muted-foreground mt-2 max-w-md">
           Du hast noch keine Fächer für diese Jahrgangsstufe angelegt. Erstelle dein erstes Fach, um Noten hinzuzufügen.
@@ -28,8 +41,8 @@ export function SubjectList({ subjects, grades, onAddGrade, onDeleteGrade, onDel
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+  const renderSubjectList = (subjects: Subject[]) => (
+    <Accordion type="multiple" className="w-full space-y-2">
       {subjects.map((subject) => (
         <SubjectCard
           key={subject.id}
@@ -40,6 +53,24 @@ export function SubjectList({ subjects, grades, onAddGrade, onDeleteGrade, onDel
           onDeleteSubject={onDeleteSubject}
         />
       ))}
+    </Accordion>
+  );
+
+  return (
+    <div className="space-y-8">
+      {mainSubjects.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold tracking-tight mb-4">Hauptfächer</h2>
+          {renderSubjectList(mainSubjects)}
+        </section>
+      )}
+      
+      {minorSubjects.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold tracking-tight mb-4">Nebenfächer</h2>
+          {renderSubjectList(minorSubjects)}
+        </section>
+      )}
     </div>
   );
 }
