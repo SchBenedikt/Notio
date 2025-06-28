@@ -65,3 +65,26 @@ export function calculateOverallAverage(
     const overallAverage = totalWeightedValue / totalWeight;
     return overallAverage.toFixed(2);
 }
+
+export function calculateCategoryAverage(
+    subjects: Subject[], 
+    grades: Grade[]
+): string {
+    if (subjects.length === 0) {
+        return "-";
+    }
+    
+    const subjectFinalGrades = subjects.map(subject => {
+        const subjectGrades = grades.filter(g => g.subjectId === subject.id);
+        if (subjectGrades.length === 0) return null;
+        const finalGradeStr = calculateFinalGrade(subjectGrades);
+        return finalGradeStr !== '-' ? parseFloat(finalGradeStr) : null;
+    }).filter(g => g !== null) as number[];
+
+    if (subjectFinalGrades.length === 0) {
+        return "-";
+    }
+
+    const average = subjectFinalGrades.reduce((sum, grade) => sum + grade, 0) / subjectFinalGrades.length;
+    return average.toFixed(2);
+}

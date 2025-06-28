@@ -7,7 +7,7 @@ import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
-import { calculateOverallAverage } from "@/lib/utils";
+import { calculateOverallAverage, calculateCategoryAverage } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 
 export default function Dashboard() {
@@ -55,6 +55,23 @@ export default function Dashboard() {
   const overallAverage = useMemo(() => {
     return calculateOverallAverage(filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight);
   }, [filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight]);
+
+  const mainSubjectsAverage = useMemo(() => {
+    return calculateCategoryAverage(mainSubjects, grades);
+  }, [mainSubjects, grades]);
+
+  const minorSubjectsAverage = useMemo(() => {
+    return calculateCategoryAverage(minorSubjects, grades);
+  }, [minorSubjects, grades]);
+  
+  const writtenGradesCount = useMemo(() => {
+    return gradesForFilteredSubjects.filter(g => g.type === 'Schulaufgabe').length;
+  }, [gradesForFilteredSubjects]);
+
+  const oralGradesCount = useMemo(() => {
+     return gradesForFilteredSubjects.filter(g => g.type === 'mündliche Note').length;
+  }, [gradesForFilteredSubjects]);
+
 
   const handleAddSubject = (values: AddSubjectData) => {
     const newSubject: Subject = {
@@ -110,8 +127,10 @@ export default function Dashboard() {
         overallAverage={overallAverage}
         onAddSubject={handleAddSubject}
         onAddGrade={handleAddGrade}
-        subjectCount={filteredSubjects.length}
-        gradeCount={gradesForFilteredSubjects.length}
+        mainSubjectsAverage={mainSubjectsAverage}
+        minorSubjectsAverage={minorSubjectsAverage}
+        writtenGradesCount={writtenGradesCount}
+        oralGradesCount={oralGradesCount}
       />
       <div className="flex-1 lg:pl-80">
         <AppHeader 

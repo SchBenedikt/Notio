@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, BookCopy, ClipboardList } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { Logo } from './logo';
 
 const addSubjectSchema = z.object({
   name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein.").max(50),
@@ -38,11 +39,22 @@ type AppSidebarProps = {
   overallAverage: string;
   onAddSubject: (values: AddSubjectData) => void;
   onAddGrade: (subjectId: string, values: Omit<AddGradeData, 'subjectId'>) => void;
-  subjectCount: number;
-  gradeCount: number;
+  mainSubjectsAverage: string;
+  minorSubjectsAverage: string;
+  writtenGradesCount: number;
+  oralGradesCount: number;
 };
 
-export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade, subjectCount, gradeCount }: AppSidebarProps) {
+export function AppSidebar({ 
+  subjects, 
+  overallAverage, 
+  onAddSubject, 
+  onAddGrade, 
+  mainSubjectsAverage,
+  minorSubjectsAverage,
+  writtenGradesCount,
+  oralGradesCount,
+}: AppSidebarProps) {
     const [openView, setOpenView] = useState<'subject' | 'grade' | null>(null);
 
     const subjectForm = useForm<z.infer<typeof addSubjectSchema>>({
@@ -74,7 +86,8 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade,
 
     return (
         <aside className="hidden lg:flex flex-col gap-6 w-80 bg-background border-r fixed top-0 left-0 h-screen p-6">
-            <div className='px-2'>
+            <div className='px-2 flex items-center gap-3'>
+              <Logo />
               <h1 className="text-2xl font-bold text-foreground">Noten Meister</h1>
             </div>
             
@@ -84,20 +97,34 @@ export function AppSidebar({ subjects, overallAverage, onAddSubject, onAddGrade,
                   <p className="text-4xl font-bold text-primary">{overallAverage}</p>
                 </div>
                 <Separator className="my-4" />
-                <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-center">
                     <div>
                         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                            <BookCopy className="h-4 w-4" />
-                            <span>Fächer</span>
+                            <Award className="h-4 w-4" />
+                            <span>Hauptfächer</span>
                         </div>
-                        <p className="text-2xl font-bold">{subjectCount}</p>
+                        <p className="text-2xl font-bold">{mainSubjectsAverage}</p>
                     </div>
                     <div>
                         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                            <ClipboardList className="h-4 w-4" />
-                            <span>Noten</span>
+                            <BookOpen className="h-4 w-4" />
+                            <span>Nebenfächer</span>
                         </div>
-                        <p className="text-2xl font-bold">{gradeCount}</p>
+                        <p className="text-2xl font-bold">{minorSubjectsAverage}</p>
+                    </div>
+                     <div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <PenLine className="h-4 w-4" />
+                            <span>Schriftlich</span>
+                        </div>
+                        <p className="text-2xl font-bold">{writtenGradesCount}</p>
+                    </div>
+                    <div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <MessageSquare className="h-4 w-4" />
+                            <span>Mündlich</span>
+                        </div>
+                        <p className="text-2xl font-bold">{oralGradesCount}</p>
                     </div>
                 </div>
             </div>
