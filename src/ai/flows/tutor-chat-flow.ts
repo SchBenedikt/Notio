@@ -21,6 +21,7 @@ const TutorChatInputSchema = z.object({
     name: z.string().describe("The name of the subject."),
     category: z.string().describe("The category of the subject."),
     average: z.string().describe("The current average grade for this subject."),
+    targetGrade: z.number().optional().describe("The student's target grade for this subject."),
     grades: z.array(z.object({
         name: z.string().optional().describe("The name of the grade/test."),
         value: z.number().describe("The grade value (1-6)."),
@@ -56,12 +57,13 @@ const tutorChatFlow = ai.defineFlow(
             const gradeList = s.grades.length > 0 
                 ? s.grades.map(g => `- ${g.name || g.type}: Note ${g.value}${g.notes ? ` (Notiz: ${g.notes})` : ''}`).join('\n')
                 : "  Noch keine Noten eingetragen.";
-            return `Fach: ${s.name} (${s.category})\nAktueller Schnitt: ${s.average}\nNoten:\n${gradeList}`;
+            const targetGradeInfo = s.targetGrade ? ` (Wunschnote: ${s.targetGrade})` : '';
+            return `Fach: ${s.name} (${s.category})${targetGradeInfo}\nAktueller Schnitt: ${s.average}\nNoten:\n${gradeList}`;
         }).join('\n\n');
     }
 
     const systemPrompt = `Du bist ein hilfsbereiter und freundlicher KI-Tutor für einen Schüler in Deutschland. Deine Aufgabe ist es, Fragen zu beantworten, Konzepte zu erklären und bei den Hausaufgaben zu helfen.
-Du hast Zugriff auf die aktuellen Noten und Fächer des Schülers. Nutze diese Informationen, um kontextbezogene und hilfreiche Antworten zu geben. Wenn der Schüler z.B. fragt "Wie kann ich mich verbessern?", beziehe dich auf die Fächer mit schlechteren Noten.
+Du hast Zugriff auf die aktuellen Noten und Fächer des Schülers. Nutze diese Informationen, um kontextbezogene und hilfreiche Antworten zu geben. Wenn der Schüler z.B. fragt "Wie kann ich mich verbessern?", beziehe dich auf die Fächer mit schlechteren Noten und berücksichtige seine Wunschnote.
 
 ${subjectsInfo}
 

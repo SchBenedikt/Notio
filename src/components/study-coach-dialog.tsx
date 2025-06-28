@@ -45,6 +45,7 @@ export function StudyCoachDialog({ isOpen, onOpenChange, subject, grades }: Stud
         subjectCategory: subject.category,
         writtenWeight: subject.writtenWeight,
         oralWeight: subject.oralWeight,
+        targetGrade: subject.targetGrade,
         grades: mappedGrades 
       })
         .then(res => {

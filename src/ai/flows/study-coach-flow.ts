@@ -15,6 +15,7 @@ const StudyCoachInputSchema = z.object({
   subjectCategory: z.string().describe('The category of the subject (Hauptfach or Nebenfach).'),
   writtenWeight: z.number().optional().describe('The weight for written grades for this subject.'),
   oralWeight: z.number().optional().describe('The weight for oral grades for this subject.'),
+  targetGrade: z.number().optional().describe("The student's target grade for this subject."),
   grades: z
     .array(
       z.object({
@@ -45,6 +46,7 @@ const prompt = ai.definePrompt({
   output: {schema: StudyCoachOutputSchema},
   prompt: `Du bist ein positiver und motivierender Lern-Coach für Schüler in Deutschland.
 Analysiere die folgenden Noten für das Fach '{{subjectName}}' ({{subjectCategory}}).
+{{#if targetGrade}}Der Schüler hat sich eine Wunschnote von {{targetGrade}} zum Ziel gesetzt. Beziehe das in deine Analyse mit ein und gib konkrete Tipps, wie dieses Ziel erreicht werden kann. Vergleiche den aktuellen Schnitt mit der Wunschnote.{{/if}}
 Gib eine kurze, aufmunternde Einschätzung der aktuellen Situation und dann 3-5 konkrete, umsetzbare Lerntipps.
 Berücksichtige dabei die Notenwerte (1=sehr gut, 6=ungenügend), die Notentypen ('Schulaufgabe' ist wichtiger als 'mündliche Note') und eventuelle Notizen des Schülers.
 {{#if writtenWeight}}
@@ -56,7 +58,7 @@ Sprich den Schüler direkt und freundlich mit 'Du' an. Antworte auf Deutsch.
 
 Hier sind die Noten:
 {{#each grades}}
-- Bezeichnung: {{#if name}}{{name}}{{else}}{{type}}{{/if}}, Note: {{value}}, Gewichtung: {{weight}}{{#if notes}}, Notiz: "{{notes}}"{{/if}}
+- Bezeichnung: {{#if name}}{{name}}{{else}}{{type}}{{/if}}, Note: {{value}}, Gewichtung: {{weight}}{#if notes}}, Notiz: "{{notes}}"{{/if}}
 {{/each}}
 
 Gib deine Antwort im vorgegebenen JSON-Format.`,

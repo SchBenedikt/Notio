@@ -56,6 +56,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
             name: subject.name,
             category: subject.category,
             average: subjectAverage,
+            targetGrade: subject.targetGrade,
             grades: subjectGrades.map(g => ({
                 name: g.name,
                 value: g.value,

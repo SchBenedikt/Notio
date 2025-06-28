@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil, Crosshair } from "lucide-react";
+import { useState, useMemo } from "react";
+import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil, Crosshair, Award, Calculator, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -25,7 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Grade, Subject, AddGradeData } from "@/lib/types";
+import { Grade, Subject, AddGradeData, GradeType } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -35,16 +35,9 @@ import { GradeDistributionChart } from "./grade-distribution-chart";
 import { GradeTrendChart } from "./grade-trend-chart";
 import { EditSubjectDialog } from "./edit-subject-dialog";
 import { Progress } from "./ui/progress";
-
-type SubjectCardProps = {
-  subject: Subject;
-  grades: Grade[];
-  onSaveGrade: (subjectId: string, values: AddGradeData, gradeId?: string) => void;
-  onDeleteGrade: (gradeId: string) => void;
-  onDeleteSubject: (subjectId: string) => void;
-  onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
-  animationIndex: number;
-};
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { FormItem, FormLabel } from "./ui/form";
+import { FormControl } from "@radix-ui/react-form";
 
 const GoalProgress = ({ finalGrade, targetGrade }: { finalGrade: string; targetGrade: number }) => {
     if (finalGrade === "-") return null;
@@ -65,6 +58,100 @@ const GoalProgress = ({ finalGrade, targetGrade }: { finalGrade: string; targetG
             <Progress value={progress} className="h-2" />
         </div>
     );
+};
+
+const WhatIfCalculator = ({ subject, grades }: { subject: Subject; grades: Grade[] }) => {
+    const [hypotheticalGrade, setHypotheticalGrade] = useState({ value: '', weight: '1', type: 'mündliche Note' as GradeType });
+    
+    const newAverage = useMemo(() => {
+        const gradeValue = parseFloat(hypotheticalGrade.value);
+        const gradeWeight = parseFloat(hypotheticalGrade.weight);
+
+        if (isNaN(gradeValue) || isNaN(gradeWeight) || gradeValue < 1 || gradeValue > 6 || gradeWeight <= 0) {
+            return null;
+        }
+
+        const tempGrade: Grade = {
+            id: 'hypothetical',
+            subjectId: subject.id,
+            value: gradeValue,
+            weight: gradeWeight,
+            type: hypotheticalGrade.type,
+            date: new Date().toISOString(),
+        };
+
+        const newGrades = [...grades, tempGrade];
+        return calculateFinalGrade(newGrades, subject);
+    }, [hypotheticalGrade, grades, subject]);
+
+    return (
+        <div className="p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-3 text-muted-foreground">
+                <Calculator className="h-4 w-4" />
+                Was-wäre-wenn-Rechner
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                      <Label htmlFor={`if-grade-${subject.id}`} className="text-xs">Note</Label>
+                      <Input 
+                          id={`if-grade-${subject.id}`}
+                          type="number"
+                          placeholder="z.B. 2"
+                          value={hypotheticalGrade.value}
+                          onChange={(e) => setHypotheticalGrade(prev => ({...prev, value: e.target.value}))}
+                          className="h-9"
+                      />
+                  </div>
+                    <div className="flex-1">
+                      <Label htmlFor={`if-weight-${subject.id}`} className="text-xs">Gewichtung</Label>
+                      <Input 
+                          id={`if-weight-${subject.id}`}
+                          type="number"
+                          placeholder="z.B. 1"
+                            value={hypotheticalGrade.weight}
+                          onChange={(e) => setHypotheticalGrade(prev => ({...prev, weight: e.target.value}))}
+                          className="h-9"
+                      />
+                  </div>
+                  <div className="flex items-center text-2xl font-bold pb-1">
+                      <ArrowRight className="h-5 w-5 text-muted-foreground mx-1" />
+                      <span className="text-primary">{newAverage ?? '-'}</span>
+                  </div>
+              </div>
+              {subject.category === "Hauptfach" && (
+                <div>
+                  <Label className="text-xs">Notentyp</Label>
+                  <RadioGroup
+                    value={hypotheticalGrade.type}
+                    onValueChange={(type) => setHypotheticalGrade(prev => ({...prev, type: type as GradeType}))}
+                    className="flex space-x-4 pt-1"
+                  >
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                        <RadioGroupItem value="Schulaufgabe" id={`if-type-written-${subject.id}`} />
+                        <FormLabel htmlFor={`if-type-written-${subject.id}`} className="font-normal text-sm">Schulaufgabe</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                        <RadioGroupItem value="mündliche Note" id={`if-type-oral-${subject.id}`} />
+                        <FormLabel htmlFor={`if-type-oral-${subject.id}`} className="font-normal text-sm">Mündliche Note</FormLabel>
+                    </FormItem>
+                  </RadioGroup>
+                </div>
+              )}
+            </div>
+        </div>
+    );
+};
+
+
+type SubjectCardProps = {
+  subject: Subject;
+  grades: Grade[];
+  onSaveGrade: (subjectId: string, values: AddGradeData, gradeId?: string) => void;
+  onDeleteGrade: (gradeId: string) => void;
+  onDeleteSubject: (subjectId: string) => void;
+  onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
+  animationIndex: number;
 };
 
 export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
@@ -170,8 +257,9 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
         style={{ animationDelay: `${animationIndex * 75}ms`, opacity: 0 }}
       >
         <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
-          <div className="flex items-center gap-4">
-            <span>{subject.name}</span>
+          <div className="flex items-center gap-3">
+            {subject.category === 'Hauptfach' && <Award className="h-5 w-5 text-amber-500 flex-shrink-0" />}
+            <span className="truncate">{subject.name}</span>
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className={`text-base font-bold px-3 py-1 rounded-md ${getAverageColor(finalGrade)}`}>
@@ -202,6 +290,7 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
                     {subject.targetGrade && finalGrade !== '-' && (
                       <GoalProgress finalGrade={finalGrade} targetGrade={subject.targetGrade} />
                     )}
+                    <WhatIfCalculator subject={subject} grades={grades} />
                     <GradeDistributionChart grades={grades} />
                     <GradeTrendChart grades={grades} />
                 </div>
@@ -218,30 +307,10 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
           <Separator className="my-4" />
           <div className="flex justify-between items-center gap-2 flex-wrap">
              <div className="flex items-center gap-2 flex-wrap">
-                <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Fach löschen
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Fach löschen?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Diese Aktion kann nicht rückgängig gemacht werden. Alle Noten in diesem Fach werden ebenfalls gelöscht.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDeleteSubject(subject.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-                </AlertDialog>
-                 <Button variant="ghost" size="sm" onClick={() => setIsEditSubjectOpen(true)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Fach bearbeiten
-                 </Button>
+                <Button size="sm" onClick={() => handleOpenGradeDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Note hinzufügen
+                </Button>
                 {subject.category === 'Hauptfach' && (
                     <Popover open={isWeightPopoverOpen} onOpenChange={setIsWeightPopoverOpen}>
                         <PopoverTrigger asChild>
@@ -290,10 +359,32 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
                     </Popover>
                 )}
             </div>
-            <Button size="sm" onClick={() => handleOpenGradeDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Note hinzufügen
-            </Button>
+            <div className="flex items-center gap-2">
+                 <Button variant="ghost" size="sm" onClick={() => setIsEditSubjectOpen(true)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Bearbeiten
+                 </Button>
+                <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Löschen
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Fach löschen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Diese Aktion kann nicht rückgängig gemacht werden. Alle Noten in diesem Fach werden ebenfalls gelöscht.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDeleteSubject(subject.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
+            </div>
           </div>
         </AccordionContent>
       </AccordionItem>
