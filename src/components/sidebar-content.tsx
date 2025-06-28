@@ -311,10 +311,10 @@ export function SidebarContent({
                                     <FormItem><FormLabel>Bezeichnung (optional)</FormLabel><FormControl><Input placeholder="z.B. Vokabeltest" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={gradeForm.control} name="value" render={({ field }) => (
-                                    <FormItem><FormLabel>Note (1-6)</FormLabel><FormControl><Input type="number" step="1" placeholder="z.B. 2" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Note (1-6)</FormLabel><FormControl><Input type="number" step="1" placeholder="z.B. 2" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={gradeForm.control} name="weight" render={({ field }) => (
-                                    <FormItem><FormLabel>Gewichtung</FormLabel><FormControl><Input type="number" step="0.5" placeholder="z.B. 1" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Gewichtung</FormLabel><FormControl><Input type="number" step="0.5" placeholder="z.B. 1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={gradeForm.control} name="notes" render={({ field }) => (
                                     <FormItem><FormLabel>Notiz (optional)</FormLabel><FormControl><Textarea placeholder="Thema der Ex..." className="resize-none" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>

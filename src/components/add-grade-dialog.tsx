@@ -135,7 +135,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
                 <FormItem>
                   <FormLabel>Note (1-6)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="1" placeholder="z.B. 2" {...field} />
+                    <Input type="number" step="1" placeholder="z.B. 2" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -203,7 +203,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
                 <FormItem>
                   <FormLabel>Gewichtung</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.5" placeholder="z.B. 1 oder 2" {...field} />
+                    <Input type="number" step="0.5" placeholder="z.B. 1 oder 2" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -171,7 +171,6 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
       >
         <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
           <div className="flex items-center gap-3">
-            {subject.category === 'Hauptfach' && <Award className="h-5 w-5 text-amber-500 flex-shrink-0" />}
             <span className="truncate">{subject.name}</span>
           </div>
           <div className="flex items-center gap-4">
