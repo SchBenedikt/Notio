@@ -7,7 +7,7 @@ import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
 import { useToast } from "@/hooks/use-toast";
-import { calculateOverallAverage, calculateCategoryAverage, calculateFinalGrade } from "@/lib/utils";
+import { calculateOverallAverage, calculateCategoryAverage } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { TutorChat } from "./tutor-chat";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -157,26 +157,6 @@ export default function Dashboard() {
     return gradesForFilteredSubjects.length;
   }, [gradesForFilteredSubjects]);
 
-  const subjectsForTutor = useMemo(() => {
-    return subjectsForGradeLevel.map(subject => {
-        const subjectGrades = grades.filter(g => g.subjectId === subject.id);
-        const subjectAverage = calculateFinalGrade(subjectGrades, subject);
-
-        return {
-            name: subject.name,
-            category: subject.category,
-            average: subjectAverage,
-            grades: subjectGrades.map(g => ({
-                name: g.name,
-                value: g.value,
-                type: g.type,
-                notes: g.notes,
-            }))
-        };
-    });
-  }, [subjectsForGradeLevel, grades]);
-
-
   const handleAddSubject = (values: AddSubjectData) => {
     const newSubject: Subject = {
       id: crypto.randomUUID(),
@@ -299,7 +279,7 @@ export default function Dashboard() {
             />
           ) : (
             <div className="h-[calc(100vh-10rem)]">
-              <TutorChat subjects={subjectsForTutor} />
+              <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
             </div>
           )}
         </main>

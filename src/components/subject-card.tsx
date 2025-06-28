@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, BrainCircuit, Settings } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -29,7 +29,6 @@ import { Grade, Subject, AddGradeData } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
-import { StudyCoachDialog } from "./study-coach-dialog";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { GradeDistributionChart } from "./grade-distribution-chart";
@@ -47,7 +46,6 @@ type SubjectCardProps = {
 
 export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
   const [isAddGradeOpen, setIsAddGradeOpen] = useState(false);
-  const [isCoachOpen, setIsCoachOpen] = useState(false);
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   
   // Default to 2:1 for main subjects if not set
@@ -190,10 +188,6 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
                     </AlertDialogFooter>
                 </AlertDialogContent>
                 </AlertDialog>
-                <Button variant="outline" size="sm" onClick={() => setIsCoachOpen(true)}>
-                    <BrainCircuit className="mr-2 h-4 w-4" />
-                    Lern-Coach
-                </Button>
                 {subject.category === 'Hauptfach' && (
                     <Popover open={isWeightPopoverOpen} onOpenChange={setIsWeightPopoverOpen}>
                         <PopoverTrigger asChild>
@@ -255,12 +249,6 @@ export function SubjectCard({ subject, grades, onAddGrade, onDeleteGrade, onDele
         onSubmit={handleAddGradeSubmit}
         subjectName={subject.name}
       />
-      <StudyCoachDialog
-        isOpen={isCoachOpen}
-        onOpenChange={setIsCoachOpen}
-        subject={subject}
-        grades={grades}
-       />
     </>
   );
 }
