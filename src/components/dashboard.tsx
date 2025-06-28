@@ -34,7 +34,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("theme-zinc", "theme-rose", "theme-green", "theme-violet");
+    root.classList.remove("theme-zinc", "theme-rose", "theme-green", "theme-violet", "theme-orange", "theme-yellow", "theme-slate");
 
     if (theme !== "blue") {
       root.classList.add(`theme-${theme}`);

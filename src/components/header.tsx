@@ -55,10 +55,13 @@ export function AppHeader({
 
   const themes = [
     { name: "blue", label: "Blau", color: "hsl(217.2 91.2% 59.8%)" },
-    { name: "zinc", label: "Zink", color: "hsl(240 5.2% 33.9%)" },
-    { name: "rose", label: "Rose", color: "hsl(346.8 77.2% 49.8%)" },
     { name: "green", label: "Grün", color: "hsl(142.1 76.2% 36.3%)" },
     { name: "violet", label: "Violett", color: "hsl(262.1 83.3% 57.8%)" },
+    { name: "orange", label: "Orange", color: "hsl(25 95% 53%)" },
+    { name: "rose", label: "Rose", color: "hsl(346.8 77.2% 49.8%)" },
+    { name: "yellow", label: "Gelb", color: "hsl(48 96% 53%)" },
+    { name: "zinc", label: "Zink", color: "hsl(240 5.2% 33.9%)" },
+    { name: "slate", label: "Schiefer", color: "hsl(215 39% 35%)" },
   ];
 
   const handleWeightChange = (setter: (weight: number) => void, value: string) => {
@@ -154,7 +157,7 @@ export function AppHeader({
                     Passe das Farbschema und den Dark Mode an.
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-wrap gap-y-2">
                   {themes.map((t) => (
                     <button
                       key={t.name}
