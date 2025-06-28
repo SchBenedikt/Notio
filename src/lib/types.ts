@@ -8,6 +8,7 @@ export interface Subject {
   gradeLevel: number;
   writtenWeight?: number;
   oralWeight?: number;
+  targetGrade?: number;
 }
 
 export interface Grade {
@@ -33,4 +34,5 @@ export type AddGradeData = {
 export type AddSubjectData = {
   name: string;
   category: SubjectCategory;
+  targetGrade?: number;
 };

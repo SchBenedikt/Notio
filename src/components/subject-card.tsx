@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -25,7 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Grade, Subject, AddGradeData, AddSubjectData } from "@/lib/types";
+import { Grade, Subject, AddGradeData } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,7 @@ import { Input } from "./ui/input";
 import { GradeDistributionChart } from "./grade-distribution-chart";
 import { GradeTrendChart } from "./grade-trend-chart";
 import { EditSubjectDialog } from "./edit-subject-dialog";
+import { Progress } from "./ui/progress";
 
 type SubjectCardProps = {
   subject: Subject;
@@ -45,13 +46,33 @@ type SubjectCardProps = {
   animationIndex: number;
 };
 
+const GoalProgress = ({ finalGrade, targetGrade }: { finalGrade: string; targetGrade: number }) => {
+    if (finalGrade === "-") return null;
+
+    const currentGradeVal = parseFloat(finalGrade);
+    const progress = Math.max(0, Math.min(100, ((6 - currentGradeVal) / (6 - targetGrade)) * 100));
+
+    return (
+        <div className="p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-semibold text-sm flex items-center gap-2 mb-2 text-muted-foreground">
+                <Crosshair className="h-4 w-4" />
+                Fortschritt zum Ziel
+            </h4>
+            <div className="flex justify-between items-baseline text-sm mb-1">
+                <span className="text-muted-foreground">Ziel: <span className="font-bold text-primary">{targetGrade.toFixed(1)}</span></span>
+                <span className="text-muted-foreground">Aktuell: <span className="font-bold text-foreground">{finalGrade}</span></span>
+            </div>
+            <Progress value={progress} className="h-2" />
+        </div>
+    );
+};
+
 export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, animationIndex }: SubjectCardProps) {
   const [isGradeDialogOpen, setIsGradeDialogOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
   const [isEditSubjectOpen, setIsEditSubjectOpen] = useState(false);
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   
-  // Default to 2:1 for main subjects if not set
   const [writtenWeight, setWrittenWeight] = useState(subject.writtenWeight ?? 2);
   const [oralWeight, setOralWeight] = useState(subject.oralWeight ?? 1);
   
@@ -76,7 +97,7 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
     setIsGradeDialogOpen(open);
   }
 
-  const handleUpdateSubjectSubmit = (values: AddSubjectData) => {
+  const handleUpdateSubjectSubmit = (values: Partial<Subject>) => {
     onUpdateSubject(subject.id, values);
   };
 
@@ -178,13 +199,20 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
                   )}
                 </div>
                 <div className="mt-6 md:mt-0 space-y-4">
+                    {subject.targetGrade && finalGrade !== '-' && (
+                      <GoalProgress finalGrade={finalGrade} targetGrade={subject.targetGrade} />
+                    )}
                     <GradeDistributionChart grades={grades} />
                     <GradeTrendChart grades={grades} />
                 </div>
             </div>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
-              <p className="text-sm">Noch keine Noten für dieses Fach.</p>
+            <div className="text-center text-muted-foreground py-8 flex flex-col items-center gap-4">
+                <p className="font-medium">Keine Noten für dieses Fach erfasst.</p>
+                <Button onClick={() => handleOpenGradeDialog()}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Erste Note hinzufügen
+                </Button>
             </div>
           )}
           <Separator className="my-4" />

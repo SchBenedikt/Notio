@@ -44,13 +44,17 @@ export default function Dashboard() {
   // This new effect determines the effective dark mode based on storage or system preference.
   useEffect(() => {
     const handleSystemPreference = (e: MediaQueryListEvent) => {
-        setIsDarkMode(e.matches);
+        if (storedDarkMode === null) {
+          setIsDarkMode(e.matches);
+        }
     };
 
     if (storedDarkMode !== null) {
         // User has set a preference, so we use it.
         setIsDarkMode(storedDarkMode);
-        return; // No need to listen for system changes.
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.removeEventListener('change', handleSystemPreference);
+        return;
     }
 
     // No user preference, so we follow the system.
@@ -161,7 +165,9 @@ export default function Dashboard() {
     const newSubject: Subject = {
       id: crypto.randomUUID(),
       gradeLevel: selectedGradeLevel,
-      ...values,
+      name: values.name,
+      category: values.category,
+      ...(values.targetGrade && { targetGrade: values.targetGrade }),
       ...(values.category === 'Hauptfach' && { writtenWeight: 2, oralWeight: 1 }),
     };
     setSubjects([...subjects, newSubject]);
@@ -277,7 +283,7 @@ export default function Dashboard() {
           theme={theme}
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
-          onIsDarkModeChange={setStoredDarkMode}
+          onIsDarkModeChange={(isDark) => setStoredDarkMode(isDark ? isDark : null)}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {view === 'subjects' ? (
