@@ -24,7 +24,7 @@ const StudySetTestInputSchema = z.object({
 export type StudySetTestInput = z.infer<typeof StudySetTestInputSchema>;
 
 const MultipleChoiceQuestionSchema = z.object({
-    type: z.literal('multiple-choice'),
+    type: z.enum(['multiple-choice']),
     question: z.string().describe("The multiple choice question."),
     options: z.array(z.string()).describe("An array of 4 plausible answers. One must be correct."),
     correctAnswer: z.string().describe("The exactly correct answer from the options array."),
@@ -32,14 +32,14 @@ const MultipleChoiceQuestionSchema = z.object({
 });
 
 const WrittenQuestionSchema = z.object({
-    type: z.literal('written'),
+    type: z.enum(['written']),
     question: z.string().describe("The definition is provided as the question, asking for the term."),
     correctAnswer: z.string().describe("The term is the correct answer."),
     explanation: z.string().describe("A simple confirmation or explanation of the term."),
 });
 
 const TrueFalseQuestionSchema = z.object({
-    type: z.literal('true-false'),
+    type: z.enum(['true-false']),
     statement: z.string().describe("A statement that is either true or false, created from a term-definition pair."),
     correctAnswer: z.enum(['Wahr', 'Falsch']).describe("The correct answer, either 'Wahr' or 'Falsch'."),
     explanation: z.string().describe("A brief explanation of why the statement is true or false."),
