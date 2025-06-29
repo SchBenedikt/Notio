@@ -43,10 +43,11 @@ type ProfilePageProps = {
   onUserRoleChange: (role: 'student' | 'teacher') => void;
   userSchool: string;
   onUserSchoolChange: (school: string) => void;
+  onUserNameChange: (name: string) => void;
 };
 
 
-export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserSchoolChange }: ProfilePageProps) {
+export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserSchoolChange, onUserNameChange }: ProfilePageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -107,6 +108,7 @@ export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserScho
     try {
       if (user.displayName !== values.name) {
         await updateProfile(user, { displayName: values.name });
+        onUserNameChange(values.name);
       }
       
       const profileRef = doc(db, 'profiles', user.uid);

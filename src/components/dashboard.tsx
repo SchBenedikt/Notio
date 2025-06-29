@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userRole, setUserRole] = useState('student');
   const [userSchool, setUserSchool] = useState('');
+  const [userName, setUserName] = useState<string | null>(null);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -60,7 +61,6 @@ export default function Dashboard() {
   const updateSetting = useCallback(async (key: string, value: any) => {
     if (!user || !isFirebaseEnabled || !settingsDocRef) return;
     try {
-      // Using setDoc with merge: true is safer as it creates the doc if it doesn't exist.
       await setDoc(settingsDocRef, { [key]: value }, { merge: true });
     } catch (error) {
       console.error("Error updating setting: ", error);
@@ -76,6 +76,8 @@ export default function Dashboard() {
 
         const fetchData = async () => {
           try {
+            setUserName(user.displayName);
+            
             // Fetch Settings
             if(settingsDocRef) {
               const settingsSnap = await getDoc(settingsDocRef);
@@ -504,7 +506,7 @@ export default function Dashboard() {
     totalGradesCount: totalGradesCount,
     currentView: view,
     onSetView: setView,
-    userName: user?.displayName ?? null,
+    userName: userName,
   };
   
   const renderView = () => {
@@ -565,6 +567,9 @@ export default function Dashboard() {
                   onUserRoleChange={(role) => {
                     setUserRole(role);
                     updateSetting('role', role);
+                  }}
+                  onUserNameChange={(name) => {
+                    setUserName(name);
                   }}
                   userSchool={userSchool}
                   onUserSchoolChange={(school) => {

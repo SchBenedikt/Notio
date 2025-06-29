@@ -1,113 +1,228 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Grade, Subject } from "@/lib/types";
-import { getStudyCoachTips, StudyCoachOutput } from "@/ai/flows/study-coach-flow";
-import { Skeleton } from "./ui/skeleton";
-import { BrainCircuit, Sparkles, Lightbulb } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Send, Bot, User, Loader2, Paperclip, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn, calculateFinalGrade } from "@/lib/utils";
+import { getTutorResponse, ChatMessage } from "@/ai/flows/tutor-chat-flow";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Subject, Grade, Attachment } from "@/lib/types";
+import { FileSelectionDialog } from "./file-selection-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudyCoachPage } from "./study-coach-page";
+import { Card } from "./ui/card";
 
-type StudyCoachDialogProps = {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  subject: Subject;
-  grades: Grade[];
+type TutorChatProps = {
+  subjects: Subject[];
+  allGrades: Grade[];
 };
 
-export function StudyCoachDialog({ isOpen, onOpenChange, subject, grades }: StudyCoachDialogProps) {
+export function TutorChat({ subjects, allGrades }: TutorChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst mir auch Dateien zum Analysieren geben." }
+  ]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<StudyCoachOutput | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [isAttachmentSelectorOpen, setAttachmentSelectorOpen] = useState(false);
+  const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>([]);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setLoading(true);
-      setError(null);
-      setResponse(null);
-      
-      const mappedGrades = grades.map(g => ({
-          value: g.value,
-          type: g.type,
-          notes: g.notes,
-          weight: g.weight,
-          name: g.name
-      }));
-
-      getStudyCoachTips({ 
-        subjectName: subject.name, 
-        subjectCategory: subject.category,
-        writtenWeight: subject.writtenWeight,
-        oralWeight: subject.oralWeight,
-        targetGrade: subject.targetGrade,
-        grades: mappedGrades 
-      })
-        .then(res => {
-          setResponse(res);
-        })
-        .catch(err => {
-          console.error("AI Coach Error:", err);
-          setError("Der Lern-Coach konnte leider nicht erreicht werden. Bitte versuche es später erneut.");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    const scrollViewport = scrollAreaRef.current?.querySelector("div[data-radix-scroll-area-viewport]");
+    if (scrollViewport) {
+      scrollViewport.scrollTop = scrollViewport.scrollHeight;
     }
-  }, [isOpen, subject, grades]);
+  }, [messages]);
 
+  const handleSend = async () => {
+    if (!input.trim() && selectedAttachments.length === 0) return;
+
+    const userMessage: ChatMessage = { 
+      role: 'user', 
+      content: input,
+      attachments: selectedAttachments,
+    };
+    const newMessages = [...messages, userMessage];
+
+    setMessages(newMessages);
+    setInput("");
+    setSelectedAttachments([]);
+    setLoading(true);
+
+    try {
+      const subjectsForTutor = subjects.map(subject => {
+        const subjectGrades = allGrades.filter(g => g.subjectId === subject.id);
+        const subjectAverage = calculateFinalGrade(subjectGrades, subject);
+        return {
+            name: subject.name,
+            category: subject.category,
+            average: subjectAverage,
+            targetGrade: subject.targetGrade,
+            grades: subjectGrades.map(g => ({
+                name: g.name,
+                value: g.value,
+                type: g.type,
+                notes: g.notes,
+            }))
+        };
+      });
+
+      const response = await getTutorResponse({
+        subjects: subjectsForTutor,
+        history: newMessages,
+      });
+      setMessages(prev => [...prev, { role: 'model', content: response.response }]);
+    } catch (error) {
+      console.error("Chat Error:", error);
+      setMessages(prev => [...prev, { role: 'model', content: "Entschuldigung, da ist etwas schiefgelaufen. Bitte versuche es erneut." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const removeSelectedAttachment = (indexToRemove: number) => {
+    setSelectedAttachments(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const hasAnyAttachments = useMemo(() => {
+    return allGrades.some(g => g.attachments && g.attachments.length > 0);
+  }, [allGrades]);
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <BrainCircuit className="h-6 w-6 text-primary" />
-            <span>Lern-Coach für {subject.name}</span>
-          </DialogTitle>
-          <DialogDescription>
-            Dein persönlicher KI-Assistent für bessere Noten.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 space-y-6">
-          {loading && (
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-1/3" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-8 w-1/3" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-5/6" />
-              </div>
-            </div>
-          )}
-          {error && <p className="text-destructive">{error}</p>}
-          {response && (
-             <div className="space-y-6">
-                <div>
-                  <h3 className="font-semibold flex items-center gap-2 mb-2"><Sparkles className="h-5 w-5 text-amber-500" />Analyse</h3>
-                  <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">{response.analysis}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="h-5 w-5 text-blue-500" />Deine nächsten Schritte</h3>
-                  <ul className="space-y-2 list-none">
-                    {response.tips.map((tip, index) => (
-                      <li key={index} className="flex items-start gap-3 text-sm">
-                        <Badge variant="outline" className="mt-1 border-primary/50 text-primary">{index + 1}</Badge>
-                        <span className="flex-1">{tip}</span>
-                      </li>
+    <Tabs defaultValue="tutor" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto mb-6">
+            <TabsTrigger value="tutor">KI-Tutor</TabsTrigger>
+            <TabsTrigger value="coach">Lern-Coach</TabsTrigger>
+        </TabsList>
+        <TabsContent value="tutor">
+             <Card className="flex flex-col" style={{height: 'calc(100vh - 200px)'}}>
+                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                  <div className="space-y-4">
+                    {messages.map((message, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          "flex items-start gap-3",
+                          message.role === 'user' ? "justify-end" : "justify-start"
+                        )}
+                      >
+                        {message.role === 'model' && (
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              <Bot className="h-5 w-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div
+                          className={cn(
+                            "p-3 rounded-lg max-w-sm prose prose-sm dark:prose-invert",
+                            message.role === 'user'
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                          )}
+                        >
+                          {message.content && <p>{message.content}</p>}
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className={cn("space-y-1", message.content && "border-t border-primary-foreground/20 pt-2 mt-2")}>
+                              {message.attachments.map((att, attIndex) => (
+                                <div key={attIndex} className="flex items-center gap-2 text-xs">
+                                  <Paperclip className="h-3 w-3" />
+                                  <span className="truncate max-w-[200px]">{att.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                         {message.role === 'user' && (
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                              <User className="h-5 w-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
                     ))}
-                  </ul>
+                     {loading && (
+                      <div className="flex items-start gap-3 justify-start">
+                         <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              <Bot className="h-5 w-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                        <div className="p-3 rounded-lg bg-muted flex items-center">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+                <div className="p-4 border-t">
+                  {selectedAttachments.length > 0 && (
+                    <div className="mb-2 p-2 border rounded-lg">
+                        <p className="text-xs text-muted-foreground font-medium mb-2">Anhänge:</p>
+                        <div className="flex flex-wrap gap-2">
+                        {selectedAttachments.map((att, index) => (
+                            <div key={index} className="flex items-center gap-1.5 bg-muted rounded-full pl-2 pr-1 py-0.5 text-sm">
+                                <Paperclip className="h-3 w-3" />
+                                <span className="truncate max-w-[150px]">{att.name}</span>
+                                <button onClick={() => removeSelectedAttachment(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5" title="Anhang entfernen">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                  )}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSend();
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setAttachmentSelectorOpen(true)} 
+                      disabled={loading || !hasAnyAttachments}
+                      title={hasAnyAttachments ? 'Datei anhängen' : 'Keine Dateien zum Anhängen vorhanden'}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Stelle eine Frage oder füge eine Datei hinzu..."
+                      disabled={loading}
+                      className="flex-1"
+                      onKeyDown={(e) => {
+                          if(e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSend();
+                          }
+                      }}
+                    />
+                    <Button type="submit" size="icon" disabled={loading || (!input.trim() && selectedAttachments.length === 0)}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      <span className="sr-only">Senden</span>
+                    </Button>
+                  </form>
                 </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+              </Card>
+            <FileSelectionDialog 
+                isOpen={isAttachmentSelectorOpen}
+                onOpenChange={setAttachmentSelectorOpen}
+                onFilesSelected={setSelectedAttachments}
+                subjects={subjects}
+                grades={allGrades}
+            />
+        </TabsContent>
+        <TabsContent value="coach">
+            <StudyCoachPage subjects={subjects} allGrades={allGrades} />
+        </TabsContent>
+    </Tabs>
   );
 }
