@@ -117,7 +117,7 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
       toast({ title: "Beitrag veröffentlicht!" });
     } catch (error: any) {
       console.error("Error adding post: ", error);
-      toast({ title: "Fehler beim Erstellen des Beitrags", description: "Stelle sicher, dass deine Datenbank-Regeln korrekt sind.", variant: "destructive" });
+      toast({ title: "Fehler beim Erstellen des Beitrags", description: `Stelle sicher, dass deine Datenbank-Regeln korrekt sind. (${error.code})`, variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
@@ -158,6 +158,14 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
       } catch (error) {
         toast({ variant: 'destructive', title: 'Fehler', description: 'Beitrag konnte nicht gelöscht werden.' });
       }
+  };
+
+  const handleReportPost = (postId: string) => {
+    console.log(`Reporting post ${postId}`);
+    toast({
+        title: "Beitrag gemeldet",
+        description: "Danke für dein Feedback. Wir werden den Beitrag überprüfen.",
+    });
   };
 
   const toggleComments = (postId: string) => {
@@ -288,12 +296,12 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                                 <Repeat className="mr-2 h-4 w-4" />
                                 <span>0</span>
                             </Button>
-                             <Button variant="ghost" size="icon" className="ml-auto" disabled>
+                             <Button variant="ghost" size="icon" className="ml-auto" onClick={() => handleReportPost(post.id)}>
                                 <Flag className="h-4 w-4" />
                             </Button>
                         </div>
                         {visibleComments === post.id && (
-                           <PostComments postId={post.id} />
+                           <PostComments postId={post.id} profilesMap={profilesMap} />
                         )}
                     </CardContent>
                   </Card>

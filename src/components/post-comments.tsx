@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, runTransaction } from 'firebase/firestore';
-import type { Comment } from '@/lib/types';
+import type { Comment, Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -16,6 +16,7 @@ import { Skeleton } from './ui/skeleton';
 
 type PostCommentsProps = {
     postId: string;
+    profilesMap: Map<string, Profile>;
 };
 
 const CommentSkeleton = () => (
@@ -28,7 +29,7 @@ const CommentSkeleton = () => (
     </div>
 );
 
-export function PostComments({ postId }: PostCommentsProps) {
+export function PostComments({ postId, profilesMap }: PostCommentsProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [comments, setComments] = useState<Comment[]>([]);
@@ -77,9 +78,9 @@ export function PostComments({ postId }: PostCommentsProps) {
                 });
             });
             setNewComment('');
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting comment:", error);
-            toast({ variant: 'destructive', title: 'Fehler', description: 'Dein Kommentar konnte nicht gesendet werden.' });
+            toast({ variant: 'destructive', title: 'Fehler', description: `Dein Kommentar konnte nicht gesendet werden. (${error.code})` });
         } finally {
             setIsSubmitting(false);
         }
@@ -96,24 +97,27 @@ export function PostComments({ postId }: PostCommentsProps) {
                         <CommentSkeleton />
                     </>
                 ) : comments.length > 0 ? (
-                    comments.map(comment => (
-                        <div key={comment.id} className="flex items-start gap-3">
-                            <Avatar className="h-8 w-8">
-                                <AvatarFallback>{comment.authorName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 bg-muted p-3 rounded-lg">
-                                <div className="flex items-baseline gap-2">
-                                    <p className="font-semibold text-sm">{comment.authorName}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true, locale: de }) : 'Gerade eben'}
-                                    </p>
+                    comments.map(comment => {
+                        const commenterProfile = profilesMap.get(comment.authorId);
+                        return (
+                            <div key={comment.id} className="flex items-start gap-3">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarFallback>{commenterProfile?.name?.charAt(0) || '?'}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 bg-muted p-3 rounded-lg">
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="font-semibold text-sm">{comment.authorName}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true, locale: de }) : 'Gerade eben'}
+                                        </p>
+                                    </div>
+                                    <p className="text-sm">{comment.content}</p>
                                 </div>
-                                <p className="text-sm">{comment.content}</p>
                             </div>
-                        </div>
-                    ))
+                        )
+                    })
                 ) : (
-                    <p className="text-sm text-muted-foreground">Noch keine Kommentare.</p>
+                    <p className="text-sm text-muted-foreground text-center py-4">Noch keine Kommentare.</p>
                 )}
             </div>
             
