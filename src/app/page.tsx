@@ -4,20 +4,27 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Dashboard from '@/components/dashboard';
+import { isFirebaseEnabled } from '@/lib/firebase';
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Only redirect if firebase is enabled and the user is not logged in.
+    if (isFirebaseEnabled && !loading && !user) {
       router.replace('/login');
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
-    // You can return a loading spinner here if you want
-    // For now, returning null to avoid flashing the dashboard
+  // In demo mode (isFirebaseEnabled is false), user will be null but we still show the dashboard.
+  // When loading, we show nothing to prevent a flash of content.
+  if (loading) {
+    return null;
+  }
+  
+  // If firebase is enabled and there's no user yet, we show nothing until the redirect happens.
+  if (isFirebaseEnabled && !user) {
     return null;
   }
 

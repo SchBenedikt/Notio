@@ -7,9 +7,10 @@ import { Upload, Download, Database } from "lucide-react";
 type DataManagementPageProps = {
   onImport: () => void;
   onExport: () => void;
+  isFirebaseEnabled: boolean;
 };
 
-export function DataManagementPage({ onImport, onExport }: DataManagementPageProps) {
+export function DataManagementPage({ onImport, onExport, isFirebaseEnabled }: DataManagementPageProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="text-center">
@@ -45,10 +46,15 @@ export function DataManagementPage({ onImport, onExport }: DataManagementPagePro
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={onImport} variant="outline" className="w-full">
+          <Button onClick={onImport} variant="outline" className="w-full" disabled={!isFirebaseEnabled}>
             <Upload className="mr-2 h-4 w-4" />
             Von CSV importieren
           </Button>
+          {!isFirebaseEnabled && (
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+                Der Import ist nur im angemeldeten Zustand verfügbar, um Daten dauerhaft zu speichern.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

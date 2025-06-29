@@ -76,11 +76,18 @@ export default function LoginPage() {
     if (!isFirebaseEnabled) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 p-4">
+                 <div className='flex items-center gap-4 mb-8'>
+                    <Logo />
+                    <h1 className="text-4xl font-bold">Noten Meister</h1>
+                </div>
                 <div className="max-w-md w-full bg-card p-8 rounded-lg shadow-lg text-center">
-                    <h1 className="text-2xl font-bold text-destructive">Firebase Not Configured</h1>
+                    <h1 className="text-2xl font-bold">Demo Modus</h1>
                     <p className="text-muted-foreground mt-2">
-                        Login and registration are disabled. Please ensure your Firebase environment variables are correctly set.
+                        Firebase ist nicht konfiguriert. Die App läuft im Offline-Demo-Modus. Deine Daten werden nicht gespeichert.
                     </p>
+                    <Button onClick={() => router.push('/')} className="mt-6">
+                        Weiter zum Dashboard
+                    </Button>
                 </div>
             </div>
         )

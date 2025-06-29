@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, isFirebaseEnabled } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView } from "@/lib/types";
 import { AppHeader } from "./header";
@@ -23,9 +23,11 @@ import { GradeInfoDialog } from "./grade-info-dialog";
 import { AwardsPage } from "./awards-page";
 import { awardsDefinitions } from "@/lib/awards";
 import { CommandPalette } from "./command-palette";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   
@@ -54,62 +56,70 @@ export default function Dashboard() {
   const settingsDocRef = useMemo(() => user ? doc(db, 'users', user.uid, 'settings', 'main') : null, [user]);
 
   const updateSetting = useCallback(async (key: string, value: any) => {
-    if (!settingsDocRef) return;
+    if (!user || !isFirebaseEnabled || !settingsDocRef) return;
     try {
       await updateDoc(settingsDocRef, { [key]: value });
     } catch (error) {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
     }
-  }, [settingsDocRef, toast]);
+  }, [user, settingsDocRef, toast]);
 
 
   useEffect(() => {
-    if (!user) return;
-    setDataLoading(true);
+    // If firebase is enabled and we have a user, fetch data from firestore
+    if (isFirebaseEnabled && user) {
+        setDataLoading(true);
 
-    const fetchData = async () => {
-      try {
-        // Fetch Settings
-        if(settingsDocRef) {
-          const settingsSnap = await getDoc(settingsDocRef);
-          if (settingsSnap.exists()) {
-            const settingsData = settingsSnap.data();
-            setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
-            setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
-            setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
-            setTheme(settingsData.theme || 'blue');
-            setIsDarkMode(settingsData.isDarkMode || false);
-            setUserRole(settingsData.role || 'student');
-            setUserSchool(settingsData.school || '');
+        const fetchData = async () => {
+          try {
+            // Fetch Settings
+            if(settingsDocRef) {
+              const settingsSnap = await getDoc(settingsDocRef);
+              if (settingsSnap.exists()) {
+                const settingsData = settingsSnap.data();
+                setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
+                setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
+                setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
+                setTheme(settingsData.theme || 'blue');
+                setIsDarkMode(settingsData.isDarkMode || false);
+                setUserRole(settingsData.role || 'student');
+                setUserSchool(settingsData.school || '');
+              }
+            }
+            
+            // Fetch Subjects
+            const subjectsQuery = query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel));
+            const subjectsSnap = await getDocs(subjectsQuery);
+            const subjectsData = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
+            setSubjects(subjectsData);
+            
+            // Fetch Grades for these subjects
+            if (subjectsData.length > 0) {
+              const subjectIds = subjectsData.map(s => s.id);
+              const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
+              const gradesSnap = await getDocs(gradesQuery);
+              const gradesData = gradesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Grade[];
+              setGrades(gradesData);
+            } else {
+              setGrades([]);
+            }
+
+          } catch (error) {
+            console.error("Error fetching data:", error);
+            toast({ title: "Fehler beim Laden der Daten", variant: "destructive" });
+          } finally {
+            setDataLoading(false);
           }
-        }
-        
-        // Fetch Subjects
-        const subjectsQuery = query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel));
-        const subjectsSnap = await getDocs(subjectsQuery);
-        const subjectsData = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
-        setSubjects(subjectsData);
-        
-        // Fetch Grades for these subjects
-        if (subjectsData.length > 0) {
-          const subjectIds = subjectsData.map(s => s.id);
-          const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
-          const gradesSnap = await getDocs(gradesQuery);
-          const gradesData = gradesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Grade[];
-          setGrades(gradesData);
-        } else {
-          setGrades([]);
-        }
-
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast({ title: "Fehler beim Laden der Daten", variant: "destructive" });
-      } finally {
+        };
+        fetchData();
+    } else {
+        // Demo mode: not logged in or firebase disabled
+        setDataLoading(true);
+        setSubjects([]);
+        setGrades([]);
         setDataLoading(false);
-      }
-    };
-    fetchData();
+    }
   }, [user, selectedGradeLevel, settingsDocRef, toast]);
 
 
@@ -135,7 +145,7 @@ export default function Dashboard() {
   }, [isDarkMode, updateSetting, user]);
 
 
-  const subjectsForGradeLevel = subjects; // Already filtered by Firestore query
+  const subjectsForGradeLevel = subjects; // Already filtered by Firestore query or local state
 
 
   const mainSubjects = useMemo(() => {
@@ -197,7 +207,6 @@ export default function Dashboard() {
   }, [subjectsForGradeLevel, grades, overallAverage]);
 
   const handleAddSubject = async (values: AddSubjectData) => {
-    if (!user) return;
     const newSubjectData = {
       gradeLevel: selectedGradeLevel,
       name: values.name,
@@ -205,6 +214,13 @@ export default function Dashboard() {
       ...(values.targetGrade && { targetGrade: values.targetGrade }),
       ...(values.category === 'Hauptfach' && { writtenWeight: 2, oralWeight: 1 }),
     };
+
+    if (!isFirebaseEnabled || !user) {
+      const newSubject: Subject = { id: `local-${Date.now()}`, ...newSubjectData };
+      setSubjects(s => [...s, newSubject]);
+      toast({ title: "Fach hinzugefügt (Demo)", description: "Im Demo-Modus werden Daten nicht gespeichert." });
+      return;
+    }
     
     try {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), newSubjectData);
@@ -221,7 +237,13 @@ export default function Dashboard() {
   };
 
   const handleUpdateSubject = async (subjectId: string, updatedValues: Partial<Omit<Subject, 'id' | 'gradeLevel'>>) => {
-    if (!user) return;
+    if (!isFirebaseEnabled || !user) {
+        setSubjects(currentSubjects => currentSubjects.map(s => s.id === subjectId ? { ...s, ...updatedValues } : s));
+        toast({ title: "Fach aktualisiert (Demo)" });
+        setEditSubjectState({ isOpen: false, subject: null });
+        return;
+    }
+
     const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
     try {
         await updateDoc(subjectDocRef, updatedValues);
@@ -242,16 +264,20 @@ export default function Dashboard() {
   };
 
   const handleDeleteSubject = async (subjectId: string) => {
-    if(!user) return;
     const subjectName = subjects.find(s => s.id === subjectId)?.name || 'Das Fach';
+
+    if(!isFirebaseEnabled || !user) {
+        setSubjects(s => s.filter((sub) => sub.id !== subjectId));
+        setGrades(g => g.filter((grade) => grade.subjectId !== subjectId));
+        toast({ title: "Fach gelöscht (Demo)", variant: "destructive" });
+        return;
+    }
     
     try {
       const batch = writeBatch(db);
-      // Delete the subject document
       const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
       batch.delete(subjectDocRef);
 
-      // Find and delete all grades associated with the subject
       const gradesToDeleteQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', '==', subjectId));
       const gradesToDeleteSnap = await getDocs(gradesToDeleteQuery);
       gradesToDeleteSnap.forEach(gradeDoc => {
@@ -274,12 +300,23 @@ export default function Dashboard() {
   };
 
   const handleSaveGrade = async (subjectId: string, values: AddGradeData, gradeId?: string) => {
-    if (!user) return;
     const gradeData = {
       subjectId,
       ...values,
       date: values.date.toISOString(),
     };
+    
+    if (!isFirebaseEnabled || !user) {
+        if (gradeId) {
+             setGrades(currentGrades => currentGrades.map(g => g.id === gradeId ? { ...g, id: g.id, ...gradeData } : g));
+             toast({ title: "Note aktualisiert (Demo)" });
+        } else {
+            const newGrade: Grade = { id: `local-${Date.now()}`, ...gradeData };
+            setGrades(g => [...g, newGrade]);
+            toast({ title: "Note hinzugefügt (Demo)" });
+        }
+        return;
+    }
 
     try {
       if (gradeId) {
@@ -290,18 +327,12 @@ export default function Dashboard() {
             g.id === gradeId ? { ...g, id: g.id, ...gradeData } : g
           )
         );
-        toast({
-          title: "Note aktualisiert",
-          description: "Die Änderungen an der Note wurden gespeichert.",
-        });
+        toast({ title: "Note aktualisiert", description: "Die Änderungen an der Note wurden gespeichert." });
       } else {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'grades'), gradeData);
         const newGrade: Grade = { id: docRef.id, ...gradeData };
         setGrades([...grades, newGrade]);
-        toast({
-          title: "Note hinzugefügt",
-          description: `Eine neue Note wurde erfolgreich gespeichert.`,
-        });
+        toast({ title: "Note hinzugefügt", description: `Eine neue Note wurde erfolgreich gespeichert.` });
       }
     } catch (error) {
        console.error("Error saving grade: ", error);
@@ -311,7 +342,12 @@ export default function Dashboard() {
 
 
   const handleDeleteGrade = async (gradeId: string) => {
-    if (!user) return;
+    if (!isFirebaseEnabled || !user) {
+        setGrades(g => g.filter((grade) => grade.id !== gradeId));
+        toast({ title: "Note gelöscht (Demo)", variant: "destructive" });
+        return;
+    }
+
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'grades', gradeId));
       setGrades(grades.filter((g) => g.id !== gradeId));
@@ -380,7 +416,10 @@ export default function Dashboard() {
   };
   
   const handleImportCSV = async () => {
-    if (!user) return;
+    if (!user || !isFirebaseEnabled) {
+      toast({ title: "Funktion nicht verfügbar", description: "Der Datenimport ist im Demo-Modus nicht möglich.", variant: "destructive" });
+      return;
+    };
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv';
@@ -417,9 +456,13 @@ export default function Dashboard() {
   };
 
   const handleLogout = async () => {
+    if (!isFirebaseEnabled) {
+        router.push('/login');
+        return;
+    }
     try {
       await auth.signOut();
-      // The redirect will be handled by the main page component
+      router.push('/login');
     } catch (error) {
       toast({ title: "Fehler beim Abmelden", variant: "destructive" });
     }
@@ -479,6 +522,7 @@ export default function Dashboard() {
           <DataManagementPage
             onImport={handleImportCSV}
             onExport={handleExportCSV}
+            isFirebaseEnabled={isFirebaseEnabled && !!user}
           />
         );
       case 'files':

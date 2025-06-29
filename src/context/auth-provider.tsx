@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return () => unsubscribe();
     } else {
+      // If firebase is not enabled, we are not loading and have no user.
       setLoading(false);
     }
   }, []);
@@ -50,20 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         </div>
       )
   }
-
-  if (!isFirebaseEnabled) {
-      return (
-          <div className="min-h-screen flex items-center justify-center bg-muted p-4">
-              <div className="max-w-md w-full bg-card p-8 rounded-lg shadow-lg text-center">
-                  <h1 className="text-2xl font-bold text-destructive">Firebase Not Configured</h1>
-                  <p className="text-muted-foreground mt-2">
-                      Firebase services are unavailable. Please ensure your environment variables (e.g., `NEXT_PUBLIC_FIREBASE_API_KEY`) are correctly set.
-                  </p>
-              </div>
-          </div>
-      )
-  }
-
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
