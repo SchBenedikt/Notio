@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (error) => {
           console.error("Firebase Auth Error:", error);
           if (error.code === 'auth/invalid-api-key') {
-             setFirebaseError('Ungültiger API-Schlüssel. Bitte überprüfe deine .env Konfiguration.');
+             setFirebaseError("API-Schlüssel ungültig. Stelle sicher, dass 'Authentication' in deiner Firebase-Konsole aktiviert ist (Build > Authentication > Jetzt loslegen).");
           } else {
              setFirebaseError(`Firebase Fehler: ${error.message}`);
           }
