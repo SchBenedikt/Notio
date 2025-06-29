@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Check, Menu, LogOut } from "lucide-react";
+import { Settings, Check, Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import type { AppView } from "@/lib/types";
 
 type AppHeaderProps = {
   selectedGradeLevel: number;
@@ -39,6 +40,7 @@ type AppHeaderProps = {
   onUserRoleChange: (role: 'student' | 'teacher') => void;
   userSchool: string;
   onUserSchoolChange: (school: string) => void;
+  onNavigate: (view: AppView) => void;
 };
 
 export function AppHeader({ 
@@ -58,7 +60,8 @@ export function AppHeader({
   userRole,
   onUserRoleChange,
   userSchool,
-  onUserSchoolChange
+  onUserSchoolChange,
+  onNavigate
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -222,6 +225,11 @@ export function AppHeader({
                         onCheckedChange={onIsDarkModeChange}
                     />
                 </div>
+                <Separator />
+                <Button variant="outline" className="w-full justify-start" onClick={() => onNavigate('profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Profil & Sicherheit
+                </Button>
                 <Separator />
                 <Button variant="outline" onClick={onLogout}>
                   <LogOut className="mr-2 h-4 w-4" />

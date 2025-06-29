@@ -11,7 +11,8 @@ import {
   Upload,
   BrainCircuit,
   Files,
-  Award
+  Award,
+  User,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -30,7 +31,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards") => void;
+  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -81,17 +82,21 @@ export function CommandPalette({
                     <MessageCircle className="mr-2 h-4 w-4" />
                     <span>KI-Tutor & Coach</span>
                 </CommandItem>
-                 <CommandItem onSelect={() => runCommand(() => onNavigate("data"))}>
-                    <Download className="mr-2 h-4 w-4" />
-                    <span>Datenverwaltung</span>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("awards"))}>
+                    <Award className="mr-2 h-4 w-4" />
+                    <span>Auszeichnungen</span>
+                </CommandItem>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("profile"))}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profil & Sicherheit</span>
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("files"))}>
                     <Files className="mr-2 h-4 w-4" />
                     <span>Dateiverwaltung</span>
                 </CommandItem>
-                 <CommandItem onSelect={() => runCommand(() => onNavigate("awards"))}>
-                    <Award className="mr-2 h-4 w-4" />
-                    <span>Auszeichnungen</span>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("data"))}>
+                    <Download className="mr-2 h-4 w-4" />
+                    <span>Datenverwaltung</span>
                 </CommandItem>
             </CommandGroup>
             <CommandSeparator />

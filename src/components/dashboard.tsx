@@ -24,6 +24,7 @@ import { AwardsPage } from "./awards-page";
 import { awardsDefinitions } from "@/lib/awards";
 import { CommandPalette } from "./command-palette";
 import { useRouter } from "next/navigation";
+import { ProfilePage } from "./profile-page";
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
@@ -556,6 +557,8 @@ export default function Dashboard() {
         return (
           <AwardsPage awards={awards} selectedGradeLevel={selectedGradeLevel} />
         );
+      case 'profile':
+        return <ProfilePage />;
       default:
         return null;
     }
@@ -614,6 +617,7 @@ export default function Dashboard() {
             setUserSchool(school);
             updateSetting('school', school);
           }}
+          onNavigate={setView}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {renderView()}
