@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2, CalendarDays, BrainCircuit } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2, CalendarDays, BrainCircuit, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -20,6 +20,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AccordionContent,
   AccordionItem,
@@ -71,6 +76,7 @@ type SubjectCardProps = {
 
 export function SubjectCard({ subject, grades, studySets, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditSubject, onShowGradeInfo, onEditGrade, onViewStudySet, animationIndex }: SubjectCardProps) {
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
+  const [studySetSearch, setStudySetSearch] = useState("");
   
   const [writtenWeight, setWrittenWeight] = useState(subject.writtenWeight ?? 2);
   const [oralWeight, setOralWeight] = useState(subject.oralWeight ?? 1);
@@ -84,6 +90,9 @@ export function SubjectCard({ subject, grades, studySets, onDeleteSubject, onUpd
   const oralGrades = completedGrades.filter((g) => g.type === "mündliche Note");
 
   const relatedStudySets = studySets.filter(set => set.subjectId === subject.id);
+  const filteredStudySets = relatedStudySets.filter(set => 
+    set.title.toLowerCase().includes(studySetSearch.toLowerCase())
+  );
 
   const handleWeightSave = () => {
     onUpdateSubject(subject.id, { writtenWeight, oralWeight });
@@ -217,19 +226,42 @@ export function SubjectCard({ subject, grades, studySets, onDeleteSubject, onUpd
             </div>
            )}
            {relatedStudySets.length > 0 && (
-            <div>
-                <Separator className="my-4" />
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2">Zugehörige Lernsets</h4>
-                <ul className="space-y-2">
-                    {relatedStudySets.map(set => (
-                        <li key={set.id}>
-                            <button onClick={() => onViewStudySet(set.id)} className="w-full flex items-center gap-3 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-left">
-                                <BrainCircuit className="h-5 w-5 text-muted-foreground" />
-                                <p className="font-medium text-sm">{set.title}</p>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+            <div className="pt-4">
+              <Separator className="mb-4" />
+              <Collapsible>
+                <CollapsibleTrigger className="w-full flex justify-between items-center text-sm font-semibold text-muted-foreground hover:bg-muted/50 p-2 rounded-md transition-colors">
+                  <div className="flex items-center gap-2">
+                    <BrainCircuit className="h-4 w-4" />
+                    <span>Zugehörige Lernsets ({relatedStudySets.length})</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input 
+                            type="text"
+                            placeholder="Lernset in diesem Fach suchen..."
+                            value={studySetSearch}
+                            onChange={(e) => setStudySetSearch(e.target.value)}
+                            className="pl-8 h-8 text-xs"
+                        />
+                    </div>
+                    <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {filteredStudySets.map(set => (
+                            <li key={set.id}>
+                                <button onClick={() => onViewStudySet(set.id)} className="w-full flex items-center gap-3 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-left">
+                                    <BrainCircuit className="h-5 w-5 text-muted-foreground" />
+                                    <p className="font-medium text-sm">{set.title}</p>
+                                </button>
+                            </li>
+                        ))}
+                        {filteredStudySets.length === 0 && (
+                            <p className="text-xs text-center text-muted-foreground py-2">Kein Lernset gefunden.</p>
+                        )}
+                    </ul>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
            )}
           <Separator className="my-4" />
