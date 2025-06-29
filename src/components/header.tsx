@@ -52,10 +52,6 @@ export function AppHeader({
     <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-           <div className="hidden lg:flex items-center gap-3 mr-4">
-              <Logo />
-              <h1 className="text-xl font-bold">Gradido</h1>
-            </div>
           <Button
             variant="ghost"
             size="icon"
@@ -65,6 +61,10 @@ export function AppHeader({
             <Menu className="h-6 w-6" />
             <span className="sr-only">Menü öffnen</span>
           </Button>
+           <div className="flex items-center gap-3">
+              <Logo />
+              <h1 className="text-xl font-bold hidden sm:block">Gradido</h1>
+            </div>
         </div>
 
         <nav className="hidden lg:flex items-center gap-1 rounded-full bg-muted p-1">

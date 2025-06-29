@@ -167,11 +167,6 @@ export function SidebarContent({
 
     return (
         <>
-            <div className='px-2 flex items-center gap-3'>
-              <Logo />
-              <h1 className="text-2xl font-bold text-foreground">Gradido</h1>
-            </div>
-            
             <div className="flex flex-col gap-1 px-2">
                 <Button 
                     variant={currentView === 'profile' ? "secondary" : "ghost"} 
