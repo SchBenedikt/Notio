@@ -185,7 +185,7 @@ export function GradeInfoDialog({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="outline" onClick={() => onEdit(grade)}>
+            <Button variant="ghost" onClick={() => onEdit(grade)}>
               <Pencil className="mr-2 h-4 w-4" />
               Bearbeiten
             </Button>
