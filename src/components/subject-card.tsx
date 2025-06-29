@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2 } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -63,19 +63,23 @@ type SubjectCardProps = {
   onAddGradeToSubject: (subjectId: string) => void;
   onEditSubject: (subject: Subject) => void;
   onShowGradeInfo: (grade: Grade) => void;
+  onEditGrade: (grade: Grade) => void;
   animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditSubject, onShowGradeInfo, animationIndex }: SubjectCardProps) {
+export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditSubject, onShowGradeInfo, onEditGrade, animationIndex }: SubjectCardProps) {
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   
   const [writtenWeight, setWrittenWeight] = useState(subject.writtenWeight ?? 2);
   const [oralWeight, setOralWeight] = useState(subject.oralWeight ?? 1);
   
   const finalGrade = calculateFinalGrade(grades, subject);
+  
+  const completedGrades = grades.filter(g => g.value != null);
+  const plannedGrades = grades.filter(g => g.value == null);
 
-  const writtenGrades = grades.filter((g) => g.type === "Schulaufgabe");
-  const oralGrades = grades.filter((g) => g.type === "mündliche Note");
+  const writtenGrades = completedGrades.filter((g) => g.type === "Schulaufgabe");
+  const oralGrades = completedGrades.filter((g) => g.type === "mündliche Note");
 
   const handleWeightSave = () => {
     onUpdateSubject(subject.id, { writtenWeight, oralWeight });
@@ -125,8 +129,8 @@ export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject,
             )}
         </div>
         <div className="flex items-center gap-1">
-            <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
-            {grade.value.toFixed(0)}
+            <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value!)}`}>
+            {grade.value!.toFixed(0)}
             </div>
         </div>
       </button>
@@ -153,7 +157,7 @@ export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject,
         </AccordionTrigger>
         <AccordionContent className="px-6 pb-4">
           <Separator className="mb-4" />
-          {grades.length > 0 ? (
+          {completedGrades.length > 0 ? (
              <div className="grid md:grid-cols-2 md:gap-x-8 items-start">
                 <div className="space-y-4">
                   {writtenGrades.length > 0 && (
@@ -173,8 +177,8 @@ export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject,
                     {subject.targetGrade && finalGrade !== '-' && (
                       <GoalProgress finalGrade={finalGrade} targetGrade={subject.targetGrade} />
                     )}
-                    <GradeDistributionChart grades={grades} />
-                    <GradeTrendChart grades={grades} />
+                    <GradeDistributionChart grades={completedGrades} />
+                    <GradeTrendChart grades={completedGrades} />
                 </div>
             </div>
           ) : (
@@ -186,6 +190,28 @@ export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject,
                 </Button>
             </div>
           )}
+          {plannedGrades.length > 0 && (
+            <div>
+                <Separator className="my-4" />
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2">Geplante Termine</h4>
+                <ul className="space-y-2">
+                    {plannedGrades.map(grade => (
+                        <li key={grade.id}>
+                            <button onClick={() => onEditGrade(grade)} className="w-full flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-left">
+                                <div className="flex items-center gap-3">
+                                    <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-medium text-sm">{grade.name || grade.type}</p>
+                                        <p className="text-xs text-muted-foreground">{new Date(grade.date).toLocaleDateString('de-DE')}</p>
+                                    </div>
+                                </div>
+                                <span className="text-xs font-semibold text-primary">Note eintragen</span>
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+           )}
           <Separator className="my-4" />
           <div className="flex justify-between items-center gap-2 flex-wrap">
              <div className="flex items-center gap-2 flex-wrap">

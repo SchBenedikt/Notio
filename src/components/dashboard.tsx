@@ -370,15 +370,16 @@ export default function Dashboard() {
     const gradeData = {
       subjectId,
       ...values,
+      value: values.value ?? null, // Ensure undefined is stored as null
       date: values.date.toISOString(),
     };
     
     if (!isFirebaseEnabled || !user) {
         if (gradeId) {
-             setGrades(currentGrades => currentGrades.map(g => g.id === gradeId ? { ...g, id: g.id, ...gradeData } : g));
+             setGrades(currentGrades => currentGrades.map(g => g.id === gradeId ? { ...g, id: g.id, ...gradeData } as Grade : g));
              toast({ title: "Note aktualisiert (Demo)" });
         } else {
-            const newGrade: Grade = { id: `local-${Date.now()}`, ...gradeData };
+            const newGrade: Grade = { id: `local-${Date.now()}`, ...gradeData } as Grade;
             setGrades(g => [...g, newGrade]);
             toast({ title: "Note hinzugefügt (Demo)" });
         }
@@ -391,13 +392,13 @@ export default function Dashboard() {
         await setDoc(gradeDocRef, gradeData, { merge: true });
         setGrades(currentGrades =>
           currentGrades.map(g =>
-            g.id === gradeId ? { ...g, id: g.id, ...gradeData } : g
+            g.id === gradeId ? { ...g, id: g.id, ...gradeData } as Grade : g
           )
         );
         toast({ title: "Note aktualisiert", description: "Die Änderungen an der Note wurden gespeichert." });
       } else {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'grades'), gradeData);
-        const newGrade: Grade = { id: docRef.id, ...gradeData };
+        const newGrade: Grade = { id: docRef.id, ...gradeData } as Grade;
         setGrades([...grades, newGrade]);
         toast({ title: "Note hinzugefügt", description: `Eine neue Note wurde erfolgreich gespeichert.` });
       }
@@ -439,11 +440,11 @@ export default function Dashboard() {
         if (setId) {
             const setRef = doc(db, 'users', user.uid, 'studySets', setId);
             await setDoc(setRef, data, { merge: true });
-            setStudySets(currentSets => currentSets.map(s => s.id === setId ? { ...s, ...data } : s));
+            setStudySets(currentSets => currentSets.map(s => s.id === setId ? { ...s, ...data } as StudySet : s));
             toast({ title: "Lernset aktualisiert" });
         } else {
             const setRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
-            setStudySets(currentSets => [...currentSets, { id: setRef.id, ...data }]);
+            setStudySets(currentSets => [...currentSets, { id: setRef.id, ...data } as StudySet]);
             toast({ title: "Lernset erstellt" });
         }
     } catch (error) {
@@ -664,11 +665,13 @@ export default function Dashboard() {
             onAddGradeToSubject={handleOpenAddGradeDialog}
             onEditSubject={handleOpenEditSubjectDialog}
             onShowGradeInfo={handleOpenGradeInfoDialog}
+            onEditGrade={handleOpenEditGradeDialog}
           />
         );
       case 'studysets':
         return <StudySetsPage 
             studySets={studySets} 
+            subjects={subjectsForGradeLevel}
             onViewStudySet={handleViewStudySet}
             onEditStudySet={handleNavigateToEditStudySet}
             onDeleteStudySet={handleDeleteStudySet}
@@ -676,12 +679,14 @@ export default function Dashboard() {
         />;
       case 'studyset-create':
         return <CreateEditStudySetPage 
+            subjects={subjectsForGradeLevel}
             onBack={() => setView('studysets')}
             onSave={handleSaveStudySet}
         />;
       case 'studyset-edit':
         return <CreateEditStudySetPage 
             studySetToEdit={editingStudySet}
+            subjects={subjectsForGradeLevel}
             onBack={() => setView('studysets')}
             onSave={handleSaveStudySet}
         />;

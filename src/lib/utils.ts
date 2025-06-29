@@ -15,6 +15,7 @@ function getGradeSums(grades: Grade[]) {
   };
 
   for (const grade of grades) {
+    if (grade.value == null) continue;
     const weightedValue = grade.value * grade.weight;
     if (grade.type === 'Schulaufgabe') {
       sums.written.value += weightedValue;
@@ -29,11 +30,12 @@ function getGradeSums(grades: Grade[]) {
 
 
 export function calculateFinalGrade(grades: Grade[], subject: Subject): string {
-    if (grades.length === 0) {
+    const gradedEntries = grades.filter(g => g.value != null);
+    if (gradedEntries.length === 0) {
       return "-";
     }
 
-    const sums = getGradeSums(grades);
+    const sums = getGradeSums(gradedEntries);
 
     if (subject.category === 'Hauptfach' && subject.writtenWeight != null && subject.oralWeight != null && (subject.writtenWeight > 0 || subject.oralWeight > 0)) {
         const { written, oral } = sums;
@@ -146,7 +148,8 @@ export function calculateGradeForTarget(
 ): number | null {
   if (newGradeWeight <= 0) return null;
 
-  const sums = getGradeSums(grades);
+  const gradedEntries = grades.filter(g => g.value != null);
+  const sums = getGradeSums(gradedEntries);
 
   if (subject.category !== 'Hauptfach' || subject.writtenWeight == null || subject.oralWeight == null) {
     const currentSum = sums.written.value + sums.oral.value;

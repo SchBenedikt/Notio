@@ -3,19 +3,20 @@
 import type { StudySet } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Layers, MoreVertical, PlayCircle } from "lucide-react";
+import { Pencil, Trash2, Layers, MoreVertical, PlayCircle, BookCopy } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 type StudySetCardProps = {
   studySet: StudySet;
+  subjectName?: string;
   onSelect: (id: string) => void;
   onEdit: () => void;
   onDelete: (id: string) => void;
   animationIndex: number;
 };
 
-export function StudySetCard({ studySet, onSelect, onEdit, onDelete, animationIndex }: StudySetCardProps) {
+export function StudySetCard({ studySet, subjectName, onSelect, onEdit, onDelete, animationIndex }: StudySetCardProps) {
   return (
     <div className="animate-fade-in-down" style={{ animationDelay: `${animationIndex * 75}ms`, opacity: 0 }}>
         <Card className="flex flex-col h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
@@ -55,11 +56,17 @@ export function StudySetCard({ studySet, onSelect, onEdit, onDelete, animationIn
                     </DropdownMenu>
                 </div>
             </CardHeader>
-            <CardContent className="flex-1">
+            <CardContent className="flex-1 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Layers className="h-4 w-4" />
                     <span>{studySet.cards.length} Begriff{studySet.cards.length !== 1 ? 'e' : ''}</span>
                 </div>
+                {subjectName && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <BookCopy className="h-4 w-4" />
+                    <span>{subjectName}</span>
+                  </div>
+                )}
             </CardContent>
             <CardFooter>
                 <Button className="w-full" onClick={() => onSelect(studySet.id)}>

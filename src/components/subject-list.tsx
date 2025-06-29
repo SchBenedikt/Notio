@@ -17,6 +17,7 @@ type SubjectListProps = {
   onAddGradeToSubject: (subjectId: string) => void;
   onEditSubject: (subject: Subject) => void;
   onShowGradeInfo: (grade: Grade) => void;
+  onEditGrade: (grade: Grade) => void;
   onOpenCommandPalette: () => void;
 };
 
@@ -31,6 +32,7 @@ export function SubjectList({
   onAddGradeToSubject,
   onEditSubject,
   onShowGradeInfo,
+  onEditGrade,
   onOpenCommandPalette
 }: SubjectListProps) {
   
@@ -61,6 +63,7 @@ export function SubjectList({
           onAddGradeToSubject={onAddGradeToSubject}
           onEditSubject={onEditSubject}
           onShowGradeInfo={onShowGradeInfo}
+          onEditGrade={onEditGrade}
         />
       ))}
     </Accordion>

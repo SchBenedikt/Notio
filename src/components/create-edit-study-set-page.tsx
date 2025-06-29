@@ -16,10 +16,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { StudySet } from "@/lib/types";
+import type { StudySet, Subject } from "@/lib/types";
 import { PlusCircle, Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const cardSchema = z.object({
   id: z.string(),
@@ -30,6 +30,7 @@ const cardSchema = z.object({
 const formSchema = z.object({
   title: z.string().min(1, "Titel darf nicht leer sein.").max(100),
   description: z.string().max(500).optional(),
+  subjectId: z.string().optional(),
   cards: z.array(cardSchema).min(1, "Es muss mindestens eine Karteikarte vorhanden sein."),
 });
 
@@ -39,14 +40,16 @@ type CreateEditStudySetPageProps = {
   onBack: () => void;
   onSave: (values: Omit<StudySet, 'id' | 'gradeLevel'>, setId?: string) => Promise<void>;
   studySetToEdit?: StudySet | null;
+  subjects: Subject[];
 };
 
-export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit }: CreateEditStudySetPageProps) {
+export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subjects }: CreateEditStudySetPageProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
+      subjectId: undefined,
       cards: [{ id: `new-${Date.now()}`, term: "", definition: "" }],
     },
   });
@@ -61,12 +64,14 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit }: Creat
       form.reset({
         title: studySetToEdit.title,
         description: studySetToEdit.description || "",
+        subjectId: studySetToEdit.subjectId || undefined,
         cards: studySetToEdit.cards,
       });
     } else {
       form.reset({
         title: "",
         description: "",
+        subjectId: undefined,
         cards: [{ id: `new-${Date.now()}`, term: "", definition: "" }],
       });
     }
@@ -121,6 +126,30 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit }: Creat
                                 )}
                             />
                         </div>
+                        <FormField
+                            control={form.control}
+                            name="subjectId"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Fach (optional)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Einem Fach zuordnen..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {subjects.map((subject) => (
+                                    <SelectItem key={subject.id} value={subject.id}>
+                                        {subject.name}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
                         <Separator />
                         <div className="space-y-4">
                             {fields.map((field, index) => (

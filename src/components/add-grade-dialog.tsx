@@ -41,7 +41,10 @@ const formSchema = z.object({
     required_error: "Du musst einen Notentyp auswählen.",
   }),
   name: z.string().max(50, "Name darf nicht länger als 50 Zeichen sein.").optional(),
-  value: z.coerce.number().min(1, "Note muss 1-6 sein.").max(6, "Note muss 1-6 sein."),
+  value: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : Number(val)),
+    z.number({ invalid_type_error: "Muss eine Zahl sein" }).min(1, "Note muss 1-6 sein").max(6, "Note muss 1-6 sein").optional()
+  ),
   weight: z.coerce.number().min(0.1, "Gewichtung muss positiv sein.").default(1),
   notes: z.string().max(100, "Notiz darf nicht länger als 100 Zeichen sein.").optional(),
   attachments: z.array(z.object({
@@ -80,6 +83,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
         form.reset({
           ...gradeToEdit,
           date: new Date(gradeToEdit.date),
+          value: gradeToEdit.value ?? undefined,
           attachments: gradeToEdit.attachments || [],
         });
       } else {
@@ -123,15 +127,19 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
     onSubmit(values, gradeToEdit?.id);
     onOpenChange(false);
   };
+  
+  const title = gradeToEdit ? 'Note bearbeiten' : 'Neue Note / Planung';
+  const description = gradeToEdit 
+      ? 'Ändere die Details der Note.' 
+      : 'Füge eine neue Note hinzu. Lass das Notenfeld leer, um einen Termin zu planen.';
+  const buttonText = gradeToEdit ? 'Änderungen speichern' : 'Speichern';
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{gradeToEdit ? 'Note bearbeiten' : `Neue Note für ${subjectName}`}</DialogTitle>
-          <DialogDescription>
-            {gradeToEdit ? 'Ändere die Details für die Note.' : 'Gib die Details für die neue Note ein.'}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pt-4">
@@ -171,7 +179,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
               name="value"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Note (1-6)</FormLabel>
+                  <FormLabel>Note (optional, 1-6)</FormLabel>
                   <FormControl>
                     <Input type="number" step="1" placeholder="z.B. 2" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -302,7 +310,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
 
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-              <Button type="submit">{gradeToEdit ? 'Änderungen speichern' : 'Note speichern'}</Button>
+              <Button type="submit">{buttonText}</Button>
             </DialogFooter>
           </form>
         </Form>

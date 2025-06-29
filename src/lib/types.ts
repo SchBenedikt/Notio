@@ -23,7 +23,7 @@ export interface Grade {
   subjectId: string;
   type: GradeType;
   name?: string;
-  value: number;
+  value?: number;
   weight: number;
   date: string;
   notes?: string;
@@ -34,7 +34,7 @@ export type AddGradeData = {
   date: Date;
   type: GradeType;
   name?: string;
-  value: number;
+  value?: number;
   weight: number;
   notes?: string;
   attachments?: Attachment[];
@@ -101,6 +101,7 @@ export interface StudySet {
   description?: string;
   cards: StudyCard[];
   gradeLevel: number;
+  subjectId?: string;
 }
 
 export interface QuizQuestion {
