@@ -13,11 +13,12 @@ import { Button } from './ui/button';
 type FileManagementPageProps = {
   subjects: Subject[];
   grades: Grade[];
-  onEditGrade: (grade: Grade) => void;
+  onShowGradeInfo: (grade: Grade) => void;
 };
 
-export function FileManagementPage({ subjects, grades, onEditGrade }: FileManagementPageProps) {
+export function FileManagementPage({ subjects, grades, onShowGradeInfo }: FileManagementPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [openSubjects, setOpenSubjects] = useState<string[]>([]);
 
   const attachmentsBySubject = useMemo(() => {
     const grouped: { [subjectId: string]: { subject: Subject; files: { attachment: Attachment, grade: Grade }[] } } = {};
@@ -44,7 +45,7 @@ export function FileManagementPage({ subjects, grades, onEditGrade }: FileManage
     });
     
     if (!searchQuery.trim()) {
-      return Object.values(grouped);
+      return Object.values(grouped).sort((a, b) => a.subject.name.localeCompare(b.subject.name));
     }
 
     const lowercasedQuery = searchQuery.toLowerCase();
@@ -63,8 +64,8 @@ export function FileManagementPage({ subjects, grades, onEditGrade }: FileManage
         }
         return null;
     }).filter(group => group !== null) as { subject: Subject; files: { attachment: Attachment; grade: Grade }[] }[];
-
-    return filteredGroups;
+    
+    return filteredGroups.sort((a, b) => a.subject.name.localeCompare(b.subject.name));
 
   }, [grades, subjects, searchQuery]);
 
@@ -75,6 +76,9 @@ export function FileManagementPage({ subjects, grades, onEditGrade }: FileManage
   const filteredFileCount = useMemo(() => {
       return attachmentsBySubject.reduce((sum, group) => sum + (group?.files.length || 0), 0);
   },[attachmentsBySubject])
+
+  // If a search is active, all matching groups should be open
+  const accordionValue = searchQuery.trim() ? attachmentsBySubject.map(g => g.subject.id) : openSubjects;
 
 
   return (
@@ -112,7 +116,7 @@ export function FileManagementPage({ subjects, grades, onEditGrade }: FileManage
       </Card>
       
       {attachmentsBySubject.length > 0 ? (
-        <Accordion type="multiple" className="w-full space-y-2">
+        <Accordion type="multiple" value={accordionValue} onValueChange={setOpenSubjects} className="w-full space-y-2">
             {attachmentsBySubject.map(group => (
                 <AccordionItem key={group.subject.id} value={group.subject.id} className="border bg-card rounded-lg shadow-sm">
                     <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
@@ -144,7 +148,7 @@ export function FileManagementPage({ subjects, grades, onEditGrade }: FileManage
                                        </div>
                                    </div>
                                    <div className="flex items-center shrink-0">
-                                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditGrade(file.grade)} title="Zugehörige Note anzeigen">
+                                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onShowGradeInfo(file.grade)} title="Zugehörige Note anzeigen">
                                           <ExternalLink className="h-4 w-4" />
                                        </Button>
                                        <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0">

@@ -17,6 +17,7 @@ import { AddGradeDialog } from "./add-grade-dialog";
 import { EditSubjectDialog } from "./edit-subject-dialog";
 import { DataManagementPage } from "./data-management-page";
 import { FileManagementPage } from "./file-management-page";
+import { GradeInfoDialog } from "./grade-info-dialog";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -36,6 +37,8 @@ export default function Dashboard() {
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
+  const [gradeInfoDialogState, setGradeInfoDialogState] = useState<{isOpen: boolean, grade: Grade | null, subject: Subject | null}>({isOpen: false, grade: null, subject: null});
+
 
   const { toast } = useToast();
 
@@ -254,6 +257,17 @@ export default function Dashboard() {
     setEditSubjectState({ isOpen: true, subject });
   };
 
+  const handleOpenGradeInfoDialog = (grade: Grade) => {
+    const subject = subjects.find(s => s.id === grade.subjectId);
+    if (subject) {
+      setGradeInfoDialogState({ isOpen: true, grade, subject });
+    }
+  };
+
+  const handleCloseGradeInfoDialog = () => {
+    setGradeInfoDialogState({ isOpen: false, grade: null, subject: null });
+  };
+
 
   const handleExportCSV = () => {
     if (filteredSubjects.length === 0) {
@@ -367,7 +381,7 @@ export default function Dashboard() {
           <FileManagementPage
             subjects={subjectsForGradeLevel}
             grades={grades}
-            onEditGrade={handleOpenEditGradeDialog}
+            onShowGradeInfo={handleOpenGradeInfoDialog}
           />
         );
       default:
@@ -431,6 +445,12 @@ export default function Dashboard() {
           subject={editSubjectState.subject}
         />
       )}
+      <GradeInfoDialog 
+        isOpen={gradeInfoDialogState.isOpen}
+        onOpenChange={(isOpen) => !isOpen && handleCloseGradeInfoDialog()}
+        grade={gradeInfoDialogState.grade}
+        subject={gradeInfoDialogState.subject}
+      />
     </div>
   );
 }
