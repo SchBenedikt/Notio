@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db, isFirebaseEnabled } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function LoginPage() {
     const [loginEmail, setLoginEmail] = useState('');
@@ -23,6 +24,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
+    const { isFirebaseEnabled, firebaseError } = useAuth();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,7 +85,10 @@ export default function LoginPage() {
                 <div className="max-w-md w-full bg-card p-8 rounded-lg shadow-lg text-center">
                     <h1 className="text-2xl font-bold">Demo Modus</h1>
                     <p className="text-muted-foreground mt-2">
-                        Firebase ist nicht konfiguriert. Die App läuft im Offline-Demo-Modus. Deine Daten werden nicht gespeichert.
+                        {firebaseError 
+                          ? `Firebase Fehler: ${firebaseError}`
+                          : "Firebase ist nicht konfiguriert. Die App läuft im Offline-Demo-Modus."
+                        }
                     </p>
                     <Button onClick={() => router.push('/')} className="mt-6">
                         Weiter zum Dashboard

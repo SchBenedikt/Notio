@@ -3,29 +3,49 @@
 import { createContext, useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, isFirebaseEnabled } from '@/lib/firebase';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  isFirebaseEnabled: boolean;
+  firebaseError: string | null;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  isFirebaseEnabled: isFirebaseConfigured,
+  firebaseError: null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
+
+  const isEffectivelyEnabled = isFirebaseConfigured && !firebaseError;
 
   useEffect(() => {
-    if (isFirebaseEnabled) {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        setLoading(false);
-      });
+    if (isFirebaseConfigured) {
+      const unsubscribe = onAuthStateChanged(auth,
+        (user) => {
+          setUser(user);
+          setFirebaseError(null);
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Firebase Auth Error:", error);
+          if (error.code === 'auth/invalid-api-key') {
+             setFirebaseError('Ungültiger API-Schlüssel. Bitte überprüfe deine .env Konfiguration.');
+          } else {
+             setFirebaseError(`Firebase Fehler: ${error.message}`);
+          }
+          setUser(null);
+          setLoading(false);
+        }
+      );
       return () => unsubscribe();
     } else {
       // If firebase is not enabled, we are not loading and have no user.
@@ -53,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, isFirebaseEnabled: isEffectivelyEnabled, firebaseError }}>
       {children}
     </AuthContext.Provider>
   );

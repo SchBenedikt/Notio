@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
-import { auth, db, isFirebaseEnabled } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView } from "@/lib/types";
 import { AppHeader } from "./header";
@@ -26,7 +26,7 @@ import { CommandPalette } from "./command-palette";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isFirebaseEnabled } = useAuth();
   const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -63,7 +63,7 @@ export default function Dashboard() {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
     }
-  }, [user, settingsDocRef, toast]);
+  }, [user, settingsDocRef, toast, isFirebaseEnabled]);
 
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function Dashboard() {
         setGrades([]);
         setDataLoading(false);
     }
-  }, [user, selectedGradeLevel, settingsDocRef, toast]);
+  }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
 
 
   useEffect(() => {

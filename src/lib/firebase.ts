@@ -11,20 +11,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const isFirebaseEnabled = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
+export const isFirebaseConfigured = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (isFirebaseEnabled) {
+if (isFirebaseConfigured) {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   db = getFirestore(app);
 } else {
   console.warn("Firebase configuration is missing or incomplete. Firebase services will be disabled.");
   // Assign dummy objects to satisfy TypeScript, but they won't be used
-  // because of the isFirebaseEnabled check in the app.
+  // because of the isFirebaseConfigured check in the app.
   app = {} as FirebaseApp;
   auth = {} as Auth;
   db = {} as Firestore;

@@ -4,10 +4,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Dashboard from '@/components/dashboard';
-import { isFirebaseEnabled } from '@/lib/firebase';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading, isFirebaseEnabled } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,7 +14,7 @@ export default function Home() {
     if (isFirebaseEnabled && !loading && !user) {
       router.replace('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isFirebaseEnabled]);
 
   // In demo mode (isFirebaseEnabled is false), user will be null but we still show the dashboard.
   // When loading, we show nothing to prevent a flash of content.
