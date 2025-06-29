@@ -218,7 +218,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
                         selected={field.value}
                         onSelect={field.onChange}
                           disabled={(date) =>
-                          date > new Date() || date < new Date("2000-01-01")
+                          date < new Date("2000-01-01")
                         }
                         initialFocus
                       />

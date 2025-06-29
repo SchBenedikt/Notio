@@ -666,6 +666,8 @@ export default function Dashboard() {
             onEditSubject={handleOpenEditSubjectDialog}
             onShowGradeInfo={handleOpenGradeInfoDialog}
             onEditGrade={handleOpenEditGradeDialog}
+            studySets={studySets}
+            onViewStudySet={handleViewStudySet}
           />
         );
       case 'studysets':

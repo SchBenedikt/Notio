@@ -1,6 +1,6 @@
 "use client";
 
-import { Subject, Grade } from "@/lib/types";
+import { Subject, Grade, StudySet } from "@/lib/types";
 import { SubjectCard } from "./subject-card";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
@@ -10,6 +10,7 @@ type SubjectListProps = {
   mainSubjects: Subject[];
   minorSubjects: Subject[];
   grades: Grade[];
+  studySets: StudySet[];
   onDeleteSubject: (subjectId: string) => void;
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   onAddSubject: () => void;
@@ -18,6 +19,7 @@ type SubjectListProps = {
   onEditSubject: (subject: Subject) => void;
   onShowGradeInfo: (grade: Grade) => void;
   onEditGrade: (grade: Grade) => void;
+  onViewStudySet: (id: string) => void;
   onOpenCommandPalette: () => void;
 };
 
@@ -25,6 +27,7 @@ export function SubjectList({
   mainSubjects, 
   minorSubjects, 
   grades, 
+  studySets,
   onDeleteSubject, 
   onUpdateSubject,
   onAddSubject,
@@ -33,6 +36,7 @@ export function SubjectList({
   onEditSubject,
   onShowGradeInfo,
   onEditGrade,
+  onViewStudySet,
   onOpenCommandPalette
 }: SubjectListProps) {
   
@@ -57,6 +61,7 @@ export function SubjectList({
           key={subject.id}
           subject={subject}
           grades={grades.filter((g) => g.subjectId === subject.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
+          studySets={studySets}
           onDeleteSubject={onDeleteSubject}
           onUpdateSubject={onUpdateSubject}
           animationIndex={startIndex + index}
@@ -64,6 +69,7 @@ export function SubjectList({
           onEditSubject={onEditSubject}
           onShowGradeInfo={onShowGradeInfo}
           onEditGrade={onEditGrade}
+          onViewStudySet={onViewStudySet}
         />
       ))}
     </Accordion>
