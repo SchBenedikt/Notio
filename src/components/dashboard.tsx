@@ -343,8 +343,6 @@ export default function Dashboard() {
             mainSubjects={mainSubjects}
             minorSubjects={minorSubjects}
             grades={grades}
-            onSaveGrade={handleSaveGrade}
-            onDeleteGrade={handleDeleteGrade}
             onDeleteSubject={handleDeleteSubject}
             onUpdateSubject={handleUpdateSubject}
             onAddSubject={() => setIsAddSubjectOpen(true)}
@@ -352,8 +350,8 @@ export default function Dashboard() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onAddGradeToSubject={handleOpenAddGradeDialog}
-            onEditGrade={handleOpenEditGradeDialog}
             onEditSubject={handleOpenEditSubjectDialog}
+            onShowGradeInfo={handleOpenGradeInfoDialog}
           />
         );
       case 'tutor':
@@ -445,11 +443,19 @@ export default function Dashboard() {
           subject={editSubjectState.subject}
         />
       )}
-      <GradeInfoDialog 
+      <GradeInfoDialog
         isOpen={gradeInfoDialogState.isOpen}
         onOpenChange={(isOpen) => !isOpen && handleCloseGradeInfoDialog()}
         grade={gradeInfoDialogState.grade}
         subject={gradeInfoDialogState.subject}
+        onEdit={(grade) => {
+            handleCloseGradeInfoDialog();
+            handleOpenEditGradeDialog(grade);
+        }}
+        onDelete={(gradeId) => {
+            handleCloseGradeInfoDialog();
+            handleDeleteGrade(gradeId);
+        }}
       />
     </div>
   );

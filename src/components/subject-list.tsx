@@ -11,8 +11,6 @@ type SubjectListProps = {
   mainSubjects: Subject[];
   minorSubjects: Subject[];
   grades: Grade[];
-  onSaveGrade: (subjectId: string, values: AddGradeData, gradeId?: string) => void;
-  onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   onAddSubject: () => void;
@@ -20,16 +18,14 @@ type SubjectListProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddGradeToSubject: (subjectId: string) => void;
-  onEditGrade: (grade: Grade) => void;
   onEditSubject: (subject: Subject) => void;
+  onShowGradeInfo: (grade: Grade) => void;
 };
 
 export function SubjectList({ 
   mainSubjects, 
   minorSubjects, 
   grades, 
-  onSaveGrade, 
-  onDeleteGrade, 
   onDeleteSubject, 
   onUpdateSubject,
   onAddSubject,
@@ -37,8 +33,8 @@ export function SubjectList({
   searchQuery,
   onSearchChange,
   onAddGradeToSubject,
-  onEditGrade,
-  onEditSubject
+  onEditSubject,
+  onShowGradeInfo
 }: SubjectListProps) {
   
   if (totalSubjectsCount === 0) {
@@ -62,14 +58,12 @@ export function SubjectList({
           key={subject.id}
           subject={subject}
           grades={grades.filter((g) => g.subjectId === subject.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
-          onSaveGrade={onSaveGrade}
-          onDeleteGrade={onDeleteGrade}
           onDeleteSubject={onDeleteSubject}
           onUpdateSubject={onUpdateSubject}
           animationIndex={startIndex + index}
           onAddGradeToSubject={onAddGradeToSubject}
-          onEditGrade={onEditGrade}
           onEditSubject={onEditSubject}
+          onShowGradeInfo={onShowGradeInfo}
         />
       ))}
     </Accordion>

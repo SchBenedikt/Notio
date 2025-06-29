@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, Trash2, ChevronDown, Settings, Pencil, Crosshair, Paperclip } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -58,17 +58,15 @@ const GoalProgress = ({ finalGrade, targetGrade }: { finalGrade: string; targetG
 type SubjectCardProps = {
   subject: Subject;
   grades: Grade[];
-  onSaveGrade: (subjectId: string, values: AddGradeData, gradeId?: string) => void;
-  onDeleteGrade: (gradeId: string) => void;
   onDeleteSubject: (subjectId: string) => void;
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   onAddGradeToSubject: (subjectId: string) => void;
-  onEditGrade: (grade: Grade) => void;
   onEditSubject: (subject: Subject) => void;
+  onShowGradeInfo: (grade: Grade) => void;
   animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditGrade, onEditSubject, animationIndex }: SubjectCardProps) {
+export function SubjectCard({ subject, grades, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditSubject, onShowGradeInfo, animationIndex }: SubjectCardProps) {
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   
   const [writtenWeight, setWrittenWeight] = useState(subject.writtenWeight ?? 2);
@@ -99,64 +97,39 @@ export function SubjectCard({ subject, grades, onSaveGrade, onDeleteGrade, onDel
   }
 
   const renderGradeItem = (grade: Grade) => (
-    <li key={grade.id} className="flex items-start justify-between p-2 rounded-md bg-muted/50">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3">
-            {grade.type === "Schulaufgabe" ? <PenLine className="h-5 w-5 text-muted-foreground" /> : <MessageSquareText className="h-5 w-5 text-muted-foreground" />}
-            <div className="flex-1">
-              <p className="font-medium text-sm">
-                {grade.name || grade.type} <span className="text-xs text-muted-foreground">(x{grade.weight})</span>
-              </p>
-              <p className="text-xs text-muted-foreground">{new Date(grade.date).toLocaleDateString('de-DE')}</p>
+     <li key={grade.id}>
+      <button
+        onClick={() => onShowGradeInfo(grade)}
+        className="w-full flex items-start justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-left"
+      >
+        <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3">
+                {grade.type === "Schulaufgabe" ? <PenLine className="h-5 w-5 text-muted-foreground" /> : <MessageSquareText className="h-5 w-5 text-muted-foreground" />}
+                <div className="flex-1">
+                <p className="font-medium text-sm">
+                    {grade.name || grade.type} <span className="text-xs text-muted-foreground">(x{grade.weight})</span>
+                </p>
+                <p className="text-xs text-muted-foreground">{new Date(grade.date).toLocaleDateString('de-DE')}</p>
+                </div>
+            </div>
+            {grade.notes && <p className="text-xs text-muted-foreground pt-1 italic pl-8">"{grade.notes}"</p>}
+            {grade.attachments && grade.attachments.length > 0 && (
+            <div className="mt-2 pl-8 space-y-1">
+                {grade.attachments.map((attachment, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs text-primary">
+                        <Paperclip className="h-3 w-3" />
+                        <span className="truncate">{attachment.name}</span>
+                    </div>
+                ))}
+            </div>
+            )}
+        </div>
+        <div className="flex items-center gap-1">
+            <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
+            {grade.value.toFixed(0)}
             </div>
         </div>
-        {grade.notes && <p className="text-xs text-muted-foreground pt-1 italic pl-8">"{grade.notes}"</p>}
-        {grade.attachments && grade.attachments.length > 0 && (
-          <div className="mt-2 pl-8 space-y-1">
-            {grade.attachments.map((attachment, index) => (
-                <a 
-                    key={index}
-                    href={attachment.dataUrl} 
-                    download={attachment.name}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-primary hover:underline"
-                >
-                    <Paperclip className="h-3 w-3" />
-                    <span className="truncate">{attachment.name}</span>
-                </a>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1">
-        <div className={`flex items-center justify-center h-8 w-8 rounded-md font-bold text-sm border ${getGradeColor(grade.value)}`}>
-          {grade.value.toFixed(0)}
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => onEditGrade(grade)}>
-            <Pencil className="h-4 w-4"/>
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-              <Trash2 className="h-4 w-4"/>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Note löschen?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Diese Aktion kann nicht rückgängig gemacht werden. Möchtest du diese Note wirklich dauerhaft löschen?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction onClick={() => onDeleteGrade(grade.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      </button>
     </li>
   );
 
