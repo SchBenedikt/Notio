@@ -175,6 +175,7 @@ export default function Dashboard() {
         secretDescription: def.secretDescription,
         icon: def.icon,
         tier: def.tier,
+        isRepeatable: def.isRepeatable,
         unlocked: result.unlocked,
         progress: result.progress,
       };

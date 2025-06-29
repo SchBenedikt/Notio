@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Award as AwardIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Badge } from "./ui/badge";
 
 const tierStyles = {
   bronze: {
@@ -47,13 +48,18 @@ const AwardCard = ({ award }: { award: AwardType }) => {
               <div className={cn("p-3 rounded-lg", styles.iconBg)}>
                   <award.icon className={cn("h-6 w-6", styles.iconText)} />
               </div>
-              <div>
-                  <CardTitle className="text-base font-bold">{award.name}</CardTitle>
+              <div className="flex-1">
+                   <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-bold">{award.name}</CardTitle>
+                        {award.isRepeatable && award.progress && award.progress.current > 0 && (
+                            <Badge variant="secondary" className={cn("font-bold", styles.text, styles.iconBg)}>x{award.progress.current}</Badge>
+                        )}
+                    </div>
                   <p className="text-sm text-muted-foreground mt-1">{award.description}</p>
               </div>
           </CardHeader>
           <CardContent className="pt-0 mt-auto">
-              {award.progress && award.progress.target > 1 && award.progress.current < award.progress.target && (
+              {!award.isRepeatable && award.progress && award.progress.target > 1 && award.progress.current < award.progress.target && (
                   <div className="mt-2">
                        <div className="flex justify-between text-xs mb-1">
                             <span className={cn(styles.text, "font-semibold")}>Fortschritt</span>

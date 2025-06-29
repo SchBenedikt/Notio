@@ -52,6 +52,7 @@ export interface Award {
   icon: React.ComponentType<{ className?: string }>;
   unlocked: boolean;
   tier: 'bronze' | 'silver' | 'gold' | 'special';
+  isRepeatable?: boolean;
   progress?: {
     current: number;
     target: number;

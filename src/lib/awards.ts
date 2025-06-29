@@ -17,6 +17,7 @@ type AwardDefinition = {
     secretDescription: string;
     icon: React.ComponentType<{ className?: string }>;
     tier: 'bronze' | 'silver' | 'gold' | 'special';
+    isRepeatable?: boolean;
     check: (subjects: Subject[], grades: Grade[], overallAverage: string) => AwardCheckResult;
 }
 
@@ -99,22 +100,28 @@ export const awardsDefinitions: AwardDefinition[] = [
     {
         id: 'first_one',
         name: 'Spitzenleistung',
-        description: 'Wow! Deine erste 1. Das ist eine Feier wert.',
+        description: 'Eine 1 erzielt. Das ist eine Feier wert!',
         secretDescription: 'Erziele eine 1 in einer Prüfung.',
         icon: Star,
         tier: 'silver',
-        check: (_, grades) => ({ unlocked: grades.some(g => g.value === 1) }),
+        isRepeatable: true,
+        check: (_, grades) => {
+            const count = grades.filter(g => g.value === 1).length;
+            return { unlocked: count > 0, progress: { current: count, target: 1 } };
+        },
     },
     {
         id: 'main_subject_one',
         name: 'Hauptfach-Held',
-        description: 'Eine 1 in einem Hauptfach. Das ist die Königsklasse!',
+        description: 'Eine 1 in einem Hauptfach erzielt. Das ist die Königsklasse!',
         secretDescription: 'Erziele eine 1 in einem Hauptfach.',
         icon: AwardIcon,
         tier: 'gold',
+        isRepeatable: true,
         check: (subjects, grades) => {
             const mainSubjectIds = subjects.filter(s => s.category === 'Hauptfach').map(s => s.id);
-            return { unlocked: grades.some(g => g.value === 1 && mainSubjectIds.includes(g.subjectId)) };
+            const count = grades.filter(g => g.value === 1 && mainSubjectIds.includes(g.subjectId)).length;
+            return { unlocked: count > 0, progress: { current: count, target: 1 } };
         },
     },
     {
