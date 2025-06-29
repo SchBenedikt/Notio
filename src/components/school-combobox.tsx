@@ -12,7 +12,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command"
 import {
   Popover,
@@ -57,62 +56,60 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {selectedSchool
-              ? selectedSchool.name
-              : "Schule auswählen..."}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-          <Command>
-            <CommandInput placeholder="Schule suchen..." />
-            <CommandList>
-              <CommandEmpty>Keine Schule gefunden.</CommandEmpty>
-              <CommandGroup>
-                {schools.map((school) => (
-                  <CommandItem
-                    key={school.id}
-                    value={school.name}
-                    onSelect={() => {
-                      onChange(school.id)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === school.id ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {school.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                  <CommandItem
+      <div className="flex items-center gap-2">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between flex-1"
+            >
+              {selectedSchool
+                ? selectedSchool.name
+                : "Schule auswählen..."}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+            <Command>
+              <CommandInput placeholder="Schule suchen..." />
+              <CommandList>
+                <CommandEmpty>Keine Schule gefunden.</CommandEmpty>
+                <CommandGroup>
+                  {schools.map((school) => (
+                    <CommandItem
+                      key={school.id}
+                      value={school.name}
                       onSelect={() => {
+                        onChange(school.id)
                         setOpen(false)
-                        setAddSchoolDialogOpen(true)
                       }}
-                      className="cursor-pointer"
-                  >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Neue Schule hinzufügen
-                  </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === school.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {school.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setAddSchoolDialogOpen(true)}
+            aria-label="Neue Schule hinzufügen"
+        >
+            <PlusCircle className="h-4 w-4" />
+        </Button>
+      </div>
 
       <Dialog open={isAddSchoolDialogOpen} onOpenChange={setAddSchoolDialogOpen}>
         <DialogContent>
