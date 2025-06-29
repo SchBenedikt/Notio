@@ -14,6 +14,13 @@ import { de } from "date-fns/locale";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   File as FileIcon,
   Paperclip,
   Calendar,
@@ -23,6 +30,7 @@ import {
   FileText,
   Pencil,
   Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -159,14 +167,30 @@ export function GradeInfoDialog({
             </div>
           )}
         </div>
-        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Löschen
-                </Button>
-              </AlertDialogTrigger>
+        <DialogFooter className="sm:justify-between">
+          <AlertDialog>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                   <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Weitere Optionen</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => onEdit(grade)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Bearbeiten
+                  </DropdownMenuItem>
+                   <DropdownMenuSeparator />
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Löschen
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Note wirklich löschen?</AlertDialogTitle>
@@ -184,11 +208,7 @@ export function GradeInfoDialog({
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
-            </AlertDialog>
-            <Button variant="ghost" onClick={() => onEdit(grade)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Bearbeiten
-            </Button>
+          </AlertDialog>
             <Button type="button" onClick={() => onOpenChange(false)}>
               Schließen
             </Button>
