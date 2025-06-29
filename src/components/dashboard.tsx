@@ -15,7 +15,7 @@ import { SidebarContent } from "./sidebar-content";
 import { GradeCalculatorPage } from "./grade-calculator-page";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { EditSubjectDialog } from "./edit-subject-dialog";
-import { StudyCoachPage } from "./study-coach-page";
+import { DataManagementPage } from "./data-management-page";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator' | 'coach'>('subjects');
+  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator' | 'data'>('subjects');
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
@@ -354,11 +354,11 @@ export default function Dashboard() {
               allGrades={grades} 
           />
         );
-      case 'coach':
+       case 'data':
         return (
-          <StudyCoachPage
-            subjects={subjectsForGradeLevel}
-            allGrades={grades}
+          <DataManagementPage
+            onImport={handleImportCSV}
+            onExport={handleExportCSV}
           />
         );
       default:
@@ -393,8 +393,6 @@ export default function Dashboard() {
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
           onIsDarkModeChange={(isDark) => setStoredDarkMode(isDark ? isDark : null)}
-          onExport={handleExportCSV}
-          onImport={handleImportCSV}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {renderView()}

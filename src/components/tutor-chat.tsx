@@ -20,7 +20,7 @@ type TutorChatProps = {
 
 export function TutorChat({ subjects, allGrades }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen?" }
+    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst auch den Lern-Coach für ein bestimmtes Fach starten." }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,9 +86,9 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
           <div>
             <h3 className="font-semibold text-lg flex items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
-                KI-Tutor Chat
+                KI-Tutor
             </h3>
-            <p className="text-sm text-muted-foreground">Stelle Fragen zu deinen Fächern und Noten.</p>
+            <p className="text-sm text-muted-foreground">Stelle Fragen und erhalte eine Lernanalyse.</p>
           </div>
           <Popover>
             <PopoverTrigger asChild>

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject, Grade, Attachment } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, BrainCircuit } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -62,8 +62,8 @@ type SidebarContentProps = {
   oralGradesCount: number;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  currentView: 'subjects' | 'tutor' | 'calculator' | 'coach';
-  onSetView: (view: 'subjects' | 'tutor' | 'calculator' | 'coach') => void;
+  currentView: 'subjects' | 'tutor' | 'calculator' | 'data';
+  onSetView: (view: 'subjects' | 'tutor' | 'calculator' | 'data') => void;
   onClose?: () => void;
 };
 
@@ -99,7 +99,7 @@ export function SidebarContent({
     const gradeAttachments = gradeForm.watch('attachments');
 
 
-    const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator' | 'coach') => {
+    const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator' | 'data') => {
         onSetView(view);
         if (onClose) onClose();
     }
@@ -192,11 +192,11 @@ export function SidebarContent({
                     KI-Tutor
                 </Button>
                  <Button 
-                    variant={currentView === 'coach' ? "secondary" : "ghost"} 
+                    variant={currentView === 'data' ? "secondary" : "ghost"} 
                     className="justify-start w-full"
-                    onClick={() => handleViewChange('coach')}>
-                     <BrainCircuit className="mr-2 h-4 w-4" />
-                    Lern-Coach
+                    onClick={() => handleViewChange('data')}>
+                     <Database className="mr-2 h-4 w-4" />
+                    Datenverwaltung
                 </Button>
             </div>
 
