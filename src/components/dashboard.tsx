@@ -166,14 +166,19 @@ export default function Dashboard() {
   }, [gradesForFilteredSubjects]);
 
   const awards = useMemo<Award[]>(() => {
-    return awardsDefinitions.map(def => ({
-      id: def.id,
-      name: def.name,
-      description: def.description,
-      secretDescription: def.secretDescription,
-      icon: def.icon,
-      unlocked: def.check(subjectsForGradeLevel, gradesForFilteredSubjects, overallAverage),
-    }));
+    return awardsDefinitions.map(def => {
+      const result = def.check(subjectsForGradeLevel, gradesForFilteredSubjects, overallAverage);
+      return {
+        id: def.id,
+        name: def.name,
+        description: def.description,
+        secretDescription: def.secretDescription,
+        icon: def.icon,
+        tier: def.tier,
+        unlocked: result.unlocked,
+        progress: result.progress,
+      };
+    });
   }, [subjectsForGradeLevel, gradesForFilteredSubjects, overallAverage]);
 
   const handleAddSubject = (values: AddSubjectData) => {

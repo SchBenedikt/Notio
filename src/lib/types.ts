@@ -51,4 +51,9 @@ export interface Award {
   secretDescription: string;
   icon: React.ComponentType<{ className?: string }>;
   unlocked: boolean;
+  tier: 'bronze' | 'silver' | 'gold' | 'special';
+  progress?: {
+    current: number;
+    target: number;
+  };
 }
