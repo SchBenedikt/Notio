@@ -510,12 +510,12 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     if (!isFirebaseEnabled) {
-        router.push('/login');
+        router.push('/');
         return;
     }
     try {
       await auth.signOut();
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       toast({ title: "Fehler beim Abmelden", variant: "destructive" });
     }

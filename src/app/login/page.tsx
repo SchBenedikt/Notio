@@ -55,7 +55,7 @@ export default function LoginPage() {
         setLoading(true);
         try {
             await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-            router.push('/');
+            router.push('/dashboard');
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 bio: `Hallo, ich bin ${signupName}! Ich benutze Noten Meister, um meine Noten zu verwalten.`
             });
             
-            router.push('/');
+            router.push('/dashboard');
         } catch (error: any) {
              toast({
                 variant: 'destructive',
@@ -144,7 +144,7 @@ export default function LoginPage() {
                 });
             }
 
-            router.push('/');
+            router.push('/dashboard');
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -171,7 +171,7 @@ export default function LoginPage() {
                           : "Firebase ist nicht konfiguriert. Die App läuft im Offline-Demo-Modus."
                         }
                     </p>
-                    <Button onClick={() => router.push('/')} className="mt-6">
+                    <Button onClick={() => router.push('/dashboard')} className="mt-6">
                         Weiter zum Dashboard
                     </Button>
                 </div>
