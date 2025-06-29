@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
-import type { Post, Profile } from '@/lib/types';
+import type { Post, Profile, Subject, Grade, Attachment } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Loader2, Users, MessageSquare, Repeat, Flag, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Heart, Loader2, Users, MessageSquare, Repeat, Flag, MoreHorizontal, Pencil, Trash2, Paperclip, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { EditPostDialog } from './edit-post-dialog';
 import { PostComments } from './post-comments';
+import { PostFileSelectionDialog } from './post-file-selection-dialog';
 
 const PostSkeleton = () => (
     <Card>
@@ -46,12 +47,16 @@ type CommunityPageProps = {
   currentUserProfile: Profile | null;
   onViewProfile: (userId: string) => void;
   onToggleFollow: (targetUserId: string) => void;
+  subjects: Subject[];
+  grades: Grade[];
 }
 
-export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollow }: CommunityPageProps) {
+export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollow, subjects, grades }: CommunityPageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const [newPostContent, setNewPostContent] = useState('');
+  const [newPostAttachments, setNewPostAttachments] = useState<Attachment[]>([]);
+  const [isFileSelectorOpen, setFileSelectorOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -99,8 +104,8 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
   }, [isFirebaseEnabled, toast]);
 
   const handlePostSubmit = async () => {
-    if (!newPostContent.trim() || !user || !user.displayName) {
-        toast({ title: "Fehler", description: "Du musst angemeldet sein und einen Anzeigenamen haben, um zu posten.", variant: "destructive" });
+    if ((!newPostContent.trim() && newPostAttachments.length === 0) || !user || !user.displayName) {
+        toast({ title: "Fehler", description: "Der Beitrag muss Inhalt oder einen Anhang haben.", variant: "destructive" });
         return;
     }
     setIsSubmitting(true);
@@ -109,11 +114,13 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
         authorId: user.uid,
         authorName: user.displayName,
         content: newPostContent,
+        attachments: newPostAttachments,
         likes: [],
         commentCount: 0,
         createdAt: serverTimestamp(),
       });
       setNewPostContent('');
+      setNewPostAttachments([]);
       toast({ title: "Beitrag veröffentlicht!" });
     } catch (error: any) {
       console.error("Error adding post: ", error);
@@ -172,6 +179,14 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
     setVisibleComments(prev => prev === postId ? null : postId);
   };
 
+  const removeSelectedAttachment = (indexToRemove: number) => {
+    setNewPostAttachments(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const hasAnyAttachmentsInApp = useMemo(() => {
+    return grades.some(g => g.attachments && g.attachments.length > 0);
+  }, [grades]);
+
   const profilesMap = new Map(profiles.map(p => [p.uid, p]));
   
   return (
@@ -201,10 +216,31 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
               maxLength={1000}
               disabled={!user || isSubmitting}
             />
-            <Button onClick={handlePostSubmit} disabled={isSubmitting || !newPostContent.trim() || !user}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Beitrag veröffentlichen
-            </Button>
+            {newPostAttachments.length > 0 && (
+                <div className="p-2 border rounded-lg space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Anhänge:</p>
+                    {newPostAttachments.map((att, index) => (
+                        <div key={index} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded-md">
+                             <div className="flex items-center gap-2 truncate">
+                                <Paperclip className="h-4 w-4" />
+                                <span className="truncate">{att.name}</span>
+                             </div>
+                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeSelectedAttachment(index)}>
+                                <X className="h-4 w-4" />
+                             </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            <div className="flex justify-between items-center">
+                <Button variant="outline" size="icon" onClick={() => setFileSelectorOpen(true)} disabled={!hasAnyAttachmentsInApp || isSubmitting} title="Datei anhängen">
+                    <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button onClick={handlePostSubmit} disabled={isSubmitting || (!newPostContent.trim() && newPostAttachments.length === 0) || !user}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Beitrag veröffentlichen
+                </Button>
+            </div>
           </div>
            {!user && (
             <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -283,6 +319,23 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                     </CardHeader>
                     <CardContent>
                         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+                        {post.attachments && post.attachments.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                                {post.attachments.map((att, index) => (
+                                    <a
+                                        key={index}
+                                        href={att.dataUrl}
+                                        download={att.name}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 p-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-sm font-medium text-primary"
+                                    >
+                                        <Paperclip className="h-4 w-4" />
+                                        <span>{att.name}</span>
+                                    </a>
+                                ))}
+                            </div>
+                        )}
                         <div className="flex items-center gap-2 mt-4 pt-4 border-t">
                             <Button variant="ghost" size="sm" onClick={() => handleLikePost(post.id)} disabled={!user}>
                                 <Heart className={`mr-2 h-4 w-4 ${hasLiked ? 'text-red-500 fill-current' : ''}`} />
@@ -323,6 +376,13 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
             onUpdate={handleUpdatePost}
         />
       )}
+      <PostFileSelectionDialog
+        isOpen={isFileSelectorOpen}
+        onOpenChange={setFileSelectorOpen}
+        onFilesSelected={(files) => setNewPostAttachments(prev => [...prev, ...files])}
+        subjects={subjects}
+        grades={grades}
+      />
     </div>
   );
 }

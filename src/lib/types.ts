@@ -71,6 +71,7 @@ export interface Post {
   likes: string[];
   commentCount: number;
   createdAt: Timestamp;
+  attachments?: Attachment[];
 }
 
 export interface Award {

@@ -635,6 +635,8 @@ export default function Dashboard() {
                   currentUserProfile={profile}
                   onViewProfile={handleViewProfile}
                   onToggleFollow={handleToggleFollow}
+                  subjects={subjectsForGradeLevel}
+                  grades={grades}
                />;
       case 'user-profile':
         if (viewingProfileId) {
