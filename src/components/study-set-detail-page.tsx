@@ -21,7 +21,7 @@ type StudySetDetailPageProps = {
 };
 
 export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDetailPageProps) {
-  const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'quiz' | 'match' | 'test'>('list');
+  const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'match' | 'quiz' | 'test'>('list');
 
   const hasCards = studySet.cards.length > 0;
 
@@ -92,11 +92,11 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDeta
         <TabsContent value="write" className="mt-4">
             {hasCards ? <WriteView cards={studySet.cards} /> : null}
         </TabsContent>
+         <TabsContent value="match" className="mt-4">
+            {hasCards ? <MatchView cards={studySet.cards} /> : null}
+        </TabsContent>
          <TabsContent value="quiz" className="mt-4">
             {hasCards ? <StudySetQuizView studySet={studySet} /> : null}
-        </TabsContent>
-        <TabsContent value="match" className="mt-4">
-            {hasCards ? <MatchView cards={studySet.cards} /> : null}
         </TabsContent>
         <TabsContent value="test" className="mt-4">
             {hasCards ? <StudySetTestView studySet={studySet} /> : null}
