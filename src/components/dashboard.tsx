@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView } from "@/lib/types";
@@ -58,7 +58,8 @@ export default function Dashboard() {
   const updateSetting = useCallback(async (key: string, value: any) => {
     if (!user || !isFirebaseEnabled || !settingsDocRef) return;
     try {
-      await updateDoc(settingsDocRef, { [key]: value });
+      // Using setDoc with merge: true is safer as it creates the doc if it doesn't exist.
+      await setDoc(settingsDocRef, { [key]: value }, { merge: true });
     } catch (error) {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
@@ -85,6 +86,26 @@ export default function Dashboard() {
                 setIsDarkMode(settingsData.isDarkMode || false);
                 setUserRole(settingsData.role || 'student');
                 setUserSchool(settingsData.school || '');
+              } else {
+                 // Settings document doesn't exist, create it with defaults
+                const defaultSettings = {
+                  selectedGradeLevel: 10,
+                  mainSubjectWeight: 2,
+                  minorSubjectWeight: 1,
+                  theme: 'blue',
+                  isDarkMode: false,
+                  role: 'student',
+                  school: '',
+                };
+                await setDoc(settingsDocRef, defaultSettings);
+                // Set the state with the defaults we just saved
+                setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
+                setMainSubjectWeight(defaultSettings.mainSubjectWeight);
+                setMinorSubjectWeight(defaultSettings.minorSubjectWeight);
+                setTheme(defaultSettings.theme);
+                setIsDarkMode(defaultSettings.isDarkMode);
+                setUserRole(defaultSettings.role as 'student' | 'teacher');
+                setUserSchool(defaultSettings.school);
               }
             }
             
@@ -645,3 +666,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    
