@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, LogOut, User, Settings as SettingsIcon } from "lucide-react";
+import { Menu, LogOut, User, Settings as SettingsIcon, LayoutDashboard, BrainCircuit, Calculator, MessageCircle, Users, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,30 +17,45 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { AppView } from "@/lib/types";
+import { Logo } from "./logo";
+import { cn } from "@/lib/utils";
 
 type AppHeaderProps = {
   selectedGradeLevel: number;
   onGradeLevelChange: (gradeLevel: number) => void;
   onOpenMobileSidebar: () => void;
-  overallAverage: string;
   onLogout: () => void;
   onNavigate: (view: AppView) => void;
+  currentView: AppView;
 };
+
+const navItems = [
+  { view: 'subjects' as AppView, label: 'Fächer', icon: LayoutDashboard },
+  { view: 'studysets' as AppView, label: 'Lernsets', icon: BrainCircuit },
+  { view: 'calculator' as AppView, label: 'Rechner', icon: Calculator },
+  { view: 'tutor' as AppView, label: 'KI-Tutor', icon: MessageCircle },
+  { view: 'community' as AppView, label: 'Community', icon: Users },
+  { view: 'awards' as AppView, label: 'Awards', icon: Award },
+]
 
 export function AppHeader({ 
   selectedGradeLevel, 
   onGradeLevelChange, 
   onOpenMobileSidebar,
-  overallAverage,
   onLogout,
-  onNavigate
+  onNavigate,
+  currentView
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
   return (
     <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2">
+           <div className="hidden lg:flex items-center gap-3 mr-4">
+              <Logo />
+              <h1 className="text-xl font-bold">Gradido</h1>
+            </div>
           <Button
             variant="ghost"
             size="icon"
@@ -50,15 +65,24 @@ export function AppHeader({
             <Menu className="h-6 w-6" />
             <span className="sr-only">Menü öffnen</span>
           </Button>
-          <h1 className="text-2xl font-bold text-foreground lg:hidden">Noten Meister</h1>
-          {overallAverage !== '-' && (
-            <div className="flex sm:hidden items-baseline gap-2 border-l pl-2 sm:pl-4">
-              <span className="text-sm font-medium text-muted-foreground">Schnitt</span>
-              <span className="text-2xl font-bold text-primary">{overallAverage}</span>
-            </div>
-          )}
         </div>
-        <div className="flex items-center gap-2 ml-auto">
+
+        <nav className="hidden lg:flex items-center gap-1 rounded-full bg-muted p-1">
+            {navItems.map((item) => (
+                <Button 
+                    key={item.view}
+                    variant={currentView === item.view ? "secondary" : "ghost"} 
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => onNavigate(item.view)}
+                >
+                     <item.icon className={cn("h-4 w-4", currentView === item.view ? "text-primary" : "text-muted-foreground")} />
+                     <span className="ml-2">{item.label}</span>
+                </Button>
+            ))}
+        </nav>
+        
+        <div className="flex items-center gap-2">
           <Select
             value={String(selectedGradeLevel)}
             onValueChange={(value) => onGradeLevelChange(Number(value))}

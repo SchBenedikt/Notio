@@ -841,9 +841,9 @@ export default function Dashboard() {
             updateSetting('selectedGradeLevel', level);
           }}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-          overallAverage={overallAverage}
           onLogout={handleLogout}
           onNavigate={setAppView}
+          currentView={view}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {renderView()}
