@@ -87,11 +87,8 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
                     <CommandItem
                       key={school.id}
                       value={school.name}
-                      onSelect={(currentValue) => {
-                        const selectedId = schools.find(s => s.name.toLowerCase() === currentValue.toLowerCase())?.id
-                        if (selectedId) {
-                            onChange(selectedId);
-                        }
+                      onSelect={() => {
+                        onChange(school.id)
                         setOpen(false)
                       }}
                     >
