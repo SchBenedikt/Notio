@@ -51,6 +51,15 @@ export interface Profile {
   bio?: string;
 }
 
+export interface Post {
+  id: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  likes: string[];
+  createdAt: any;
+}
+
 export interface Award {
   id: string;
   name: string;

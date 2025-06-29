@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -42,6 +42,10 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState('student');
   const [userSchool, setUserSchool] = useState('');
   const [userName, setUserName] = useState<string | null>(null);
+
+  // Community State
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -146,6 +150,33 @@ export default function Dashboard() {
         setDataLoading(false);
     }
   }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
+
+
+  // Real-time listeners for community features
+  useEffect(() => {
+    if (!user || !isFirebaseEnabled) {
+      setPosts([]);
+      setProfiles([]);
+      return;
+    }
+
+    // Listen for all profiles
+    const profilesUnsubscribe = onSnapshot(collection(db, 'profiles'), (snapshot) => {
+      const profilesData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as Profile[];
+      setProfiles(profilesData);
+    });
+
+    // Listen for all posts
+    const postsUnsubscribe = onSnapshot(query(collection(db, 'posts'), orderBy('createdAt', 'desc')), (snapshot) => {
+      const postsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[];
+      setPosts(postsData);
+    });
+
+    return () => {
+      profilesUnsubscribe();
+      postsUnsubscribe();
+    };
+  }, [user, isFirebaseEnabled]);
 
 
   useEffect(() => {
@@ -384,6 +415,43 @@ export default function Dashboard() {
       toast({ title: "Fehler beim Löschen der Note", variant: "destructive"});
     }
   };
+
+  const handleAddPost = async (content: string) => {
+    if (!user || !user.displayName) {
+      toast({ title: "Fehler", description: "Du musst angemeldet sein, um zu posten.", variant: "destructive" });
+      return;
+    }
+    try {
+      await addDoc(collection(db, 'posts'), {
+        authorId: user.uid,
+        authorName: user.displayName,
+        content,
+        likes: [],
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "Beitrag veröffentlicht!" });
+    } catch (error) {
+      console.error("Error adding post: ", error);
+      toast({ title: "Fehler beim Erstellen des Beitrags", variant: "destructive" });
+    }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    if (!user) return;
+    const postRef = doc(db, 'posts', postId);
+    try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      const hasLiked = post.likes.includes(user.uid);
+      await updateDoc(postRef, {
+        likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid)
+      });
+    } catch (error) {
+      console.error("Error liking post: ", error);
+      toast({ title: "Fehler beim Liken des Beitrags", variant: "destructive" });
+    }
+  };
   
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
@@ -510,7 +578,7 @@ export default function Dashboard() {
   };
   
   const renderView = () => {
-    if (dataLoading) {
+    if (dataLoading && view !== 'community') {
       return <div>Loading...</div>; // Replace with a proper skeleton loader
     }
     switch (view) {
@@ -578,7 +646,7 @@ export default function Dashboard() {
                   }}
                />;
       case 'community':
-        return <CommunityPage />;
+        return <CommunityPage posts={posts} profiles={profiles} onAddPost={handleAddPost} onLikePost={handleLikePost} />;
       default:
         return null;
     }
