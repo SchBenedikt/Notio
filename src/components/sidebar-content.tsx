@@ -20,6 +20,7 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { ScrollArea } from './ui/scroll-area';
 
 const addSubjectSchema = z.object({
   name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein.").max(50),
@@ -183,287 +184,306 @@ export function SidebarContent({
 
             <Separator />
             
-            <div className="flex flex-col gap-1 px-2">
-                <Button 
-                    variant={currentView === 'subjects' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('subjects')}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Fächerübersicht
-                </Button>
-                <Button 
-                    variant={currentView === 'studysets' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('studysets')}>
-                     <BrainCircuit className="mr-2 h-4 w-4" />
-                    Lernsets
-                </Button>
-                <Button 
-                    variant={currentView === 'calculator' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('calculator')}>
-                    <Calculator className="mr-2 h-4 w-4" />
-                    Notenrechner
-                </Button>
-                <Button 
-                    variant={currentView === 'tutor' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('tutor')}>
-                     <MessageCircle className="mr-2 h-4 w-4" />
-                    KI-Tutor & Coach
-                </Button>
-                 <Button 
-                    variant={currentView === 'community' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('community')}>
-                     <Users className="mr-2 h-4 w-4" />
-                    Community
-                </Button>
-                <Button 
-                    variant={currentView === 'awards' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('awards')}>
-                     <Award className="mr-2 h-4 w-4" />
-                    Auszeichnungen
-                </Button>
-                 <Button 
-                    variant={currentView === 'files' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('files')}>
-                     <Files className="mr-2 h-4 w-4" />
-                    Dateiverwaltung
-                </Button>
-                 <Button 
-                    variant={currentView === 'data' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('data')}>
-                     <Database className="mr-2 h-4 w-4" />
-                    Datenverwaltung
-                </Button>
-                 <Button 
-                    variant={currentView === 'settings' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('settings')}>
-                     <Settings className="mr-2 h-4 w-4" />
-                    Einstellungen
-                </Button>
-            </div>
+            <ScrollArea className="flex-1 -mx-6">
+                <div className="px-6 space-y-4 py-4">
 
-            <Separator />
-            
-            <div className="flex-1 overflow-y-auto space-y-6">
-                <Collapsible className="border bg-card rounded-lg shadow-sm">
-                    <CollapsibleTrigger className="p-4 w-full flex items-center justify-between hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
-                        <div className="flex items-baseline gap-3">
-                            <span className="text-sm font-medium text-muted-foreground">Gesamtschnitt</span>
-                            <span className="text-4xl font-bold text-primary">{overallAverage}</span>
-                        </div>
-                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-4 pb-4">
-                        <Separator className="mb-4" />
-                        <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-center">
-                            <div>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <Award className="h-4 w-4" />
-                                    <span>Hauptfächer</span>
-                                </div>
-                                <p className="text-2xl font-bold">{mainSubjectsAverage}</p>
+                    <Collapsible defaultOpen={true}>
+                        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-2 py-1 font-semibold text-base hover:bg-muted [&[data-state=open]>svg]:rotate-180">
+                            <span>Navigation</span>
+                            <ChevronDown className="h-5 w-5 transition-transform duration-200" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+                             <div className="flex flex-col gap-1 pt-2">
+                                <Button 
+                                    variant={currentView === 'subjects' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('subjects')}>
+                                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                                    Fächerübersicht
+                                </Button>
+                                <Button 
+                                    variant={currentView === 'studysets' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('studysets')}>
+                                     <BrainCircuit className="mr-2 h-4 w-4" />
+                                    Lernsets
+                                </Button>
+                                <Button 
+                                    variant={currentView === 'calculator' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('calculator')}>
+                                    <Calculator className="mr-2 h-4 w-4" />
+                                    Notenrechner
+                                </Button>
+                                <Button 
+                                    variant={currentView === 'tutor' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('tutor')}>
+                                     <MessageCircle className="mr-2 h-4 w-4" />
+                                    KI-Tutor & Coach
+                                </Button>
+                                 <Button 
+                                    variant={currentView === 'community' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('community')}>
+                                     <Users className="mr-2 h-4 w-4" />
+                                    Community
+                                </Button>
+                                <Button 
+                                    variant={currentView === 'awards' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('awards')}>
+                                     <Award className="mr-2 h-4 w-4" />
+                                    Auszeichnungen
+                                </Button>
+                                 <Button 
+                                    variant={currentView === 'files' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('files')}>
+                                     <Files className="mr-2 h-4 w-4" />
+                                    Dateiverwaltung
+                                </Button>
+                                 <Button 
+                                    variant={currentView === 'data' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('data')}>
+                                     <Database className="mr-2 h-4 w-4" />
+                                    Datenverwaltung
+                                </Button>
+                                 <Button 
+                                    variant={currentView === 'settings' ? "secondary" : "ghost"} 
+                                    className="justify-start w-full"
+                                    onClick={() => handleViewChange('settings')}>
+                                     <Settings className="mr-2 h-4 w-4" />
+                                    Einstellungen
+                                </Button>
                             </div>
-                            <div>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <BookOpen className="h-4 w-4" />
-                                    <span>Nebenfächer</span>
-                                </div>
-                                <p className="text-2xl font-bold">{minorSubjectsAverage}</p>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <PenLine className="h-4 w-4" />
-                                    <span>Schriftlich</span>
-                                </div>
-                                <p className="text-2xl font-bold">{writtenGradesCount}</p>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span>Mündlich</span>
-                                </div>
-                                <p className="text-2xl font-bold">{oralGradesCount}</p>
-                            </div>
-                             <div>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <BookCopy className="h-4 w-4" />
-                                    <span>Fächer</span>
-                                </div>
-                                <p className="text-2xl font-bold">{totalSubjectsCount}</p>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                    <ClipboardList className="h-4 w-4" />
-                                    <span>Noten gesamt</span>
-                                </div>
-                                <p className="text-2xl font-bold">{totalGradesCount}</p>
-                            </div>
-                        </div>
-                    </CollapsibleContent>
-                </Collapsible>
-                
-                <div className="flex flex-col gap-4">
-                <Collapsible open={openView === 'subject'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'subject' : null)} className="border bg-card rounded-lg shadow-sm">
-                    <CollapsibleTrigger onClick={() => handleTriggerClick('subject')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
-                        <div className="flex items-center gap-3">
-                            <BookUp className="h-5 w-5 text-muted-foreground" /> 
-                            <span>Neues Fach</span>
-                        </div>
-                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-4 pb-4">
-                        <Separator className="mb-4" />
-                        <Form {...subjectForm}>
-                            <form onSubmit={subjectForm.handleSubmit(handleSubjectSubmit)} className="space-y-4">
-                                <FormField control={subjectForm.control} name="name" render={({ field }) => (
-                                    <FormItem><FormLabel>Fachname</FormLabel><FormControl><Input placeholder="z.B. Mathematik" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={subjectForm.control} name="category" render={({ field }) => (
-                                    <FormItem><FormLabel>Kategorie</FormLabel><FormControl>
-                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Hauptfach" /></FormControl><FormLabel className="font-normal">Hauptfach</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Nebenfach" /></FormControl><FormLabel className="font-normal">Nebenfach</FormLabel></FormItem></RadioGroup>
-                                    </FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField
-                                  control={subjectForm.control}
-                                  name="targetGrade"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Wunschnote (optional)</FormLabel>
-                                      <FormControl>
-                                        <Input type="number" step="0.1" placeholder="z.B. 2,5" {...field} value={field.value ?? ''} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                <Button type="submit" className="w-full">Fach speichern</Button>
-                            </form>
-                        </Form>
-                    </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible open={openView === 'grade'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'grade' : null)} className="border bg-card rounded-lg shadow-sm">
-                    <CollapsibleTrigger onClick={() => handleTriggerClick('grade')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
-                        <div className="flex items-center gap-3">
-                            <ListPlus className="h-5 w-5 text-muted-foreground" />
-                            <span>Neue Note</span>
-                        </div>
-                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="px-4 pb-4">
-                        <Separator className="mb-4" />
-                        <Form {...gradeForm}>
-                            <form onSubmit={gradeForm.handleSubmit(handleGradeSubmit)} className="space-y-4">
-                                <FormField control={gradeForm.control} name="subjectId" render={({ field }) => (
-                                    <FormItem><FormLabel>Fach</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Fach auswählen" /></SelectTrigger></FormControl><SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                                )} />
-                                <FormField
-                                  control={gradeForm.control}
-                                  name="date"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Datum</FormLabel>
-                                       <Popover>
-                                        <PopoverTrigger asChild>
-                                          <FormControl>
-                                            <Button
-                                              variant={"outline"}
-                                              className={cn(
-                                                "w-full justify-start text-left font-normal",
-                                                !field.value && "text-muted-foreground"
-                                              )}
-                                            >
-                                              <CalendarIcon className="mr-2 h-4 w-4" />
-                                              {field.value ? (
-                                                format(field.value, "PPP", { locale: de })
-                                              ) : (
-                                                <span>Wähle ein Datum</span>
-                                              )}
-                                            </Button>
-                                          </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={field.onChange}
-                                             disabled={(date) =>
-                                              date > new Date() || date < new Date("2000-01-01")
-                                            }
-                                            initialFocus
-                                          />
-                                        </PopoverContent>
-                                      </Popover>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                <FormField control={gradeForm.control} name="type" render={({ field }) => (
-                                    <FormItem><FormLabel>Notentyp</FormLabel><FormControl>
-                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Schulaufgabe" /></FormControl><FormLabel className="font-normal">Schulaufgabe</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="mündliche Note" /></FormControl><FormLabel className="font-normal">Mündliche Note</FormLabel></FormItem></RadioGroup>
-                                    </FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={gradeForm.control} name="name" render={({ field }) => (
-                                    <FormItem><FormLabel>Bezeichnung (optional)</FormLabel><FormControl><Input placeholder="z.B. Vokabeltest" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={gradeForm.control} name="value" render={({ field }) => (
-                                    <FormItem><FormLabel>Note (1-6)</FormLabel><FormControl><Input type="number" step="1" placeholder="z.B. 2" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={gradeForm.control} name="weight" render={({ field }) => (
-                                    <FormItem><FormLabel>Gewichtung</FormLabel><FormControl><Input type="number" step="0.5" placeholder="z.B. 1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={gradeForm.control} name="notes" render={({ field }) => (
-                                    <FormItem><FormLabel>Notiz (optional)</FormLabel><FormControl><Textarea placeholder="Thema der Ex..." className="resize-none" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                
-                                <div className="space-y-2">
-                                    <FormLabel>Anhänge (optional)</FormLabel>
-                                    <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-                                        <UploadCloud className="mr-2 h-4 w-4" />
-                                        Dateien auswählen
-                                    </Button>
-                                    <Input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        className="hidden"
-                                        multiple
-                                        onChange={handleFileChange}
-                                    />
-                                    <div className="space-y-2">
-                                        {gradeAttachments?.map((attachment, index) => (
-                                        <div key={index} className="flex items-center justify-between rounded-md border p-2 bg-muted/50 text-xs">
-                                            <div className="flex items-center gap-2 truncate">
-                                            <FileIcon className="h-4 w-4 text-muted-foreground" />
-                                            <span className="truncate">{attachment.name}</span>
-                                            </div>
-                                            <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-5 w-5"
-                                            onClick={() => removeAttachment(index)}
-                                            >
-                                            <X className="h-3 w-3" />
-                                            </Button>
+                        </CollapsibleContent>
+                    </Collapsible>
+                    
+                    <Collapsible defaultOpen={true}>
+                        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-2 py-1 font-semibold text-base hover:bg-muted [&[data-state=open]>svg]:rotate-180">
+                            <span>Übersicht & Aktionen</span>
+                            <ChevronDown className="h-5 w-5 transition-transform duration-200" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+                            <div className="space-y-6 pt-2">
+                                <Collapsible className="border bg-card rounded-lg shadow-sm">
+                                    <CollapsibleTrigger className="p-4 w-full flex items-center justify-between hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                                        <div className="flex items-baseline gap-3">
+                                            <span className="text-sm font-medium text-muted-foreground">Gesamtschnitt</span>
+                                            <span className="text-4xl font-bold text-primary">{overallAverage}</span>
                                         </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="px-4 pb-4">
+                                        <Separator className="mb-4" />
+                                        <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-center">
+                                            <div>
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <Award className="h-4 w-4" />
+                                                    <span>Hauptfächer</span>
+                                                </div>
+                                                <p className="text-2xl font-bold">{mainSubjectsAverage}</p>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <BookOpen className="h-4 w-4" />
+                                                    <span>Nebenfächer</span>
+                                                </div>
+                                                <p className="text-2xl font-bold">{minorSubjectsAverage}</p>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <PenLine className="h-4 w-4" />
+                                                    <span>Schriftlich</span>
+                                                </div>
+                                                <p className="text-2xl font-bold">{writtenGradesCount}</p>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <MessageSquare className="h-4 w-4" />
+                                                    <span>Mündlich</span>
+                                                </div>
+                                                <p className="text-2xl font-bold">{oralGradesCount}</p>
+                                            </div>
+                                             <div>
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <BookCopy className="h-4 w-4" />
+                                                    <span>Fächer</span>
+                                                </div>
+                                                <p className="text-2xl font-bold">{totalSubjectsCount}</p>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <ClipboardList className="h-4 w-4" />
+                                                    <span>Noten gesamt</span>
+                                                </div>
+                                                <p className="text-2xl font-bold">{totalGradesCount}</p>
+                                            </div>
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
                                 
-                                <Button type="submit" className="w-full">Note speichern</Button>
-                            </form>
-                        </Form>
-                    </CollapsibleContent>
-                </Collapsible>
+                                <div className="flex flex-col gap-4">
+                                <Collapsible open={openView === 'subject'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'subject' : null)} className="border bg-card rounded-lg shadow-sm">
+                                    <CollapsibleTrigger onClick={() => handleTriggerClick('subject')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                                        <div className="flex items-center gap-3">
+                                            <BookUp className="h-5 w-5 text-muted-foreground" /> 
+                                            <span>Neues Fach</span>
+                                        </div>
+                                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="px-4 pb-4">
+                                        <Separator className="mb-4" />
+                                        <Form {...subjectForm}>
+                                            <form onSubmit={subjectForm.handleSubmit(handleSubjectSubmit)} className="space-y-4">
+                                                <FormField control={subjectForm.control} name="name" render={({ field }) => (
+                                                    <FormItem><FormLabel>Fachname</FormLabel><FormControl><Input placeholder="z.B. Mathematik" {...field} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={subjectForm.control} name="category" render={({ field }) => (
+                                                    <FormItem><FormLabel>Kategorie</FormLabel><FormControl>
+                                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Hauptfach" /></FormControl><FormLabel className="font-normal">Hauptfach</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Nebenfach" /></FormControl><FormLabel className="font-normal">Nebenfach</FormLabel></FormItem></RadioGroup>
+                                                    </FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField
+                                                  control={subjectForm.control}
+                                                  name="targetGrade"
+                                                  render={({ field }) => (
+                                                    <FormItem>
+                                                      <FormLabel>Wunschnote (optional)</FormLabel>
+                                                      <FormControl>
+                                                        <Input type="number" step="0.1" placeholder="z.B. 2,5" {...field} value={field.value ?? ''} />
+                                                      </FormControl>
+                                                      <FormMessage />
+                                                    </FormItem>
+                                                  )}
+                                                />
+                                                <Button type="submit" className="w-full">Fach speichern</Button>
+                                            </form>
+                                        </Form>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                
+                                <Collapsible open={openView === 'grade'} onOpenChange={(isOpen) => setOpenView(isOpen ? 'grade' : null)} className="border bg-card rounded-lg shadow-sm">
+                                    <CollapsibleTrigger onClick={() => handleTriggerClick('grade')} className="p-4 font-medium w-full flex items-center justify-between text-base hover:no-underline [&[data-state=open]>svg:last-child]:rotate-180">
+                                        <div className="flex items-center gap-3">
+                                            <ListPlus className="h-5 w-5 text-muted-foreground" />
+                                            <span>Neue Note</span>
+                                        </div>
+                                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="px-4 pb-4">
+                                        <Separator className="mb-4" />
+                                        <Form {...gradeForm}>
+                                            <form onSubmit={gradeForm.handleSubmit(handleGradeSubmit)} className="space-y-4">
+                                                <FormField control={gradeForm.control} name="subjectId" render={({ field }) => (
+                                                    <FormItem><FormLabel>Fach</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Fach auswählen" /></SelectTrigger></FormControl><SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField
+                                                  control={gradeForm.control}
+                                                  name="date"
+                                                  render={({ field }) => (
+                                                    <FormItem>
+                                                      <FormLabel>Datum</FormLabel>
+                                                       <Popover>
+                                                        <PopoverTrigger asChild>
+                                                          <FormControl>
+                                                            <Button
+                                                              variant={"outline"}
+                                                              className={cn(
+                                                                "w-full justify-start text-left font-normal",
+                                                                !field.value && "text-muted-foreground"
+                                                              )}
+                                                            >
+                                                              <CalendarIcon className="mr-2 h-4 w-4" />
+                                                              {field.value ? (
+                                                                format(field.value, "PPP", { locale: de })
+                                                              ) : (
+                                                                <span>Wähle ein Datum</span>
+                                                              )}
+                                                            </Button>
+                                                          </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                          <Calendar
+                                                            mode="single"
+                                                            selected={field.value}
+                                                            onSelect={field.onChange}
+                                                             disabled={(date) =>
+                                                              date > new Date() || date < new Date("2000-01-01")
+                                                            }
+                                                            initialFocus
+                                                          />
+                                                        </PopoverContent>
+                                                      </Popover>
+                                                      <FormMessage />
+                                                    </FormItem>
+                                                  )}
+                                                />
+                                                <FormField control={gradeForm.control} name="type" render={({ field }) => (
+                                                    <FormItem><FormLabel>Notentyp</FormLabel><FormControl>
+                                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Schulaufgabe" /></FormControl><FormLabel className="font-normal">Schulaufgabe</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="mündliche Note" /></FormControl><FormLabel className="font-normal">Mündliche Note</FormLabel></FormItem></RadioGroup>
+                                                    </FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={gradeForm.control} name="name" render={({ field }) => (
+                                                    <FormItem><FormLabel>Bezeichnung (optional)</FormLabel><FormControl><Input placeholder="z.B. Vokabeltest" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={gradeForm.control} name="value" render={({ field }) => (
+                                                    <FormItem><FormLabel>Note (1-6)</FormLabel><FormControl><Input type="number" step="1" placeholder="z.B. 2" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={gradeForm.control} name="weight" render={({ field }) => (
+                                                    <FormItem><FormLabel>Gewichtung</FormLabel><FormControl><Input type="number" step="0.5" placeholder="z.B. 1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={gradeForm.control} name="notes" render={({ field }) => (
+                                                    <FormItem><FormLabel>Notiz (optional)</FormLabel><FormControl><Textarea placeholder="Thema der Ex..." className="resize-none" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                
+                                                <div className="space-y-2">
+                                                    <FormLabel>Anhänge (optional)</FormLabel>
+                                                    <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                                                        <UploadCloud className="mr-2 h-4 w-4" />
+                                                        Dateien auswählen
+                                                    </Button>
+                                                    <Input
+                                                        ref={fileInputRef}
+                                                        type="file"
+                                                        className="hidden"
+                                                        multiple
+                                                        onChange={handleFileChange}
+                                                    />
+                                                    <div className="space-y-2">
+                                                        {gradeAttachments?.map((attachment, index) => (
+                                                        <div key={index} className="flex items-center justify-between rounded-md border p-2 bg-muted/50 text-xs">
+                                                            <div className="flex items-center gap-2 truncate">
+                                                            <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                                            <span className="truncate">{attachment.name}</span>
+                                                            </div>
+                                                            <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-5 w-5"
+                                                            onClick={() => removeAttachment(index)}
+                                                            >
+                                                            <X className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                
+                                                <Button type="submit" className="w-full">Note speichern</Button>
+                                            </form>
+                                        </Form>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
                 </div>
-            </div>
+            </ScrollArea>
         </>
     );
 }
