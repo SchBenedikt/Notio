@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, PlusCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -42,14 +42,20 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
   const [isAddSchoolDialogOpen, setAddSchoolDialogOpen] = React.useState(false)
   const [newSchoolName, setNewSchoolName] = React.useState("")
   const [newSchoolAddress, setNewSchoolAddress] = React.useState("")
+  const [isAdding, setIsAdding] = React.useState(false)
 
   const handleAddSchool = async () => {
-    if (!newSchoolName.trim()) return;
-    const newSchoolId = await onAddSchool(newSchoolName, newSchoolAddress);
-    onChange(newSchoolId);
-    setAddSchoolDialogOpen(false);
-    setNewSchoolName("");
-    setNewSchoolAddress("");
+    if (!newSchoolName.trim() || isAdding) return;
+    setIsAdding(true);
+    try {
+        const newSchoolId = await onAddSchool(newSchoolName, newSchoolAddress);
+        onChange(newSchoolId);
+        setAddSchoolDialogOpen(false);
+        setNewSchoolName("");
+        setNewSchoolAddress("");
+    } finally {
+        setIsAdding(false);
+    }
   }
 
   const selectedSchool = schools.find((school) => school.id === value)
@@ -81,8 +87,11 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
                     <CommandItem
                       key={school.id}
                       value={school.name}
-                      onSelect={() => {
-                        onChange(school.id)
+                      onSelect={(currentValue) => {
+                        const selectedId = schools.find(s => s.name.toLowerCase() === currentValue.toLowerCase())?.id
+                        if (selectedId) {
+                            onChange(selectedId);
+                        }
                         setOpen(false)
                       }}
                     >
@@ -130,8 +139,11 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
                 </div>
             </div>
             <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setAddSchoolDialogOpen(false)}>Abbrechen</Button>
-                <Button type="button" onClick={handleAddSchool}>Schule speichern</Button>
+                <Button type="button" variant="ghost" onClick={() => setAddSchoolDialogOpen(false)} disabled={isAdding}>Abbrechen</Button>
+                <Button type="button" onClick={handleAddSchool} disabled={isAdding || !newSchoolName.trim()}>
+                    {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Schule speichern
+                </Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
