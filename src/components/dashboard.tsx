@@ -16,6 +16,7 @@ import { GradeCalculatorPage } from "./grade-calculator-page";
 import { AddGradeDialog } from "./add-grade-dialog";
 import { EditSubjectDialog } from "./edit-subject-dialog";
 import { DataManagementPage } from "./data-management-page";
+import { FileManagementPage } from "./file-management-page";
 
 export default function Dashboard() {
   const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
@@ -31,7 +32,7 @@ export default function Dashboard() {
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator' | 'data'>('subjects');
+  const [view, setView] = useState<'subjects' | 'tutor' | 'calculator' | 'data' | 'files'>('subjects');
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
@@ -359,6 +360,13 @@ export default function Dashboard() {
           <DataManagementPage
             onImport={handleImportCSV}
             onExport={handleExportCSV}
+          />
+        );
+      case 'files':
+        return (
+          <FileManagementPage
+            subjects={subjectsForGradeLevel}
+            grades={grades}
           />
         );
       default:
