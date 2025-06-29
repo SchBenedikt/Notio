@@ -26,7 +26,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -52,13 +51,12 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
     setAddSchoolDialogOpen(false);
     setNewSchoolName("");
     setNewSchoolAddress("");
-    setOpen(false);
   }
 
   const selectedSchool = schools.find((school) => school.id === value)
 
   return (
-    <Dialog open={isAddSchoolDialogOpen} onOpenChange={setAddSchoolDialogOpen}>
+    <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -115,28 +113,31 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent>
-          <DialogHeader>
-              <DialogTitle>Neue Schule hinzufügen</DialogTitle>
-              <DialogDescription>
-                  Wenn deine Schule nicht in der Liste ist, kannst du sie hier erstellen.
-              </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="school-name" className="text-right">Name</Label>
-                  <Input id="school-name" value={newSchoolName} onChange={(e) => setNewSchoolName(e.target.value)} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="school-address" className="text-right">Adresse</Label>
-                  <Input id="school-address" value={newSchoolAddress} onChange={(e) => setNewSchoolAddress(e.target.value)} className="col-span-3" placeholder="(Optional)" />
-              </div>
-          </div>
-          <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setAddSchoolDialogOpen(false)}>Abbrechen</Button>
-              <Button type="button" onClick={handleAddSchool}>Schule speichern</Button>
-          </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+      <Dialog open={isAddSchoolDialogOpen} onOpenChange={setAddSchoolDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Neue Schule hinzufügen</DialogTitle>
+                <DialogDescription>
+                    Wenn deine Schule nicht in der Liste ist, kannst du sie hier erstellen.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="school-name" className="text-right">Name</Label>
+                    <Input id="school-name" value={newSchoolName} onChange={(e) => setNewSchoolName(e.target.value)} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="school-address" className="text-right">Adresse</Label>
+                    <Input id="school-address" value={newSchoolAddress} onChange={(e) => setNewSchoolAddress(e.target.value)} className="col-span-3" placeholder="(Optional)" />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setAddSchoolDialogOpen(false)}>Abbrechen</Button>
+                <Button type="button" onClick={handleAddSchool}>Schule speichern</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
