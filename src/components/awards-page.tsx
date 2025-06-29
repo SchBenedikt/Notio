@@ -13,7 +13,6 @@ const tierStyles = {
     iconBg: "bg-amber-700/10",
     iconText: "text-amber-600 dark:text-amber-500",
     text: "text-amber-700 dark:text-amber-500",
-    glow: "shadow-[0_0_15px_1px] shadow-amber-700/20"
   },
   silver: {
     bg: "bg-slate-400/10 dark:bg-slate-600/10",
@@ -21,7 +20,6 @@ const tierStyles = {
     iconBg: "bg-slate-400/10",
     iconText: "text-slate-500 dark:text-slate-400",
     text: "text-slate-600 dark:text-slate-400",
-    glow: "shadow-[0_0_15px_1px] shadow-slate-400/20"
   },
   gold: {
     bg: "bg-yellow-400/10 dark:bg-yellow-600/10",
@@ -29,7 +27,6 @@ const tierStyles = {
     iconBg: "bg-yellow-400/10",
     iconText: "text-yellow-500 dark:text-yellow-400",
     text: "text-yellow-600 dark:text-yellow-400",
-    glow: "shadow-[0_0_15px_1px] shadow-yellow-500/20"
   },
   special: {
     bg: "bg-primary/10",
@@ -37,7 +34,6 @@ const tierStyles = {
     iconBg: "bg-primary/10",
     iconText: "text-primary",
     text: "text-primary",
-    glow: "shadow-[0_0_15px_1px] shadow-primary/20"
   },
 };
 
@@ -46,7 +42,7 @@ const AwardCard = ({ award }: { award: AwardType }) => {
   
   if (award.unlocked) {
     return (
-      <Card className={cn("flex flex-col animate-fade-in-down transition-all", styles.bg, styles.border, styles.glow)}>
+      <Card className={cn("flex flex-col animate-fade-in-down transition-all", styles.bg, styles.border)}>
           <CardHeader className="flex-row items-start gap-4 space-y-0 pb-3">
               <div className={cn("p-3 rounded-lg", styles.iconBg)}>
                   <award.icon className={cn("h-6 w-6", styles.iconText)} />
