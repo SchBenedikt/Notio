@@ -21,7 +21,7 @@ import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { SchoolCombobox } from '@/components/school-combobox';
+import { SchoolSelector } from '@/components/school-selector';
 import type { School } from '@/lib/types';
 
 
@@ -288,7 +288,7 @@ export default function LoginPage() {
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="signup-school">Schule</Label>
-                                     <SchoolCombobox
+                                     <SchoolSelector
                                         schools={allSchools}
                                         value={signupSchoolId}
                                         onChange={setSignupSchoolId}

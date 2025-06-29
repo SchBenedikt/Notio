@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Settings, Weight, Palette, Briefcase, School as SchoolIcon } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { SchoolCombobox } from "./school-combobox";
+import { SchoolSelector } from "./school-selector";
 import type { School } from "@/lib/types";
 
 
@@ -154,17 +154,14 @@ export function SettingsPage({
                     <CardDescription>Diese Einstellungen sind privat und gelten nur für dich.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 p-3 border rounded-md">
-                        <SchoolIcon className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-1 space-y-2">
-                            <Label htmlFor="school">Schule</Label>
-                             <SchoolCombobox
-                                schools={allSchools}
-                                value={userSchoolId}
-                                onChange={onUserSchoolIdChange}
-                                onAddSchool={onAddSchool}
-                             />
-                        </div>
+                    <div className="space-y-2">
+                        <Label>Schule</Label>
+                        <SchoolSelector
+                            schools={allSchools}
+                            value={userSchoolId}
+                            onChange={onUserSchoolIdChange}
+                            onAddSchool={onAddSchool}
+                        />
                     </div>
                     <div className="flex items-center gap-4 p-3 border rounded-md">
                         <Briefcase className="h-5 w-5 text-muted-foreground" />
