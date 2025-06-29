@@ -134,4 +134,10 @@ export interface TrueFalseTestQuestion {
 export type TestQuestion = MultipleChoiceTestQuestion | WrittenTestQuestion | TrueFalseTestQuestion;
 
 
+export interface School {
+  id: string;
+  name: string;
+  address?: string;
+}
+
 export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit';

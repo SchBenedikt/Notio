@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [allSchools, setAllSchools] = useState<School[]>([]);
   
   // Settings state
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
@@ -48,7 +49,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<string>("blue");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userRole, setUserRole] = useState('student');
-  const [userSchool, setUserSchool] = useState('');
+  const [userSchoolId, setUserSchoolId] = useState('');
   const [userName, setUserName] = useState<string | null>(null);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
@@ -108,6 +109,12 @@ export default function Dashboard() {
                  setUserName(newProfileData.name);
             }
             
+            // Fetch All Schools
+            const schoolsQuery = query(collection(db, 'schools'));
+            const schoolsSnap = await getDocs(schoolsQuery);
+            const schoolsData = schoolsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
+            setAllSchools(schoolsData.sort((a, b) => a.name.localeCompare(b.name)));
+
             // Fetch Settings
             if(settingsDocRef) {
               const settingsSnap = await getDoc(settingsDocRef);
@@ -119,7 +126,7 @@ export default function Dashboard() {
                 setTheme(settingsData.theme || 'blue');
                 setIsDarkMode(settingsData.isDarkMode || false);
                 setUserRole(settingsData.role || 'student');
-                setUserSchool(settingsData.school || '');
+                setUserSchoolId(settingsData.schoolId || '');
               } else {
                  // Settings document doesn't exist, create it with defaults
                 const defaultSettings = {
@@ -129,7 +136,7 @@ export default function Dashboard() {
                   theme: 'blue',
                   isDarkMode: false,
                   role: 'student',
-                  school: '',
+                  schoolId: '',
                 };
                 await setDoc(settingsDocRef, defaultSettings);
                 setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
@@ -138,7 +145,7 @@ export default function Dashboard() {
                 setTheme(defaultSettings.theme);
                 setIsDarkMode(defaultSettings.isDarkMode);
                 setUserRole(defaultSettings.role as 'student' | 'teacher');
-                setUserSchool(defaultSettings.school);
+                setUserSchoolId(defaultSettings.schoolId);
               }
             }
             
@@ -190,6 +197,7 @@ export default function Dashboard() {
         setSubjects([]);
         setGrades([]);
         setStudySets([]);
+        setAllSchools([]);
         setDataLoading(false);
     }
   }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
@@ -629,6 +637,13 @@ export default function Dashboard() {
     }
   }
 
+  const handleAddSchool = async (name: string, address: string): Promise<string> => {
+      const docRef = await addDoc(collection(db, "schools"), { name, address });
+      const newSchool = { id: docRef.id, name, address };
+      setAllSchools(prev => [...prev, newSchool].sort((a, b) => a.name.localeCompare(b.name)));
+      return docRef.id;
+  }
+
   const sidebarProps = {
     subjects: subjectsForGradeLevel,
     grades: grades,
@@ -792,11 +807,13 @@ export default function Dashboard() {
                 setUserRole(role);
                 updateSetting('role', role);
             }}
-            userSchool={userSchool}
-            onUserSchoolChange={(school) => {
-                setUserSchool(school);
-                updateSetting('school', school);
+            userSchoolId={userSchoolId}
+            onUserSchoolIdChange={(schoolId) => {
+                setUserSchoolId(schoolId);
+                updateSetting('schoolId', schoolId);
             }}
+            allSchools={allSchools}
+            onAddSchool={handleAddSchool}
         />;
       default:
         return null;

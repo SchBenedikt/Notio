@@ -5,8 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Settings, Weight, Palette, Briefcase, School } from 'lucide-react';
+import { Settings, Weight, Palette, Briefcase, School as SchoolIcon } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { SchoolCombobox } from "./school-combobox";
+import type { School } from "@/lib/types";
+
 
 type SettingsPageProps = {
   mainSubjectWeight: number;
@@ -19,8 +22,10 @@ type SettingsPageProps = {
   onIsDarkModeChange: (isDark: boolean) => void;
   userRole: string;
   onUserRoleChange: (role: 'student' | 'teacher') => void;
-  userSchool: string;
-  onUserSchoolChange: (school: string) => void;
+  userSchoolId: string;
+  onUserSchoolIdChange: (schoolId: string) => void;
+  allSchools: School[];
+  onAddSchool: (name: string, address: string) => Promise<string>;
 };
 
 const themes = [
@@ -45,8 +50,10 @@ export function SettingsPage({
     onIsDarkModeChange,
     userRole,
     onUserRoleChange,
-    userSchool,
-    onUserSchoolChange,
+    userSchoolId,
+    onUserSchoolIdChange,
+    allSchools,
+    onAddSchool,
 }: SettingsPageProps) {
 
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
@@ -148,10 +155,15 @@ export function SettingsPage({
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center gap-4 p-3 border rounded-md">
-                        <School className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-1">
-                            <Label htmlFor="school" className="text-xs text-muted-foreground">Schule</Label>
-                            <Input id="school" value={userSchool} onChange={(e) => onUserSchoolChange(e.target.value)} placeholder="Name deiner Schule" className="border-0 px-0 h-auto text-base focus-visible:ring-0 focus-visible:ring-offset-0" />
+                        <SchoolIcon className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex-1 space-y-2">
+                            <Label htmlFor="school">Schule</Label>
+                             <SchoolCombobox
+                                schools={allSchools}
+                                value={userSchoolId}
+                                onChange={onUserSchoolIdChange}
+                                onAddSchool={onAddSchool}
+                             />
                         </div>
                     </div>
                     <div className="flex items-center gap-4 p-3 border rounded-md">
