@@ -267,7 +267,7 @@ export default function Dashboard() {
 
     const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
     try {
-        await updateDoc(subjectDocRef, updatedValues);
+        await setDoc(subjectDocRef, updatedValues, { merge: true });
         setSubjects(currentSubjects => 
             currentSubjects.map(s => 
                 s.id === subjectId ? { ...s, ...updatedValues } : s
@@ -342,7 +342,7 @@ export default function Dashboard() {
     try {
       if (gradeId) {
         const gradeDocRef = doc(db, 'users', user.uid, 'grades', gradeId);
-        await updateDoc(gradeDocRef, gradeData);
+        await setDoc(gradeDocRef, gradeData, { merge: true });
         setGrades(currentGrades =>
           currentGrades.map(g =>
             g.id === gradeId ? { ...g, id: g.id, ...gradeData } : g
@@ -666,5 +666,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-    
