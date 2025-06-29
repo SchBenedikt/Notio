@@ -559,7 +559,18 @@ export default function Dashboard() {
           <AwardsPage awards={awards} selectedGradeLevel={selectedGradeLevel} />
         );
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage 
+                  userRole={userRole}
+                  onUserRoleChange={(role) => {
+                    setUserRole(role);
+                    updateSetting('role', role);
+                  }}
+                  userSchool={userSchool}
+                  onUserSchoolChange={(school) => {
+                    setUserSchool(school);
+                    updateSetting('school', school);
+                  }}
+               />;
       case 'community':
         return <CommunityPage />;
       default:
@@ -610,16 +621,6 @@ export default function Dashboard() {
             updateSetting('isDarkMode', isDark);
           }}
           onLogout={handleLogout}
-          userRole={userRole}
-          onUserRoleChange={(role) => {
-            setUserRole(role);
-            updateSetting('role', role);
-          }}
-          userSchool={userSchool}
-          onUserSchoolChange={(school) => {
-            setUserSchool(school);
-            updateSetting('school', school);
-          }}
           onNavigate={setView}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">

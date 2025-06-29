@@ -168,7 +168,19 @@ export function SidebarContent({
               <Logo />
               <h1 className="text-2xl font-bold text-foreground">Noten Meister</h1>
             </div>
+            
+            <div className="flex flex-col gap-1 px-2">
+                <Button 
+                    variant={currentView === 'profile' ? "secondary" : "ghost"} 
+                    className="justify-start w-full h-11 text-base font-semibold"
+                    onClick={() => handleViewChange('profile')}>
+                     <User className="mr-2 h-5 w-5" />
+                    Profil & Sicherheit
+                </Button>
+            </div>
 
+            <Separator />
+            
             <div className="flex flex-col gap-1 px-2">
                 <Button 
                     variant={currentView === 'subjects' ? "secondary" : "ghost"} 
@@ -218,13 +230,6 @@ export function SidebarContent({
                     onClick={() => handleViewChange('data')}>
                      <Database className="mr-2 h-4 w-4" />
                     Datenverwaltung
-                </Button>
-                 <Button 
-                    variant={currentView === 'profile' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('profile')}>
-                     <User className="mr-2 h-4 w-4" />
-                    Profil & Sicherheit
                 </Button>
             </div>
 

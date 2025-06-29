@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import type { AppView } from "@/lib/types";
 
 type AppHeaderProps = {
@@ -36,10 +35,6 @@ type AppHeaderProps = {
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
   onLogout: () => void;
-  userRole: string;
-  onUserRoleChange: (role: 'student' | 'teacher') => void;
-  userSchool: string;
-  onUserSchoolChange: (school: string) => void;
   onNavigate: (view: AppView) => void;
 };
 
@@ -57,10 +52,6 @@ export function AppHeader({
   isDarkMode,
   onIsDarkModeChange,
   onLogout,
-  userRole,
-  onUserRoleChange,
-  userSchool,
-  onUserSchoolChange,
   onNavigate
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
@@ -161,36 +152,6 @@ export function AppHeader({
                       className="col-span-2 h-8"
                     />
                   </div>
-                </div>
-                <Separator />
-                 <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Profil</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Verwalte deine Profilinformationen.
-                  </p>
-                </div>
-                 <div className="grid gap-4">
-                   <div className="grid grid-cols-3 items-center gap-4">
-                     <Label htmlFor="school">Schule</Label>
-                     <Input id="school" value={userSchool} onChange={(e) => onUserSchoolChange(e.target.value)} className="col-span-2 h-8" />
-                   </div>
-                   <div className="grid grid-cols-3 items-center gap-4">
-                      <Label>Rolle</Label>
-                      <RadioGroup
-                        value={userRole}
-                        onValueChange={(value) => onUserRoleChange(value as any)}
-                        className="col-span-2 flex space-x-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="student" id="role-student" />
-                          <Label htmlFor="role-student" className="font-normal">Schüler</Label>
-                        </div>
-                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="teacher" id="role-teacher" />
-                          <Label htmlFor="role-teacher" className="font-normal">Lehrer</Label>
-                        </div>
-                      </RadioGroup>
-                   </div>
                 </div>
                 <Separator />
                 <div className="space-y-2">
