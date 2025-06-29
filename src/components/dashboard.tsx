@@ -79,7 +79,7 @@ export default function Dashboard() {
 
         const fetchData = async () => {
           try {
-            // Fetch Profile
+            // Fetch Profile and create if it doesn't exist
             const profileRef = doc(db, 'profiles', user.uid);
             const profileSnap = await getDoc(profileRef);
             if (profileSnap.exists()) {
@@ -87,7 +87,18 @@ export default function Dashboard() {
                 setProfile(profileData);
                 setUserName(profileData.name);
             } else {
-                 setUserName(user.displayName);
+                // Profile doesn't exist, so create it
+                 const newProfileData = {
+                    uid: user.uid,
+                    name: user.displayName || 'Neuer Nutzer',
+                    email: user.email,
+                    bio: `Hallo! Ich benutze Noten Meister.`,
+                    followers: [],
+                    following: []
+                 };
+                 await setDoc(profileRef, newProfileData);
+                 setProfile(newProfileData as Profile);
+                 setUserName(newProfileData.name);
             }
             
             // Fetch Settings
