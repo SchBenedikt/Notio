@@ -31,12 +31,12 @@ export function StudySetsPage({ studySets, onViewStudySet, onEditStudySet, onDel
 
       {studySets.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {studySets.map((set, index) => (
+          {studySets.sort((a,b) => a.title.localeCompare(b.title)).map((set, index) => (
             <StudySetCard
               key={set.id}
               studySet={set}
               onSelect={onViewStudySet}
-              onEdit={onEditStudySet}
+              onEdit={() => onEditStudySet(set)}
               onDelete={onDeleteStudySet}
               animationIndex={index}
             />

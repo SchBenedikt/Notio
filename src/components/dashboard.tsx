@@ -30,7 +30,7 @@ import { UserProfilePage } from "./user-profile-page";
 import { SettingsPage } from "./settings-page";
 import { StudySetsPage } from "./study-sets-page";
 import { StudySetDetailPage } from "./study-set-detail-page";
-import { CreateEditStudySetDialog } from "./create-edit-study-set-dialog";
+import { CreateEditStudySetPage } from "./create-edit-study-set-page";
 
 
 export default function Dashboard() {
@@ -56,12 +56,12 @@ export default function Dashboard() {
   const [view, setView] = useState<AppView>('subjects');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [viewingStudySetId, setViewingStudySetId] = useState<string | null>(null);
+  const [editingStudySet, setEditingStudySet] = useState<StudySet | null>(null);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
   const [gradeInfoDialogState, setGradeInfoDialogState] = useState<{isOpen: boolean, grade: Grade | null, subject: Subject | null}>({isOpen: false, grade: null, subject: null});
-  const [studySetDialogState, setStudySetDialogState] = useState<{isOpen: boolean, setToEdit?: StudySet | null}>({isOpen: false});
   
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -450,6 +450,7 @@ export default function Dashboard() {
         console.error("Error saving study set:", error);
         toast({ title: "Fehler beim Speichern des Lernsets", variant: "destructive" });
     }
+    setView('studysets');
   };
 
   const handleDeleteStudySet = async (setId: string) => {
@@ -573,7 +574,10 @@ export default function Dashboard() {
   
   const setAppView = (view: AppView) => {
     if (view !== 'user-profile') setViewingProfileId(null);
-    if (view !== 'studyset-detail') setViewingStudySetId(null);
+    if (view !== 'studyset-detail' && view !== 'studyset-create' && view !== 'studyset-edit') {
+      setViewingStudySetId(null);
+      setEditingStudySet(null);
+    }
     setView(view);
   }
 
@@ -585,6 +589,16 @@ export default function Dashboard() {
   const handleViewStudySet = (setId: string) => {
     setViewingStudySetId(setId);
     setView('studyset-detail');
+  };
+
+  const handleNavigateToCreateStudySet = () => {
+    setEditingStudySet(null);
+    setView('studyset-create');
+  };
+
+  const handleNavigateToEditStudySet = (set: StudySet) => {
+    setEditingStudySet(set);
+    setView('studyset-edit');
   };
 
   const handleToggleFollow = async (targetUserId: string) => {
@@ -656,9 +670,20 @@ export default function Dashboard() {
         return <StudySetsPage 
             studySets={studySets} 
             onViewStudySet={handleViewStudySet}
-            onEditStudySet={(set) => setStudySetDialogState({ isOpen: true, setToEdit: set })}
+            onEditStudySet={handleNavigateToEditStudySet}
             onDeleteStudySet={handleDeleteStudySet}
-            onAddNew={() => setStudySetDialogState({ isOpen: true, setToEdit: null })}
+            onAddNew={handleNavigateToCreateStudySet}
+        />;
+      case 'studyset-create':
+        return <CreateEditStudySetPage 
+            onBack={() => setView('studysets')}
+            onSave={handleSaveStudySet}
+        />;
+      case 'studyset-edit':
+        return <CreateEditStudySetPage 
+            studySetToEdit={editingStudySet}
+            onBack={() => setView('studysets')}
+            onSave={handleSaveStudySet}
         />;
       case 'studyset-detail':
         const set = studySets.find(s => s.id === viewingStudySetId);
@@ -666,10 +691,10 @@ export default function Dashboard() {
           return <StudySetDetailPage 
             studySet={set}
             onBack={() => setView('studysets')}
-            onEditSet={(set) => setStudySetDialogState({ isOpen: true, setToEdit: set })}
+            onEditSet={handleNavigateToEditStudySet}
           />;
         }
-        return null; // Or a not found component
+        return null;
       case 'tutor':
         return (
           <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
@@ -713,7 +738,7 @@ export default function Dashboard() {
         return <CommunityPage 
                   currentUserProfile={profile}
                   onViewProfile={handleViewProfile}
-                  onToggleFollow={handleToggleFollow}
+                  onToggleFollow={onToggleFollow}
                   subjects={subjectsForGradeLevel}
                   grades={grades}
                />;
@@ -722,7 +747,7 @@ export default function Dashboard() {
             return <UserProfilePage 
                       userId={viewingProfileId} 
                       onBack={() => setView('community')}
-                      onToggleFollow={handleToggleFollow}
+                      onToggleFollow={onToggleFollow}
                       currentUserProfile={profile}
                    />
         }
@@ -842,14 +867,6 @@ export default function Dashboard() {
             handleDeleteGrade(gradeId);
         }}
       />
-       <CreateEditStudySetDialog
-            isOpen={studySetDialogState.isOpen}
-            onOpenChange={(isOpen) => !isOpen && setStudySetDialogState({ isOpen: false, setToEdit: undefined })}
-            studySetToEdit={studySetDialogState.setToEdit}
-            onSubmit={async (values, setId) => {
-                await handleSaveStudySet(values, setId);
-            }}
-        />
     </div>
   );
 }

@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, BookOpen, Layers, Pencil, Play } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare } from "lucide-react";
 import { FlashcardsView } from "./flashcards-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { WriteView } from "./write-view";
+import { StudySetQuizView } from "./study-set-quiz-view";
 
 type StudySetDetailPageProps = {
   studySet: StudySet;
@@ -17,7 +19,9 @@ type StudySetDetailPageProps = {
 };
 
 export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDetailPageProps) {
-  const [mode, setMode] = useState<'list' | 'flashcards'>('list');
+  const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'quiz'>('list');
+
+  const hasCards = studySet.cards.length > 0;
 
   return (
     <div className="space-y-6">
@@ -43,9 +47,11 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDeta
       </div>
       
       <Tabs value={mode} onValueChange={(value) => setMode(value as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-sm">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-xl">
             <TabsTrigger value="list"><BookOpen className="mr-2 h-4 w-4" /> Begriffe</TabsTrigger>
-            <TabsTrigger value="flashcards" disabled={studySet.cards.length === 0}><Layers className="mr-2 h-4 w-4" /> Karteikarten</TabsTrigger>
+            <TabsTrigger value="flashcards" disabled={!hasCards}><Layers className="mr-2 h-4 w-4" />Karten</TabsTrigger>
+            <TabsTrigger value="write" disabled={!hasCards}><PenSquare className="mr-2 h-4 w-4" />Schreiben</TabsTrigger>
+            <TabsTrigger value="quiz" disabled={!hasCards}><BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="mt-4">
@@ -77,13 +83,13 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDeta
             </Card>
         </TabsContent>
         <TabsContent value="flashcards" className="mt-4">
-            {studySet.cards.length > 0 ? (
-                <FlashcardsView cards={studySet.cards} />
-            ) : (
-                <Card className="flex items-center justify-center h-96">
-                    <p className="text-muted-foreground">Füge Karten hinzu, um den Lernmodus zu starten.</p>
-                </Card>
-            )}
+            {hasCards ? <FlashcardsView cards={studySet.cards} /> : null}
+        </TabsContent>
+        <TabsContent value="write" className="mt-4">
+            {hasCards ? <WriteView cards={studySet.cards} /> : null}
+        </TabsContent>
+         <TabsContent value="quiz" className="mt-4">
+            {hasCards ? <StudySetQuizView studySet={studySet} /> : null}
         </TabsContent>
       </Tabs>
     </div>

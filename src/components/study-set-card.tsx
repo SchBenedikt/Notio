@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 type StudySetCardProps = {
   studySet: StudySet;
   onSelect: (id: string) => void;
-  onEdit: (set: StudySet) => void;
+  onEdit: () => void;
   onDelete: (id: string) => void;
   animationIndex: number;
 };
@@ -32,7 +32,7 @@ export function StudySetCard({ studySet, onSelect, onEdit, onDelete, animationIn
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(studySet)}>
+                            <DropdownMenuItem onClick={onEdit}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Bearbeiten
                             </DropdownMenuItem>
