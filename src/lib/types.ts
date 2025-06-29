@@ -58,3 +58,5 @@ export interface Award {
     target: number;
   };
 }
+
+export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach';

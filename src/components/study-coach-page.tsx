@@ -125,11 +125,16 @@ export function StudyCoachPage({ subjects, allGrades }: StudyCoachPageProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
        <div className="text-center">
-            <h1 className="text-3xl font-bold">Lern-Coach</h1>
-            <p className="text-muted-foreground mt-2">
-                Erhalte personalisierte Lerntipps basierend auf deinen Noten.
-            </p>
+         <div className="flex justify-center mb-4">
+            <div className="p-3 bg-primary/10 rounded-full border-8 border-primary/5">
+                <BrainCircuit className="h-8 w-8 text-primary" />
+            </div>
         </div>
+        <h1 className="text-3xl font-bold">Lern-Coach</h1>
+        <p className="text-muted-foreground mt-2">
+            Erhalte personalisierte Lerntipps basierend auf deinen Noten.
+        </p>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Fach auswählen</CardTitle>
@@ -153,7 +158,6 @@ export function StudyCoachPage({ subjects, allGrades }: StudyCoachPageProps) {
         <Card className="animate-fade-in-down">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-                <BrainCircuit className="h-6 w-6 text-primary" />
                 <span>Analyse für {selectedSubject.name}</span>
             </CardTitle>
              <CardDescription>
