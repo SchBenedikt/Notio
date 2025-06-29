@@ -58,7 +58,7 @@ Sprich den Schüler direkt und freundlich mit 'Du' an. Antworte auf Deutsch.
 
 Hier sind die Noten:
 {{#each grades}}
-- Bezeichnung: {{#if name}}{{name}}{{else}}{{type}}{{/if}}, Note: {{value}}, Gewichtung: {{weight}}{#if notes}}, Notiz: "{{notes}}"{{/if}}
+- Bezeichnung: {{#if this.name}}{{this.name}}{{else}}{{this.type}}{{/if}}, Note: {{this.value}}, Gewichtung: {{this.weight}}{{#if this.notes}}, Notiz: "{{this.notes}}"{{/if}}
 {{/each}}
 
 Gib deine Antwort im vorgegebenen JSON-Format.`,
