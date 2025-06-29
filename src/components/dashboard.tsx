@@ -628,6 +628,7 @@ export default function Dashboard() {
                   onUserNameChange={(name) => {
                     setUserName(name);
                   }}
+                  onToggleFollow={handleToggleFollow}
                />;
       case 'community':
         return <CommunityPage 

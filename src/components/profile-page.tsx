@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { reauthenticateWithCredential, EmailAuthProvider, updateProfile, updateEmail, updatePassword, deleteUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDocs, collection, query, writeBatch, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDocs, collection, query, writeBatch, setDoc, onSnapshot } from "firebase/firestore";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { Loader2, User, KeyRound, Mail, Trash2, Pencil, Info } from "lucide-reac
 import { Textarea } from "./ui/textarea";
 import type { Profile } from "@/lib/types";
 import { Skeleton } from "./ui/skeleton";
+import { FollowListDialog } from "./follow-list-dialog";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein.").max(50, "Name darf nicht länger als 50 Zeichen sein."),
@@ -40,10 +41,11 @@ const passwordFormSchema = z.object({
 type ProfilePageProps = {
   profile: Profile | null;
   onUserNameChange: (name: string) => void;
+  onToggleFollow: (targetUserId: string) => void;
 };
 
 
-export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
+export function ProfilePage({ profile, onUserNameChange, onToggleFollow }: ProfilePageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -51,6 +53,8 @@ export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [deletePassword, setDeletePassword] = useState("");
+  const [dialogState, setDialogState] = useState<{isOpen: boolean, title: string, userIds: string[]}>({isOpen: false, title: '', userIds: []});
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -70,6 +74,16 @@ export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
         });
     }
   }, [user, profile, profileForm]);
+
+  useEffect(() => {
+    if (!isFirebaseEnabled) return;
+    const q = collection(db, 'profiles');
+    const unsub = onSnapshot(q, (snapshot) => {
+        const profilesData = snapshot.docs.map(doc => ({...doc.data(), uid: doc.id } as Profile));
+        setAllProfiles(profilesData);
+    });
+    return () => unsub();
+  }, [isFirebaseEnabled]);
 
   const emailForm = useForm<z.infer<typeof emailFormSchema>>({
     resolver: zodResolver(emailFormSchema),
@@ -190,6 +204,20 @@ export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
     }
   };
 
+  const handleShowFollowList = (listType: 'followers' | 'following') => {
+    if (!profile) return;
+    setDialogState({
+        isOpen: true,
+        title: listType === 'followers' ? 'Follower' : 'Ich folge',
+        userIds: listType === 'followers' ? (profile.followers || []) : (profile.following || []),
+    });
+  }
+
+  const profilesForDialog = useMemo(() => {
+    if (!dialogState.userIds.length) return [];
+    return allProfiles.filter(p => dialogState.userIds.includes(p.uid));
+  }, [allProfiles, dialogState.userIds]);
+
 
   if (!isFirebaseEnabled || !user) {
     return (
@@ -220,6 +248,7 @@ export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
   }
 
   return (
+    <>
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center">
          <div className="flex justify-center mb-4">
@@ -320,14 +349,14 @@ export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
                     </div>
                 </div>
                 <div className="flex items-center gap-4 p-3 border rounded-md">
-                    <div className="flex-1 space-y-1">
+                    <button onClick={() => handleShowFollowList('followers')} className="flex-1 space-y-1 text-left">
                         <p className="text-xs text-muted-foreground">Follower</p>
                         <p className="font-medium text-lg">{profile?.followers?.length || 0}</p>
-                    </div>
-                    <div className="flex-1 space-y-1">
+                    </button>
+                    <button onClick={() => handleShowFollowList('following')} className="flex-1 space-y-1 text-left">
                         <p className="text-xs text-muted-foreground">Ich folge</p>
                         <p className="font-medium text-lg">{profile?.following?.length || 0}</p>
-                    </div>
+                    </button>
                 </div>
                 <div className="flex items-start gap-4 p-3 border rounded-md">
                     <Mail className="h-5 w-5 text-muted-foreground mt-1" />
@@ -387,5 +416,15 @@ export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
         </CardContent>
       </Card>
     </div>
+    <FollowListDialog 
+        isOpen={dialogState.isOpen}
+        onOpenChange={(isOpen) => setDialogState(prev => ({...prev, isOpen}))}
+        title={dialogState.title}
+        profiles={profilesForDialog}
+        currentUserId={user?.uid || null}
+        onToggleFollow={onToggleFollow}
+        followingList={profile?.following || []}
+    />
+    </>
   );
 }

@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection } from 'firebase/firestore';
 import type { Profile } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, User, Users } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
+import { FollowListDialog } from './follow-list-dialog';
+
 
 type UserProfilePageProps = {
   userId: string;
@@ -44,6 +46,8 @@ export function UserProfilePage({ userId, onBack, onToggleFollow, currentUserPro
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [dialogState, setDialogState] = useState<{isOpen: boolean, title: string, userIds: string[]}>({isOpen: false, title: '', userIds: []});
 
   useEffect(() => {
     setLoading(true);
@@ -62,9 +66,32 @@ export function UserProfilePage({ userId, onBack, onToggleFollow, currentUserPro
 
     return () => unsubscribe();
   }, [userId]);
+
+  useEffect(() => {
+    const q = collection(db, 'profiles');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const profilesData = snapshot.docs.map(doc => ({...doc.data(), uid: doc.id } as Profile));
+        setAllProfiles(profilesData);
+    });
+    return () => unsubscribe();
+  }, []);
   
   const isFollowing = currentUserProfile?.following?.includes(userId) || false;
   const isOwnProfile = user?.uid === userId;
+
+  const handleShowFollowList = (listType: 'followers' | 'following') => {
+    if (!profile) return;
+    setDialogState({
+        isOpen: true,
+        title: listType === 'followers' ? 'Follower' : 'Folgt',
+        userIds: listType === 'followers' ? (profile.followers || []) : (profile.following || []),
+    });
+  }
+
+  const profilesForDialog = useMemo(() => {
+    if (!dialogState.userIds.length) return [];
+    return allProfiles.filter(p => dialogState.userIds.includes(p.uid));
+  }, [allProfiles, dialogState.userIds]);
 
 
   if (loading) {
@@ -85,6 +112,7 @@ export function UserProfilePage({ userId, onBack, onToggleFollow, currentUserPro
   }
 
   return (
+    <>
     <div className="max-w-2xl mx-auto space-y-6">
        <Button variant="ghost" onClick={onBack}>
          <ArrowLeft className="mr-2 h-4 w-4" />
@@ -102,15 +130,15 @@ export function UserProfilePage({ userId, onBack, onToggleFollow, currentUserPro
                 </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-                <div className="flex gap-6 text-center">
-                    <div>
+                <div className="flex gap-6">
+                    <button onClick={() => handleShowFollowList('followers')} className="text-center">
                         <p className="text-2xl font-bold">{profile.followers?.length || 0}</p>
                         <p className="text-sm text-muted-foreground">Follower</p>
-                    </div>
-                     <div>
+                    </button>
+                     <button onClick={() => handleShowFollowList('following')} className="text-center">
                         <p className="text-2xl font-bold">{profile.following?.length || 0}</p>
                         <p className="text-sm text-muted-foreground">Folgt</p>
-                    </div>
+                    </button>
                 </div>
                 {!isOwnProfile && (
                     <Button 
@@ -124,5 +152,15 @@ export function UserProfilePage({ userId, onBack, onToggleFollow, currentUserPro
             </CardContent>
        </Card>
     </div>
+    <FollowListDialog 
+        isOpen={dialogState.isOpen}
+        onOpenChange={(isOpen) => setDialogState(prev => ({...prev, isOpen}))}
+        title={dialogState.title}
+        profiles={profilesForDialog}
+        currentUserId={user?.uid || null}
+        onToggleFollow={onToggleFollow}
+        followingList={currentUserProfile?.following || []}
+    />
+    </>
   );
 }
