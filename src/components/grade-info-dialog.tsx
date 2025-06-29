@@ -159,11 +159,10 @@ export function GradeInfoDialog({
             </div>
           )}
         </div>
-        <DialogFooter className="sm:justify-between flex-col-reverse sm:flex-row gap-2">
-          <div>
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">
+                <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Löschen
                 </Button>
@@ -186,20 +185,13 @@ export function GradeInfoDialog({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
-          <div className="flex gap-2 justify-end sm:flex-row flex-col-reverse">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Schließen
-            </Button>
-            <Button type="button" onClick={() => onEdit(grade)}>
+            <Button variant="outline" onClick={() => onEdit(grade)}>
               <Pencil className="mr-2 h-4 w-4" />
               Bearbeiten
             </Button>
-          </div>
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              Schließen
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
