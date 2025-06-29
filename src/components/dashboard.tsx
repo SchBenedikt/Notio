@@ -504,6 +504,7 @@ export default function Dashboard() {
     totalGradesCount: totalGradesCount,
     currentView: view,
     onSetView: setView,
+    userName: user?.displayName ?? null,
   };
   
   const renderView = () => {

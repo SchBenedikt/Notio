@@ -17,6 +17,7 @@ type AppSidebarProps = {
   totalGradesCount: number;
   currentView: AppView;
   onSetView: (view: AppView) => void;
+  userName: string | null;
 };
 
 export function AppSidebar(props: AppSidebarProps) {

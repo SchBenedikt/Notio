@@ -65,6 +65,7 @@ type SidebarContentProps = {
   currentView: AppView;
   onSetView: (view: AppView) => void;
   onClose?: () => void;
+  userName: string | null;
 };
 
 export function SidebarContent({ 
@@ -82,6 +83,7 @@ export function SidebarContent({
   currentView,
   onSetView,
   onClose,
+  userName,
 }: SidebarContentProps) {
     const [openView, setOpenView] = useState<'subject' | 'grade' | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -175,7 +177,7 @@ export function SidebarContent({
                     className="justify-start w-full h-11 text-base font-semibold"
                     onClick={() => handleViewChange('profile')}>
                      <User className="mr-2 h-5 w-5" />
-                    Profil & Sicherheit
+                    {userName || 'Profil & Sicherheit'}
                 </Button>
             </div>
 
