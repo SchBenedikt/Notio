@@ -71,9 +71,11 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
               aria-expanded={open}
               className="w-full justify-between flex-1"
             >
-              {selectedSchool
-                ? selectedSchool.name
-                : "Schule auswählen..."}
+              <span className="truncate">
+                {selectedSchool
+                  ? selectedSchool.name
+                  : "Schule auswählen..."}
+              </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -86,7 +88,7 @@ export function SchoolCombobox({ schools, value, onChange, onAddSchool }: School
                   {schools.map((school) => (
                     <CommandItem
                       key={school.id}
-                      value={school.name}
+                      value={school.name} // Value for searching
                       onSelect={() => {
                         onChange(school.id)
                         setOpen(false)
