@@ -62,8 +62,8 @@ type SidebarContentProps = {
   oralGradesCount: number;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  currentView: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files';
-  onSetView: (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files') => void;
+  currentView: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards';
+  onSetView: (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards') => void;
   onClose?: () => void;
 };
 
@@ -99,7 +99,7 @@ export function SidebarContent({
     const gradeAttachments = gradeForm.watch('attachments');
 
 
-    const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files') => {
+    const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards') => {
         onSetView(view);
         if (onClose) onClose();
     }
@@ -204,6 +204,13 @@ export function SidebarContent({
                     onClick={() => handleViewChange('files')}>
                      <Files className="mr-2 h-4 w-4" />
                     Dateiverwaltung
+                </Button>
+                <Button 
+                    variant={currentView === 'awards' ? "secondary" : "ghost"} 
+                    className="justify-start w-full"
+                    onClick={() => handleViewChange('awards')}>
+                     <Award className="mr-2 h-4 w-4" />
+                    Auszeichnungen
                 </Button>
             </div>
 

@@ -43,3 +43,12 @@ export type AddSubjectData = {
   category: SubjectCategory;
   targetGrade?: number;
 };
+
+export interface Award {
+  id: string;
+  name: string;
+  description: string;
+  secretDescription: string;
+  icon: React.ComponentType<{ className?: string }>;
+  unlocked: boolean;
+}
