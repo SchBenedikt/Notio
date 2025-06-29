@@ -151,8 +151,7 @@ export default function Dashboard() {
     if (theme !== "blue") {
       root.classList.add(`theme-${theme}`);
     }
-    if (user) updateSetting('theme', theme);
-  }, [theme, updateSetting, user]);
+  }, [theme]);
   
   
   useEffect(() => {
@@ -162,8 +161,7 @@ export default function Dashboard() {
     } else {
       root.classList.remove('dark');
     }
-    if (user) updateSetting('isDarkMode', isDarkMode);
-  }, [isDarkMode, updateSetting, user]);
+  }, [isDarkMode]);
 
 
   const subjectsForGradeLevel = subjects; // Already filtered by Firestore query or local state
@@ -596,9 +594,15 @@ export default function Dashboard() {
             updateSetting('minorSubjectWeight', weight);
           }}
           theme={theme}
-          onThemeChange={setTheme}
+          onThemeChange={(newTheme) => {
+            setTheme(newTheme);
+            updateSetting('theme', newTheme);
+          }}
           isDarkMode={isDarkMode}
-          onIsDarkModeChange={setIsDarkMode}
+          onIsDarkModeChange={(isDark) => {
+            setIsDarkMode(isDark);
+            updateSetting('isDarkMode', isDark);
+          }}
           onLogout={handleLogout}
           userRole={userRole}
           onUserRoleChange={(role) => {
