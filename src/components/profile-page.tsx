@@ -11,13 +11,13 @@ import { reauthenticateWithCredential, EmailAuthProvider, updateProfile, updateE
 import { auth, db } from "@/lib/firebase";
 import { doc, getDocs, collection, query, writeBatch } from "firebase/firestore";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, User, KeyRound, Mail, Trash2 } from "lucide-react";
+import { Loader2, User, KeyRound, Mail, Trash2, Pencil } from "lucide-react";
 
 // Schemas for forms
 const profileFormSchema = z.object({
@@ -38,6 +38,8 @@ export function ProfilePage() {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [deletePassword, setDeletePassword] = useState("");
 
@@ -55,6 +57,13 @@ export function ProfilePage() {
     resolver: zodResolver(passwordFormSchema),
     defaultValues: { currentPassword: "", newPassword: "" },
   });
+  
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    profileForm.reset({ name: user?.displayName || "" });
+    emailForm.reset();
+    passwordForm.reset();
+  }
 
   const handleProfileUpdate = async (values: z.infer<typeof profileFormSchema>) => {
     if (!user) return;
@@ -62,6 +71,7 @@ export function ProfilePage() {
     try {
       await updateProfile(user, { displayName: values.name });
       toast({ title: "Erfolg", description: "Dein Name wurde aktualisiert." });
+      setIsEditing(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Fehler", description: error.message });
     } finally {
@@ -78,6 +88,7 @@ export function ProfilePage() {
       await updateEmail(user, values.newEmail);
       toast({ title: "E-Mail aktualisiert", description: `Eine Bestätigungs-E-Mail wurde an ${values.newEmail} gesendet.` });
       emailForm.reset();
+      setIsEditing(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Fehler", description: "Falsches Passwort oder die E-Mail wird bereits verwendet." });
     } finally {
@@ -94,6 +105,7 @@ export function ProfilePage() {
       await updatePassword(user, values.newPassword);
       toast({ title: "Erfolg", description: "Dein Passwort wurde erfolgreich geändert." });
       passwordForm.reset();
+      setIsEditing(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Fehler beim Ändern des Passworts", description: "Dein aktuelles Passwort war nicht korrekt." });
     } finally {
@@ -108,7 +120,6 @@ export function ProfilePage() {
         const credential = EmailAuthProvider.credential(user.email, deletePassword);
         await reauthenticateWithCredential(user, credential);
 
-        // Delete Firestore data
         const batch = writeBatch(db);
         const gradesQuery = query(collection(db, 'users', user.uid, 'grades'));
         const gradesSnap = await getDocs(gradesQuery);
@@ -123,7 +134,6 @@ export function ProfilePage() {
         
         await batch.commit();
         
-        // Delete user
         await deleteUser(user);
         toast({ title: "Konto gelöscht", description: "Dein Konto und alle zugehörigen Daten wurden gelöscht." });
         router.push("/login");
@@ -137,12 +147,12 @@ export function ProfilePage() {
   };
 
 
-  if (!isFirebaseEnabled) {
+  if (!isFirebaseEnabled || !user) {
     return (
         <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] bg-background/50 rounded-lg border border-dashed">
             <h2 className="text-2xl font-semibold">Profilverwaltung nicht verfügbar</h2>
             <p className="text-muted-foreground mt-2 max-w-md">
-                Die Profilverwaltung ist nur im angemeldeten Zustand verfügbar. Bitte konfiguriere Firebase, um diese Funktion zu nutzen.
+                Die Profilverwaltung ist nur im angemeldeten Zustand verfügbar.
             </p>
         </div>
     );
@@ -161,78 +171,105 @@ export function ProfilePage() {
           Verwalte deine Kontoinformationen und Sicherheitseinstellungen.
         </p>
       </div>
-      
-      {/* Profile Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profilinformationen</CardTitle>
-          <CardDescription>Aktualisiere deinen öffentlichen Namen.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...profileForm}>
-            <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
-              <FormField control={profileForm.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Anzeigename</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Dein Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <Button type="submit" disabled={loading.profile}>
-                {loading.profile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Namen speichern
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      
-      {/* Security Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sicherheit</CardTitle>
-          <CardDescription>Ändere deine E-Mail-Adresse oder dein Passwort.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Change Email */}
-          <Form {...emailForm}>
-            <form onSubmit={emailForm.handleSubmit(handleEmailUpdate)} className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> E-Mail-Adresse ändern</h4>
-                <FormField control={emailForm.control} name="newEmail" render={({ field }) => (
-                    <FormItem><FormLabel>Neue E-Mail</FormLabel><FormControl><Input type="email" placeholder="neue@email.de" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={emailForm.control} name="password" render={({ field }) => (
-                    <FormItem><FormLabel>Aktuelles Passwort</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <Button type="submit" disabled={loading.email} variant="secondary">
-                  {loading.email && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  E-Mail ändern
+
+      {isEditing ? (
+        // EDIT MODE
+        <Card>
+            <CardHeader>
+                <CardTitle>Profil bearbeiten</CardTitle>
+                <CardDescription>Ändere hier deinen Namen, deine E-Mail oder dein Passwort.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4 p-4 border rounded-lg">
+                        <h4 className="font-medium flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> Anzeigename</h4>
+                        <FormField control={profileForm.control} name="name" render={({ field }) => (
+                            <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Dein Name" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <Button type="submit" disabled={loading.profile}>
+                            {loading.profile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Namen speichern
+                        </Button>
+                    </form>
+                </Form>
+                
+                <Form {...emailForm}>
+                    <form onSubmit={emailForm.handleSubmit(handleEmailUpdate)} className="space-y-4 p-4 border rounded-lg">
+                        <h4 className="font-medium flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> E-Mail-Adresse ändern</h4>
+                        <FormField control={emailForm.control} name="newEmail" render={({ field }) => (
+                            <FormItem><FormLabel>Neue E-Mail</FormLabel><FormControl><Input type="email" placeholder="neue@email.de" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={emailForm.control} name="password" render={({ field }) => (
+                            <FormItem><FormLabel>Aktuelles Passwort zur Bestätigung</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <Button type="submit" disabled={loading.email} variant="secondary">
+                        {loading.email && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        E-Mail ändern
+                        </Button>
+                    </form>
+                </Form>
+
+                <Form {...passwordForm}>
+                    <form onSubmit={passwordForm.handleSubmit(handlePasswordUpdate)} className="space-y-4 p-4 border rounded-lg">
+                        <h4 className="font-medium flex items-center gap-2"><KeyRound className="h-4 w-4 text-muted-foreground" /> Passwort ändern</h4>
+                        <FormField control={passwordForm.control} name="currentPassword" render={({ field }) => (
+                            <FormItem><FormLabel>Aktuelles Passwort</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
+                            <FormItem><FormLabel>Neues Passwort</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <Button type="submit" disabled={loading.password} variant="secondary">
+                        {loading.password && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Passwort ändern
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+            <CardFooter className="justify-end">
+                <Button variant="ghost" onClick={handleCancelEdit}>Abbrechen</Button>
+            </CardFooter>
+        </Card>
+      ) : (
+        // VIEW MODE
+        <Card>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>Profilübersicht</CardTitle>
+                    <CardDescription>Deine persönlichen Daten und Sicherheitseinstellungen.</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Bearbeiten
                 </Button>
-            </form>
-          </Form>
-          {/* Change Password */}
-           <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(handlePasswordUpdate)} className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium flex items-center gap-2"><KeyRound className="h-4 w-4 text-muted-foreground" /> Passwort ändern</h4>
-                <FormField control={passwordForm.control} name="currentPassword" render={({ field }) => (
-                    <FormItem><FormLabel>Aktuelles Passwort</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
-                    <FormItem><FormLabel>Neues Passwort</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <Button type="submit" disabled={loading.password} variant="secondary">
-                  {loading.password && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Passwort ändern
-                </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                 <div className="flex items-center gap-4 p-3 border rounded-md">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Anzeigename</p>
+                        <p className="font-medium">{user.displayName || "Nicht festgelegt"}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 border rounded-md">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">E-Mail-Adresse</p>
+                        <p className="font-medium">{user.email}</p>
+                    </div>
+                </div>
+                 <div className="flex items-center gap-4 p-3 border rounded-md">
+                    <KeyRound className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Passwort</p>
+                        <p className="font-medium text-muted-foreground italic">Zum Ändern bitte auf "Bearbeiten" klicken.</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
 
       {/* Danger Zone */}
-       <Card className="border-destructive">
+      <Card className="border-destructive">
         <CardHeader>
           <CardTitle className="text-destructive">Gefahrenzone</CardTitle>
           <CardDescription>Diese Aktionen können nicht rückgängig gemacht werden.</CardDescription>
