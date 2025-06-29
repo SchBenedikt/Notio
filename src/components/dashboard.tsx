@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { ProfilePage } from "./profile-page";
 import { CommunityPage } from "./community-page";
 import { UserProfilePage } from "./user-profile-page";
+import { SettingsPage } from "./settings-page";
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
@@ -613,18 +614,8 @@ export default function Dashboard() {
       case 'profile':
         return <ProfilePage 
                   profile={profile}
-                  userRole={userRole}
-                  onUserRoleChange={(role) => {
-                    setUserRole(role);
-                    updateSetting('role', role);
-                  }}
                   onUserNameChange={(name) => {
                     setUserName(name);
-                  }}
-                  userSchool={userSchool}
-                  onUserSchoolChange={(school) => {
-                    setUserSchool(school);
-                    updateSetting('school', school);
                   }}
                />;
       case 'community':
@@ -643,6 +634,39 @@ export default function Dashboard() {
                    />
         }
         return null;
+      case 'settings':
+        return <SettingsPage
+            mainSubjectWeight={mainSubjectWeight}
+            onMainSubjectWeightChange={(weight) => {
+                setMainSubjectWeight(weight);
+                updateSetting('mainSubjectWeight', weight);
+            }}
+            minorSubjectWeight={minorSubjectWeight}
+            onMinorSubjectWeightChange={(weight) => {
+                setMinorSubjectWeight(weight);
+                updateSetting('minorSubjectWeight', weight);
+            }}
+            theme={theme}
+            onThemeChange={(newTheme) => {
+                setTheme(newTheme);
+                updateSetting('theme', newTheme);
+            }}
+            isDarkMode={isDarkMode}
+            onIsDarkModeChange={(isDark) => {
+                setIsDarkMode(isDark);
+                updateSetting('isDarkMode', isDark);
+            }}
+            userRole={userRole}
+            onUserRoleChange={(role) => {
+                setUserRole(role);
+                updateSetting('role', role);
+            }}
+            userSchool={userSchool}
+            onUserSchoolChange={(school) => {
+                setUserSchool(school);
+                updateSetting('school', school);
+            }}
+        />;
       default:
         return null;
     }
@@ -670,26 +694,6 @@ export default function Dashboard() {
           }}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           overallAverage={overallAverage}
-          mainSubjectWeight={mainSubjectWeight}
-          onMainSubjectWeightChange={(weight) => {
-            setMainSubjectWeight(weight);
-            updateSetting('mainSubjectWeight', weight);
-          }}
-          minorSubjectWeight={minorSubjectWeight}
-          onMinorSubjectWeightChange={(weight) => {
-            setMinorSubjectWeight(weight);
-            updateSetting('minorSubjectWeight', weight);
-          }}
-          theme={theme}
-          onThemeChange={(newTheme) => {
-            setTheme(newTheme);
-            updateSetting('theme', newTheme);
-          }}
-          isDarkMode={isDarkMode}
-          onIsDarkModeChange={(isDark) => {
-            setIsDarkMode(isDark);
-            updateSetting('isDarkMode', isDark);
-          }}
           onLogout={handleLogout}
           onNavigate={setView}
         />

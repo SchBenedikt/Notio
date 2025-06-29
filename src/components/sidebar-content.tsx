@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject, Grade, Attachment, AppView } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit, User, Users } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit, User, Users, Settings } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -177,7 +177,7 @@ export function SidebarContent({
                     className="justify-start w-full h-11 text-base font-semibold"
                     onClick={() => handleViewChange('profile')}>
                      <User className="mr-2 h-5 w-5" />
-                    {userName || 'Profil & Sicherheit'}
+                    {userName || 'Dein Profil'}
                 </Button>
             </div>
 
@@ -232,6 +232,13 @@ export function SidebarContent({
                     onClick={() => handleViewChange('data')}>
                      <Database className="mr-2 h-4 w-4" />
                     Datenverwaltung
+                </Button>
+                 <Button 
+                    variant={currentView === 'settings' ? "secondary" : "ghost"} 
+                    className="justify-start w-full"
+                    onClick={() => handleViewChange('settings')}>
+                     <Settings className="mr-2 h-4 w-4" />
+                    Einstellungen
                 </Button>
             </div>
 

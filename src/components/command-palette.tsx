@@ -14,6 +14,7 @@ import {
   Award,
   User,
   Users,
+  Settings,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -32,7 +33,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community") => void;
+  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -93,7 +94,11 @@ export function CommandPalette({
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("profile"))}>
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profil & Sicherheit</span>
+                    <span>Profil</span>
+                </CommandItem>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("settings"))}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Einstellungen</span>
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("files"))}>
                     <Files className="mr-2 h-4 w-4" />

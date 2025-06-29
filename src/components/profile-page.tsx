@@ -17,11 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, User, KeyRound, Mail, Trash2, Pencil, Info, School, Briefcase } from "lucide-react";
+import { Loader2, User, KeyRound, Mail, Trash2, Pencil, Info } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import type { Profile } from "@/lib/types";
 import { Skeleton } from "./ui/skeleton";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein.").max(50, "Name darf nicht länger als 50 Zeichen sein."),
@@ -40,15 +39,11 @@ const passwordFormSchema = z.object({
 
 type ProfilePageProps = {
   profile: Profile | null;
-  userRole: string;
-  onUserRoleChange: (role: 'student' | 'teacher') => void;
-  userSchool: string;
-  onUserSchoolChange: (school: string) => void;
   onUserNameChange: (name: string) => void;
 };
 
 
-export function ProfilePage({ profile, userRole, onUserRoleChange, userSchool, onUserSchoolChange, onUserNameChange }: ProfilePageProps) {
+export function ProfilePage({ profile, onUserNameChange }: ProfilePageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -234,7 +229,7 @@ export function ProfilePage({ profile, userRole, onUserRoleChange, userSchool, o
         </div>
         <h1 className="text-3xl font-bold">Dein Profil</h1>
         <p className="text-muted-foreground mt-2">
-          Verwalte deine Kontoinformationen und Sicherheitseinstellungen.
+          Verwalte deine öffentlichen Profildaten und Sicherheitseinstellungen.
         </p>
       </div>
 
@@ -351,42 +346,6 @@ export function ProfilePage({ profile, userRole, onUserRoleChange, userSchool, o
             </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>App-Einstellungen</CardTitle>
-          <CardDescription>Diese Einstellungen sind privat und gelten nur für dich.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="flex items-center gap-4 p-3 border rounded-md">
-              <School className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                  <Label htmlFor="school" className="text-xs text-muted-foreground">Schule</Label>
-                  <Input id="school" value={userSchool} onChange={(e) => onUserSchoolChange(e.target.value)} placeholder="Name deiner Schule" className="border-0 px-0 h-auto text-base focus-visible:ring-0 focus-visible:ring-offset-0" />
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-3 border rounded-md">
-                <Briefcase className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                    <Label className="text-xs text-muted-foreground">Rolle</Label>
-                    <RadioGroup
-                      value={userRole}
-                      onValueChange={(value) => onUserRoleChange(value as any)}
-                      className="flex space-x-4 pt-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="student" id="role-student" />
-                        <Label htmlFor="role-student" className="font-normal">Schüler</Label>
-                      </div>
-                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="teacher" id="role-teacher" />
-                        <Label htmlFor="role-teacher" className="font-normal">Lehrer</Label>
-                      </div>
-                    </RadioGroup>
-                </div>
-            </div>
-        </CardContent>
-      </Card>
 
       <Card className="border-destructive">
         <CardHeader>

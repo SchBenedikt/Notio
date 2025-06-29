@@ -88,4 +88,4 @@ export interface Award {
   };
 }
 
-export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile';
+export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings';
