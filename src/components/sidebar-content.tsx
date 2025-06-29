@@ -192,6 +192,13 @@ export function SidebarContent({
                     Fächerübersicht
                 </Button>
                 <Button 
+                    variant={currentView === 'studysets' ? "secondary" : "ghost"} 
+                    className="justify-start w-full"
+                    onClick={() => handleViewChange('studysets')}>
+                     <BrainCircuit className="mr-2 h-4 w-4" />
+                    Lernsets
+                </Button>
+                <Button 
                     variant={currentView === 'calculator' ? "secondary" : "ghost"} 
                     className="justify-start w-full"
                     onClick={() => handleViewChange('calculator')}>

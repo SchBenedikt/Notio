@@ -33,7 +33,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings") => void;
+  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -75,6 +75,10 @@ export function CommandPalette({
                 <CommandItem onSelect={() => runCommand(() => onNavigate("subjects"))}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Fächerübersicht</span>
+                </CommandItem>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("studysets"))}>
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    <span>Lernsets</span>
                 </CommandItem>
                 <CommandItem onSelect={() => runCommand(() => onNavigate("calculator"))}>
                     <Calculator className="mr-2 h-4 w-4" />

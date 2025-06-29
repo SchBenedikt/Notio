@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -28,12 +28,17 @@ import { ProfilePage } from "./profile-page";
 import { CommunityPage } from "./community-page";
 import { UserProfilePage } from "./user-profile-page";
 import { SettingsPage } from "./settings-page";
+import { StudySetsPage } from "./study-sets-page";
+import { StudySetDetailPage } from "./study-set-detail-page";
+import { CreateEditStudySetDialog } from "./create-edit-study-set-dialog";
+
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
   const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
+  const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   
   // Settings state
@@ -50,11 +55,13 @@ export default function Dashboard() {
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [view, setView] = useState<AppView>('subjects');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
+  const [viewingStudySetId, setViewingStudySetId] = useState<string | null>(null);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
   const [gradeInfoDialogState, setGradeInfoDialogState] = useState<{isOpen: boolean, grade: Grade | null, subject: Subject | null}>({isOpen: false, grade: null, subject: null});
+  const [studySetDialogState, setStudySetDialogState] = useState<{isOpen: boolean, setToEdit?: StudySet | null}>({isOpen: false});
   
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -152,6 +159,12 @@ export default function Dashboard() {
               setGrades([]);
             }
 
+            // Fetch Study Sets
+            const studySetsQuery = query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', selectedGradeLevel));
+            const studySetsSnap = await getDocs(studySetsQuery);
+            const studySetsData = studySetsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as StudySet[];
+            setStudySets(studySetsData);
+
           } catch (error) {
             console.error("Error fetching data:", error);
             toast({ title: "Fehler beim Laden der Daten", variant: "destructive" });
@@ -176,6 +189,7 @@ export default function Dashboard() {
         setDataLoading(true);
         setSubjects([]);
         setGrades([]);
+        setStudySets([]);
         setDataLoading(false);
     }
   }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
@@ -415,6 +429,42 @@ export default function Dashboard() {
     }
   };
   
+  const handleSaveStudySet = async (values: Omit<StudySet, 'id' | 'gradeLevel'>, setId?: string) => {
+    if (!user || !isFirebaseEnabled) {
+        toast({ title: "Funktion nicht verfügbar", description: "Lernsets sind im Demo-Modus nicht verfügbar.", variant: "destructive" });
+        return;
+    }
+    const data = { ...values, gradeLevel: selectedGradeLevel };
+    try {
+        if (setId) {
+            const setRef = doc(db, 'users', user.uid, 'studySets', setId);
+            await setDoc(setRef, data, { merge: true });
+            setStudySets(currentSets => currentSets.map(s => s.id === setId ? { ...s, ...data } : s));
+            toast({ title: "Lernset aktualisiert" });
+        } else {
+            const setRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
+            setStudySets(currentSets => [...currentSets, { id: setRef.id, ...data }]);
+            toast({ title: "Lernset erstellt" });
+        }
+    } catch (error) {
+        console.error("Error saving study set:", error);
+        toast({ title: "Fehler beim Speichern des Lernsets", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteStudySet = async (setId: string) => {
+    if (!user || !isFirebaseEnabled) return;
+    try {
+        await deleteDoc(doc(db, 'users', user.uid, 'studySets', setId));
+        setStudySets(currentSets => currentSets.filter(s => s.id !== setId));
+        toast({ title: "Lernset gelöscht", variant: "destructive" });
+    } catch (error) {
+        console.error("Error deleting study set:", error);
+        toast({ title: "Fehler beim Löschen des Lernsets", variant: "destructive" });
+    }
+  };
+
+
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
   };
@@ -521,9 +571,20 @@ export default function Dashboard() {
     }
   };
   
+  const setAppView = (view: AppView) => {
+    if (view !== 'user-profile') setViewingProfileId(null);
+    if (view !== 'studyset-detail') setViewingStudySetId(null);
+    setView(view);
+  }
+
   const handleViewProfile = (userId: string) => {
     setViewingProfileId(userId);
     setView('user-profile');
+  };
+
+  const handleViewStudySet = (setId: string) => {
+    setViewingStudySetId(setId);
+    setView('studyset-detail');
   };
 
   const handleToggleFollow = async (targetUserId: string) => {
@@ -566,7 +627,7 @@ export default function Dashboard() {
     totalSubjectsCount: totalSubjectsCount,
     totalGradesCount: totalGradesCount,
     currentView: view,
-    onSetView: setView,
+    onSetView: setAppView,
     userName: userName,
   };
   
@@ -591,6 +652,24 @@ export default function Dashboard() {
             onShowGradeInfo={handleOpenGradeInfoDialog}
           />
         );
+      case 'studysets':
+        return <StudySetsPage 
+            studySets={studySets} 
+            onViewStudySet={handleViewStudySet}
+            onEditStudySet={(set) => setStudySetDialogState({ isOpen: true, setToEdit: set })}
+            onDeleteStudySet={handleDeleteStudySet}
+            onAddNew={() => setStudySetDialogState({ isOpen: true, setToEdit: null })}
+        />;
+      case 'studyset-detail':
+        const set = studySets.find(s => s.id === viewingStudySetId);
+        if (set) {
+          return <StudySetDetailPage 
+            studySet={set}
+            onBack={() => setView('studysets')}
+            onEditSet={(set) => setStudySetDialogState({ isOpen: true, setToEdit: set })}
+          />;
+        }
+        return null; // Or a not found component
       case 'tutor':
         return (
           <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
@@ -628,7 +707,7 @@ export default function Dashboard() {
                   onUserNameChange={(name) => {
                     setUserName(name);
                   }}
-                  onToggleFollow={handleToggleFollow}
+                  onToggleFollow={onToggleFollow}
                />;
       case 'community':
         return <CommunityPage 
@@ -709,7 +788,7 @@ export default function Dashboard() {
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           overallAverage={overallAverage}
           onLogout={handleLogout}
-          onNavigate={setView}
+          onNavigate={setAppView}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {renderView()}
@@ -719,7 +798,7 @@ export default function Dashboard() {
         isOpen={isCommandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
         subjects={subjectsForGradeLevel}
-        onNavigate={setView}
+        onNavigate={setAppView}
         onAddSubject={() => setIsAddSubjectOpen(true)}
         onAddGrade={handleOpenAddGradeDialog}
         onExport={handleExportCSV}
@@ -763,6 +842,14 @@ export default function Dashboard() {
             handleDeleteGrade(gradeId);
         }}
       />
+       <CreateEditStudySetDialog
+            isOpen={studySetDialogState.isOpen}
+            onOpenChange={(isOpen) => !isOpen && setStudySetDialogState({ isOpen: false, setToEdit: undefined })}
+            studySetToEdit={studySetDialogState.setToEdit}
+            onSubmit={async (values, setId) => {
+                await handleSaveStudySet(values, setId);
+            }}
+        />
     </div>
   );
 }

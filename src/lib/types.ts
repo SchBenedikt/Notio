@@ -89,4 +89,19 @@ export interface Award {
   };
 }
 
-export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings';
+export interface StudyCard {
+  id: string;
+  term: string;
+  definition: string;
+}
+
+export interface StudySet {
+  id: string;
+  title: string;
+  description?: string;
+  cards: StudyCard[];
+  gradeLevel: number;
+}
+
+
+export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail';
