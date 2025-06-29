@@ -20,6 +20,8 @@ type SubjectListProps = {
   onShowGradeInfo: (grade: Grade) => void;
   onEditGrade: (grade: Grade) => void;
   onViewStudySet: (id: string) => void;
+  onEditStudySet: (set: StudySet) => void;
+  onDeleteStudySet: (id: string) => void;
   onOpenCommandPalette: () => void;
 };
 
@@ -37,6 +39,8 @@ export function SubjectList({
   onShowGradeInfo,
   onEditGrade,
   onViewStudySet,
+  onEditStudySet,
+  onDeleteStudySet,
   onOpenCommandPalette
 }: SubjectListProps) {
   
@@ -70,6 +74,8 @@ export function SubjectList({
           onShowGradeInfo={onShowGradeInfo}
           onEditGrade={onEditGrade}
           onViewStudySet={onViewStudySet}
+          onEditStudySet={onEditStudySet}
+          onDeleteStudySet={onDeleteStudySet}
         />
       ))}
     </Accordion>

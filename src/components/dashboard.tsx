@@ -634,7 +634,7 @@ export default function Dashboard() {
     grades: grades,
     overallAverage: overallAverage,
     onAddSubject: handleAddSubject,
-    onAddGrade: (subjectId: string, values: AddGradeData) => handleSaveGrade(subjectId, values),
+    onAddGrade: (subjectId: string, values: Omit<AddGradeData, 'subjectId'>) => handleSaveGrade(subjectId, values),
     mainSubjectsAverage: mainSubjectsAverage,
     minorSubjectsAverage: minorSubjectsAverage,
     writtenGradesCount: writtenGradesCount,
@@ -668,6 +668,8 @@ export default function Dashboard() {
             onEditGrade={handleOpenEditGradeDialog}
             studySets={studySets}
             onViewStudySet={handleViewStudySet}
+            onEditStudySet={handleNavigateToEditStudySet}
+            onDeleteStudySet={handleDeleteStudySet}
           />
         );
       case 'studysets':

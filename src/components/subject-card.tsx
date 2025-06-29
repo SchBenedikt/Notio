@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2, CalendarDays, BrainCircuit, Search } from "lucide-react";
+import { PenLine, MessageSquareText, Plus, ChevronDown, Settings, Pencil, Crosshair, Paperclip, Trash2, CalendarDays, BrainCircuit, Search, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -30,6 +30,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Grade, Subject, StudySet } from "@/lib/types";
 import { calculateFinalGrade } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -71,10 +77,12 @@ type SubjectCardProps = {
   onShowGradeInfo: (grade: Grade) => void;
   onEditGrade: (grade: Grade) => void;
   onViewStudySet: (id: string) => void;
+  onEditStudySet: (set: StudySet) => void;
+  onDeleteStudySet: (id: string) => void;
   animationIndex: number;
 };
 
-export function SubjectCard({ subject, grades, studySets, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditSubject, onShowGradeInfo, onEditGrade, onViewStudySet, animationIndex }: SubjectCardProps) {
+export function SubjectCard({ subject, grades, studySets, onDeleteSubject, onUpdateSubject, onAddGradeToSubject, onEditSubject, onShowGradeInfo, onEditGrade, onViewStudySet, onEditStudySet, onDeleteStudySet, animationIndex }: SubjectCardProps) {
   const [isWeightPopoverOpen, setIsWeightPopoverOpen] = useState(false);
   const [studySetSearch, setStudySetSearch] = useState("");
   
@@ -247,13 +255,44 @@ export function SubjectCard({ subject, grades, studySets, onDeleteSubject, onUpd
                             className="pl-8 h-8 text-xs"
                         />
                     </div>
-                    <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
                         {filteredStudySets.map(set => (
-                            <li key={set.id}>
-                                <button onClick={() => onViewStudySet(set.id)} className="w-full flex items-center gap-3 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-left">
+                            <li key={set.id} className="flex items-center justify-between p-1 rounded-md bg-muted/50 hover:bg-muted group">
+                                <button onClick={() => onViewStudySet(set.id)} className="flex-1 flex items-center gap-3 p-1 text-left">
                                     <BrainCircuit className="h-5 w-5 text-muted-foreground" />
-                                    <p className="font-medium text-sm">{set.title}</p>
+                                    <p className="font-medium text-sm truncate">{set.title}</p>
                                 </button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => onEditStudySet(set)}>
+                                            <Pencil className="mr-2 h-4 w-4" />
+                                            Bearbeiten
+                                        </DropdownMenuItem>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Löschen
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Lernset löschen?</AlertDialogTitle>
+                                                    <AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => onDeleteStudySet(set.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </li>
                         ))}
                         {filteredStudySets.length === 0 && (
