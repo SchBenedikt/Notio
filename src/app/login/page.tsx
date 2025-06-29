@@ -76,6 +76,7 @@ export default function LoginPage() {
             
             await updateProfile(user, { displayName: signupName });
 
+            // Create settings document
             await setDoc(doc(db, 'users', user.uid, 'settings', 'main'), {
                 selectedGradeLevel: 10,
                 mainSubjectWeight: 2,
@@ -84,6 +85,14 @@ export default function LoginPage() {
                 isDarkMode: false,
                 role: 'student',
                 school: '',
+            });
+
+            // Create profile document
+            await setDoc(doc(db, 'profiles', user.uid), {
+                uid: user.uid,
+                name: signupName,
+                email: signupEmail,
+                bio: `Hallo, ich bin ${signupName}! Ich benutze Noten Meister, um meine Noten zu verwalten.`
             });
             
             router.push('/');
@@ -106,6 +115,7 @@ export default function LoginPage() {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
             
+            // Check for settings doc
             const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
             const settingsSnap = await getDoc(settingsRef);
 
@@ -120,6 +130,20 @@ export default function LoginPage() {
                     school: '',
                 });
             }
+
+            // Check for profile doc
+            const profileRef = doc(db, 'profiles', user.uid);
+            const profileSnap = await getDoc(profileRef);
+
+            if (!profileSnap.exists()) {
+                 await setDoc(profileRef, {
+                    uid: user.uid,
+                    name: user.displayName,
+                    email: user.email,
+                    bio: `Hallo, ich bin ${user.displayName}! Ich benutze Noten Meister, um meine Noten zu verwalten.`
+                });
+            }
+
             router.push('/');
         } catch (error: any) {
             toast({

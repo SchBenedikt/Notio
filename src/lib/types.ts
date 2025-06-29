@@ -44,6 +44,13 @@ export type AddSubjectData = {
   targetGrade?: number;
 };
 
+export interface Profile {
+  uid: string;
+  name: string;
+  email: string;
+  bio?: string;
+}
+
 export interface Award {
   id: string;
   name: string;
@@ -59,4 +66,4 @@ export interface Award {
   };
 }
 
-export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile';
+export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community';

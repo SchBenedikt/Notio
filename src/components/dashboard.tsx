@@ -25,6 +25,7 @@ import { awardsDefinitions } from "@/lib/awards";
 import { CommandPalette } from "./command-palette";
 import { useRouter } from "next/navigation";
 import { ProfilePage } from "./profile-page";
+import { CommunityPage } from "./community-page";
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
@@ -559,6 +560,8 @@ export default function Dashboard() {
         );
       case 'profile':
         return <ProfilePage />;
+      case 'community':
+        return <CommunityPage />;
       default:
         return null;
     }

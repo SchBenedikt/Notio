@@ -13,6 +13,7 @@ import {
   Files,
   Award,
   User,
+  Users,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -31,7 +32,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile") => void;
+  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -81,6 +82,10 @@ export function CommandPalette({
                 <CommandItem onSelect={() => runCommand(() => onNavigate("tutor"))}>
                     <MessageCircle className="mr-2 h-4 w-4" />
                     <span>KI-Tutor & Coach</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("community"))}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Community</span>
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("awards"))}>
                     <Award className="mr-2 h-4 w-4" />

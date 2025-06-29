@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject, Grade, Attachment, AppView } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit, User } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit, User, Users } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -191,19 +191,19 @@ export function SidebarContent({
                      <MessageCircle className="mr-2 h-4 w-4" />
                     KI-Tutor & Coach
                 </Button>
+                 <Button 
+                    variant={currentView === 'community' ? "secondary" : "ghost"} 
+                    className="justify-start w-full"
+                    onClick={() => handleViewChange('community')}>
+                     <Users className="mr-2 h-4 w-4" />
+                    Community
+                </Button>
                 <Button 
                     variant={currentView === 'awards' ? "secondary" : "ghost"} 
                     className="justify-start w-full"
                     onClick={() => handleViewChange('awards')}>
                      <Award className="mr-2 h-4 w-4" />
                     Auszeichnungen
-                </Button>
-                <Button 
-                    variant={currentView === 'profile' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('profile')}>
-                     <User className="mr-2 h-4 w-4" />
-                    Profil & Sicherheit
                 </Button>
                  <Button 
                     variant={currentView === 'files' ? "secondary" : "ghost"} 
@@ -218,6 +218,13 @@ export function SidebarContent({
                     onClick={() => handleViewChange('data')}>
                      <Database className="mr-2 h-4 w-4" />
                     Datenverwaltung
+                </Button>
+                 <Button 
+                    variant={currentView === 'profile' ? "secondary" : "ghost"} 
+                    className="justify-start w-full"
+                    onClick={() => handleViewChange('profile')}>
+                     <User className="mr-2 h-4 w-4" />
+                    Profil & Sicherheit
                 </Button>
             </div>
 

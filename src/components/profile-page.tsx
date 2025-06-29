@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { reauthenticateWithCredential, EmailAuthProvider, updateProfile, updateEmail, updatePassword, deleteUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDocs, collection, query, writeBatch } from "firebase/firestore";
+import { doc, getDocs, collection, query, writeBatch, getDoc, setDoc } from "firebase/firestore";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, User, KeyRound, Mail, Trash2, Pencil } from "lucide-react";
+import { Loader2, User, KeyRound, Mail, Trash2, Pencil, Info } from "lucide-react";
+import { Textarea } from "./ui/textarea";
+import type { Profile } from "@/lib/types";
+import { Skeleton } from "./ui/skeleton";
 
-// Schemas for forms
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein.").max(50, "Name darf nicht länger als 50 Zeichen sein."),
+  bio: z.string().max(160, "Biografie darf nicht länger als 160 Zeichen sein.").optional(),
 });
 
 const emailFormSchema = z.object({
@@ -39,14 +42,36 @@ export function ProfilePage() {
   const { toast } = useToast();
   const router = useRouter();
   
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({ page: true });
   const [deletePassword, setDeletePassword] = useState("");
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: { name: user?.displayName || "" },
+    defaultValues: { name: "", bio: "" },
   });
+
+  useEffect(() => {
+    if (user && isFirebaseEnabled) {
+      setLoading(p => ({...p, page: true}));
+      const profileRef = doc(db, 'profiles', user.uid);
+      getDoc(profileRef).then(profileSnap => {
+        if (profileSnap.exists()) {
+          const profileData = profileSnap.data() as Profile;
+          setProfile(profileData);
+          profileForm.reset({
+            name: profileData.name,
+            bio: profileData.bio || ""
+          });
+        }
+      }).finally(() => {
+        setLoading(p => ({...p, page: false}));
+      });
+    } else {
+        setLoading(p => ({...p, page: false}));
+    }
+  }, [user, isFirebaseEnabled, profileForm]);
 
   const emailForm = useForm<z.infer<typeof emailFormSchema>>({
     resolver: zodResolver(emailFormSchema),
@@ -60,17 +85,31 @@ export function ProfilePage() {
   
   const handleCancelEdit = () => {
     setIsEditing(false);
-    profileForm.reset({ name: user?.displayName || "" });
+    if(profile) {
+      profileForm.reset({ name: profile.name, bio: profile.bio || "" });
+    }
     emailForm.reset();
     passwordForm.reset();
   }
 
   const handleProfileUpdate = async (values: z.infer<typeof profileFormSchema>) => {
-    if (!user) return;
+    if (!user || !profile) return;
     setLoading(p => ({ ...p, profile: true }));
     try {
-      await updateProfile(user, { displayName: values.name });
-      toast({ title: "Erfolg", description: "Dein Name wurde aktualisiert." });
+      if (user.displayName !== values.name) {
+        await updateProfile(user, { displayName: values.name });
+      }
+      
+      const profileRef = doc(db, 'profiles', user.uid);
+      const updatedProfileData = {
+          name: values.name,
+          bio: values.bio,
+      };
+      await setDoc(profileRef, updatedProfileData, { merge: true });
+
+      setProfile({ ...profile, ...updatedProfileData });
+
+      toast({ title: "Erfolg", description: "Dein Profil wurde aktualisiert." });
       setIsEditing(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Fehler", description: error.message });
@@ -86,6 +125,11 @@ export function ProfilePage() {
       const credential = EmailAuthProvider.credential(user.email, values.password);
       await reauthenticateWithCredential(user, credential);
       await updateEmail(user, values.newEmail);
+      
+      const profileRef = doc(db, 'profiles', user.uid);
+      await setDoc(profileRef, { email: values.newEmail }, { merge: true });
+      if (profile) setProfile({...profile, email: values.newEmail});
+
       toast({ title: "E-Mail aktualisiert", description: `Eine Bestätigungs-E-Mail wurde an ${values.newEmail} gesendet.` });
       emailForm.reset();
       setIsEditing(false);
@@ -121,6 +165,7 @@ export function ProfilePage() {
         await reauthenticateWithCredential(user, credential);
 
         const batch = writeBatch(db);
+        
         const gradesQuery = query(collection(db, 'users', user.uid, 'grades'));
         const gradesSnap = await getDocs(gradesQuery);
         gradesSnap.forEach(doc => batch.delete(doc.ref));
@@ -132,6 +177,9 @@ export function ProfilePage() {
         const settingsDocRef = doc(db, 'users', user.uid, 'settings', 'main');
         batch.delete(settingsDocRef);
         
+        const profileDocRef = doc(db, 'profiles', user.uid);
+        batch.delete(profileDocRef);
+
         await batch.commit();
         
         await deleteUser(user);
@@ -158,6 +206,23 @@ export function ProfilePage() {
     );
   }
 
+  if (loading.page) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 animate-pulse">
+        <div className="text-center space-y-4">
+         <div className="flex justify-center mb-4">
+            <Skeleton className="h-20 w-20 rounded-full" />
+        </div>
+        <Skeleton className="h-8 w-1/2 mx-auto" />
+        <Skeleton className="h-6 w-3/4 mx-auto" />
+      </div>
+        <Card><CardHeader><Skeleton className="h-6 w-1/4" /><Skeleton className="h-4 w-1/2" /></CardHeader>
+        <CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-16 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+        <Card className="border-destructive"><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><Skeleton className="h-10 w-48" /></CardContent></Card>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center">
@@ -173,22 +238,24 @@ export function ProfilePage() {
       </div>
 
       {isEditing ? (
-        // EDIT MODE
         <Card>
             <CardHeader>
                 <CardTitle>Profil bearbeiten</CardTitle>
-                <CardDescription>Ändere hier deinen Namen, deine E-Mail oder dein Passwort.</CardDescription>
+                <CardDescription>Ändere hier deinen Namen, deine Biografie, E-Mail oder dein Passwort.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <Form {...profileForm}>
                     <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4 p-4 border rounded-lg">
-                        <h4 className="font-medium flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> Anzeigename</h4>
+                        <h4 className="font-medium flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> Öffentliches Profil</h4>
                         <FormField control={profileForm.control} name="name" render={({ field }) => (
-                            <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Dein Name" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Anzeigename</FormLabel><FormControl><Input placeholder="Dein Name" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={profileForm.control} name="bio" render={({ field }) => (
+                            <FormItem><FormLabel>Biografie (optional)</FormLabel><FormControl><Textarea placeholder="Erzähle etwas über dich..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <Button type="submit" disabled={loading.profile}>
                             {loading.profile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Namen speichern
+                            Profil speichern
                         </Button>
                     </form>
                 </Form>
@@ -230,7 +297,6 @@ export function ProfilePage() {
             </CardFooter>
         </Card>
       ) : (
-        // VIEW MODE
         <Card>
             <CardHeader className="flex flex-row items-start justify-between">
                 <div>
@@ -243,22 +309,29 @@ export function ProfilePage() {
                 </Button>
             </CardHeader>
             <CardContent className="space-y-2">
-                 <div className="flex items-center gap-4 p-3 border rounded-md">
-                    <User className="h-5 w-5 text-muted-foreground" />
+                 <div className="flex items-start gap-4 p-3 border rounded-md">
+                    <User className="h-5 w-5 text-muted-foreground mt-1" />
                     <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Anzeigename</p>
-                        <p className="font-medium">{user.displayName || "Nicht festgelegt"}</p>
+                        <p className="font-medium">{profile?.name || user.displayName || "Nicht festgelegt"}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 p-3 border rounded-md">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
+                 <div className="flex items-start gap-4 p-3 border rounded-md">
+                    <Info className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Biografie</p>
+                        <p className="font-medium text-sm italic text-muted-foreground whitespace-pre-wrap">{profile?.bio || "Keine Biografie festgelegt."}</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4 p-3 border rounded-md">
+                    <Mail className="h-5 w-5 text-muted-foreground mt-1" />
                     <div className="flex-1">
                         <p className="text-xs text-muted-foreground">E-Mail-Adresse</p>
                         <p className="font-medium">{user.email}</p>
                     </div>
                 </div>
-                 <div className="flex items-center gap-4 p-3 border rounded-md">
-                    <KeyRound className="h-5 w-5 text-muted-foreground" />
+                 <div className="flex items-start gap-4 p-3 border rounded-md">
+                    <KeyRound className="h-5 w-5 text-muted-foreground mt-1" />
                     <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Passwort</p>
                         <p className="font-medium text-muted-foreground italic">Zum Ändern bitte auf "Bearbeiten" klicken.</p>
@@ -268,7 +341,6 @@ export function ProfilePage() {
         </Card>
       )}
 
-      {/* Danger Zone */}
       <Card className="border-destructive">
         <CardHeader>
           <CardTitle className="text-destructive">Gefahrenzone</CardTitle>
@@ -286,7 +358,7 @@ export function ProfilePage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Bist du dir absolut sicher?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Diese Aktion kann nicht rückgängig gemacht werden. Dein Konto und alle deine Daten (Fächer, Noten, Anhänge) werden dauerhaft gelöscht. Bitte gib dein Passwort ein, um zu bestätigen.
+                            Diese Aktion kann nicht rückgängig gemacht werden. Dein Konto und alle deine Daten (Fächer, Noten, Anhänge, Profil) werden dauerhaft gelöscht. Bitte gib dein Passwort ein, um zu bestätigen.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-2">
