@@ -11,8 +11,8 @@ const fontInter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Noten Meister",
-  description: "Verwalte deine Noten einfach und übersichtlich.",
+  title: "Gradido",
+  description: "Dein intelligenter Begleiter für bessere Noten und Lernerfolg.",
 };
 
 export default function RootLayout({

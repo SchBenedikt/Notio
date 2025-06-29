@@ -92,7 +92,7 @@ export default function Dashboard() {
                     uid: user.uid,
                     name: user.displayName || 'Neuer Nutzer',
                     email: user.email,
-                    bio: `Hallo! Ich benutze Noten Meister.`,
+                    bio: `Hallo! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`,
                     followers: [],
                     following: []
                  };
@@ -457,7 +457,7 @@ export default function Dashboard() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `noten-meister-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `gradido-export-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

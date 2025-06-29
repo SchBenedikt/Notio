@@ -92,7 +92,7 @@ export default function LoginPage() {
                 uid: user.uid,
                 name: signupName,
                 email: signupEmail,
-                bio: `Hallo, ich bin ${signupName}! Ich benutze Noten Meister, um meine Noten zu verwalten.`
+                bio: `Hallo, ich bin ${signupName}! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`
             });
             
             router.push('/dashboard');
@@ -140,7 +140,7 @@ export default function LoginPage() {
                     uid: user.uid,
                     name: user.displayName,
                     email: user.email,
-                    bio: `Hallo, ich bin ${user.displayName}! Ich benutze Noten Meister, um meine Noten zu verwalten.`
+                    bio: `Hallo, ich bin ${user.displayName}! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`
                 });
             }
 
@@ -161,7 +161,7 @@ export default function LoginPage() {
             <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 p-4">
                  <div className='flex items-center gap-4 mb-8'>
                     <Logo />
-                    <h1 className="text-4xl font-bold">Noten Meister</h1>
+                    <h1 className="text-4xl font-bold">Gradido</h1>
                 </div>
                 <div className="max-w-md w-full bg-card p-8 rounded-lg shadow-lg text-center">
                     <h1 className="text-2xl font-bold">Demo Modus</h1>
@@ -183,7 +183,7 @@ export default function LoginPage() {
         <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 p-4">
             <div className='flex items-center gap-4 mb-8'>
                 <Logo />
-                <h1 className="text-4xl font-bold">Noten Meister</h1>
+                <h1 className="text-4xl font-bold">Gradido</h1>
             </div>
             <Tabs defaultValue="login" className="w-full max-w-sm">
                 <TabsList className="grid w-full grid-cols-2">

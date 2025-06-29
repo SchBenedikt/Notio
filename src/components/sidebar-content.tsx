@@ -168,7 +168,7 @@ export function SidebarContent({
         <>
             <div className='px-2 flex items-center gap-3'>
               <Logo />
-              <h1 className="text-2xl font-bold text-foreground">Noten Meister</h1>
+              <h1 className="text-2xl font-bold text-foreground">Gradido</h1>
             </div>
             
             <div className="flex flex-col gap-1 px-2">
