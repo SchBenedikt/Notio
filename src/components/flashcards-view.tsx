@@ -39,9 +39,12 @@ export function FlashcardsView({ cards }: FlashcardsViewProps) {
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === ' ') {
         event.preventDefault();
-        toggleFlip(current - 1);
+        // C-1 because current is 1-based, index is 0-based
+        if (api) {
+            toggleFlip(api.selectedScrollSnap());
+        }
     }
-  }, [current]);
+  }, [api]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -57,18 +60,18 @@ export function FlashcardsView({ cards }: FlashcardsViewProps) {
         <CarouselContent>
           {cards.map((card, index) => (
             <CarouselItem key={card.id}>
-                <div className="p-1 perspective-1000">
+                <div className="p-1 [perspective:1000px]">
                     <div 
                         className={cn(
-                            "relative w-full h-80 rounded-lg transition-transform duration-700 preserve-3d",
-                            flipped[index] ? "rotate-y-180" : ""
+                            "relative w-full h-80 rounded-lg transition-transform duration-700 [transform-style:preserve-3d]",
+                            flipped[index] ? "[transform:rotateY(180deg)]" : ""
                         )}
                         onClick={() => toggleFlip(index)}
                     >
-                        <Card className="absolute w-full h-full backface-hidden flex items-center justify-center p-6 text-center">
+                        <Card className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 text-center">
                             <p className="text-2xl font-semibold">{card.term}</p>
                         </Card>
-                         <Card className="absolute w-full h-full backface-hidden rotate-y-180 flex items-center justify-center p-6 text-center bg-secondary">
+                         <Card className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center p-6 text-center bg-secondary">
                             <p className="text-xl">{card.definition}</p>
                         </Card>
                     </div>
@@ -88,12 +91,6 @@ export function FlashcardsView({ cards }: FlashcardsViewProps) {
             Klicke auf die Karte oder drücke die Leertaste, um sie umzudrehen.
         </div>
       </div>
-      <style jsx>{`
-        .perspective-1000 { perspective: 1000px; }
-        .preserve-3d { transform-style: preserve-3d; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-      `}</style>
     </div>
   );
 }

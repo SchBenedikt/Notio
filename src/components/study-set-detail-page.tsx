@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion } from "lucide-react";
 import { FlashcardsView } from "./flashcards-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { WriteView } from "./write-view";
 import { StudySetQuizView } from "./study-set-quiz-view";
 import { MatchView } from "./match-view";
+import { StudySetTestView } from "./study-set-test-view";
 
 type StudySetDetailPageProps = {
   studySet: StudySet;
@@ -20,7 +21,7 @@ type StudySetDetailPageProps = {
 };
 
 export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDetailPageProps) {
-  const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'quiz' | 'match'>('list');
+  const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'quiz' | 'match' | 'test'>('list');
 
   const hasCards = studySet.cards.length > 0;
 
@@ -48,12 +49,13 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDeta
       </div>
       
       <Tabs value={mode} onValueChange={(value) => setMode(value as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 max-w-4xl">
             <TabsTrigger value="list"><BookOpen className="mr-2 h-4 w-4" /> Begriffe</TabsTrigger>
             <TabsTrigger value="flashcards" disabled={!hasCards}><Layers className="mr-2 h-4 w-4" />Karten</TabsTrigger>
             <TabsTrigger value="write" disabled={!hasCards}><PenSquare className="mr-2 h-4 w-4" />Schreiben</TabsTrigger>
-            <TabsTrigger value="quiz" disabled={!hasCards}><BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz</TabsTrigger>
             <TabsTrigger value="match" disabled={!hasCards}><Puzzle className="mr-2 h-4 w-4" />Zuordnen</TabsTrigger>
+            <TabsTrigger value="quiz" disabled={!hasCards}><BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz</TabsTrigger>
+            <TabsTrigger value="test" disabled={!hasCards}><FileQuestion className="mr-2 h-4 w-4"/>Test</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="mt-4">
@@ -95,6 +97,9 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet }: StudySetDeta
         </TabsContent>
         <TabsContent value="match" className="mt-4">
             {hasCards ? <MatchView cards={studySet.cards} /> : null}
+        </TabsContent>
+        <TabsContent value="test" className="mt-4">
+            {hasCards ? <StudySetTestView studySet={studySet} /> : null}
         </TabsContent>
       </Tabs>
     </div>

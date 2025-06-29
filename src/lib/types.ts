@@ -111,5 +111,27 @@ export interface QuizQuestion {
     explanation: string;
 }
 
+// New types for the "Test" mode
+export interface MultipleChoiceTestQuestion {
+    type: 'multiple-choice';
+    question: string;
+    options: string[];
+    correctAnswer: string;
+    explanation: string;
+}
+export interface WrittenTestQuestion {
+    type: 'written';
+    question: string; // The definition
+    correctAnswer: string; // The term
+    explanation: string;
+}
+export interface TrueFalseTestQuestion {
+    type: 'true-false';
+    statement: string;
+    correctAnswer: 'Wahr' | 'Falsch';
+    explanation: string;
+}
+export type TestQuestion = MultipleChoiceTestQuestion | WrittenTestQuestion | TrueFalseTestQuestion;
+
 
 export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit';
