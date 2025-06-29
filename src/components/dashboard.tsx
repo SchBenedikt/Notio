@@ -697,7 +697,11 @@ export default function Dashboard() {
         return null;
       case 'tutor':
         return (
-          <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
+          <TutorChat
+            subjects={subjectsForGradeLevel}
+            allGrades={grades}
+            studySets={studySets}
+          />
         );
       case 'calculator':
         return (
@@ -732,13 +736,13 @@ export default function Dashboard() {
                   onUserNameChange={(name) => {
                     setUserName(name);
                   }}
-                  onToggleFollow={onToggleFollow}
+                  onToggleFollow={handleToggleFollow}
                />;
       case 'community':
         return <CommunityPage 
                   currentUserProfile={profile}
                   onViewProfile={handleViewProfile}
-                  onToggleFollow={onToggleFollow}
+                  onToggleFollow={handleToggleFollow}
                   subjects={subjectsForGradeLevel}
                   grades={grades}
                />;
@@ -747,7 +751,7 @@ export default function Dashboard() {
             return <UserProfilePage 
                       userId={viewingProfileId} 
                       onBack={() => setView('community')}
-                      onToggleFollow={onToggleFollow}
+                      onToggleFollow={handleToggleFollow}
                       currentUserProfile={profile}
                    />
         }

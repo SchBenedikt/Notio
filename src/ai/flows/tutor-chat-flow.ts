@@ -23,6 +23,15 @@ const ChatMessageSchema = z.object({
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
+const StudySetForTutorSchema = z.object({
+  title: z.string().describe("The title of the study set."),
+  description: z.string().optional().describe("The description of the study set."),
+  cards: z.array(z.object({
+    term: z.string(),
+    definition: z.string(),
+  })).describe("The flashcards in the study set."),
+});
+
 const TutorChatInputSchema = z.object({
   subjects: z.array(z.object({
     name: z.string().describe("The name of the subject."),
@@ -36,6 +45,7 @@ const TutorChatInputSchema = z.object({
         notes: z.string().optional().describe("Notes for the grade."),
     })).describe("The list of grades for this subject.")
   })).describe("A list of the student's subjects and their corresponding grades."),
+  studySets: z.array(StudySetForTutorSchema).optional().describe("A list of study sets the user has selected for this conversation."),
   history: z.array(ChatMessageSchema).describe('The chat history so far. The last message is the current user query.'),
 });
 export type TutorChatInput = z.infer<typeof TutorChatInputSchema>;
@@ -69,11 +79,20 @@ const tutorChatFlow = ai.defineFlow(
         }).join('\n\n');
     }
 
+    let studySetsInfo = "";
+    if (input.studySets && input.studySets.length > 0) {
+        studySetsInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernsets für diesen Chat ausgewählt. Beziehe dich auf die Begriffe und Definitionen, um Fragen zu beantworten, Zusammenfassungen zu erstellen oder Übungsaufgaben zu generieren:\n\n" + input.studySets.map(set => {
+            const cardList = set.cards.map(card => `- Begriff: "${card.term}", Definition: "${card.definition}"`).join('\n');
+            return `Lernset: "${set.title}"\n${set.description ? `Beschreibung: ${set.description}\n` : ''}Karten:\n${cardList}`;
+        }).join('\n\n');
+    }
+
     const systemPrompt = `Du bist ein hilfsbereiter und freundlicher KI-Tutor für einen Schüler in Deutschland. Deine Aufgabe ist es, Fragen zu beantworten, Konzepte zu erklären und bei den Hausaufgaben zu helfen.
 Du hast Zugriff auf die aktuellen Noten und Fächer des Schülers. Nutze diese Informationen, um kontextbezogene und hilfreiche Antworten zu geben. Wenn der Schüler z.B. fragt "Wie kann ich mich verbessern?", beziehe dich auf die Fächer mit schlechteren Noten und berücksichtige seine Wunschnote.
 Du kannst auch Dateien wie Bilder, PDFs oder andere Dokumente als Anhänge erhalten. Beziehe diese in deine Analyse und Antworten mit ein.
 
 ${subjectsInfo}
+${studySetsInfo}
 
 Sei ermutigend, geduldig und sprich den Schüler mit "Du" an. Antworte immer auf Deutsch.`;
 

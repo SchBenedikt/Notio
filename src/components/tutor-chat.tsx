@@ -1,25 +1,27 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Send, Bot, User, Loader2, Paperclip, X } from "lucide-react";
+import { Send, Bot, User, Loader2, Paperclip, X, BookOpen, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, calculateFinalGrade } from "@/lib/utils";
 import { getTutorResponse, ChatMessage } from "@/ai/flows/tutor-chat-flow";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { Subject, Grade, Attachment } from "@/lib/types";
+import { Subject, Grade, Attachment, StudySet } from "@/lib/types";
 import { FileSelectionDialog } from "./file-selection-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudyCoachPage } from "./study-coach-page";
 import { Card } from "./ui/card";
+import { StudySetSelectionDialog } from "./study-set-selection-dialog";
 
 type TutorChatProps = {
   subjects: Subject[];
   allGrades: Grade[];
+  studySets: StudySet[];
 };
 
-export function TutorChat({ subjects, allGrades }: TutorChatProps) {
+export function TutorChat({ subjects, allGrades, studySets }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst mir auch Dateien zum Analysieren geben." }
   ]);
@@ -27,6 +29,8 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
   const [loading, setLoading] = useState(false);
   const [isAttachmentSelectorOpen, setAttachmentSelectorOpen] = useState(false);
   const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>([]);
+  const [isStudySetSelectorOpen, setStudySetSelectorOpen] = useState(false);
+  const [selectedStudySets, setSelectedStudySets] = useState<StudySet[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,7 +41,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() && selectedAttachments.length === 0) return;
+    if (!input.trim() && selectedAttachments.length === 0 && selectedStudySets.length === 0) return;
 
     const userMessage: ChatMessage = { 
       role: 'user', 
@@ -49,6 +53,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
     setMessages(newMessages);
     setInput("");
     setSelectedAttachments([]);
+    setSelectedStudySets([]);
     setLoading(true);
 
     try {
@@ -71,6 +76,11 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
 
       const response = await getTutorResponse({
         subjects: subjectsForTutor,
+        studySets: selectedStudySets.map(s => ({
+            title: s.title,
+            description: s.description,
+            cards: s.cards.map(c => ({ term: c.term, definition: c.definition })),
+        })),
         history: newMessages,
       });
       setMessages(prev => [...prev, { role: 'model', content: response.response }]);
@@ -85,10 +95,16 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
   const removeSelectedAttachment = (indexToRemove: number) => {
     setSelectedAttachments(prev => prev.filter((_, index) => index !== indexToRemove));
   };
+  
+  const removeSelectedStudySet = (indexToRemove: number) => {
+    setSelectedStudySets(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
 
   const hasAnyAttachments = useMemo(() => {
     return allGrades.some(g => g.attachments && g.attachments.length > 0);
   }, [allGrades]);
+  
+  const hasAnyStudySets = useMemo(() => studySets.length > 0, [studySets]);
   
   return (
     <Tabs defaultValue="tutor" className="w-full">
@@ -175,6 +191,22 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                         </div>
                     </div>
                   )}
+                  {selectedStudySets.length > 0 && (
+                    <div className="mb-2 p-2 border rounded-lg">
+                        <p className="text-xs text-muted-foreground font-medium mb-2">Ausgewählte Lernsets:</p>
+                        <div className="flex flex-wrap gap-2">
+                        {selectedStudySets.map((set, index) => (
+                            <div key={index} className="flex items-center gap-1.5 bg-muted rounded-full pl-2 pr-1 py-0.5 text-sm">
+                                <BrainCircuit className="h-3 w-3" />
+                                <span className="truncate max-w-[150px]">{set.title}</span>
+                                <button onClick={() => removeSelectedStudySet(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5" title="Lernset entfernen">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                  )}
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -182,6 +214,16 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                     }}
                     className="flex items-center gap-2"
                   >
+                     <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setStudySetSelectorOpen(true)}
+                      disabled={loading || !hasAnyStudySets}
+                      title={hasAnyStudySets ? 'Lernset auswählen' : 'Keine Lernsets zum Auswählen vorhanden'}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                    </Button>
                     <Button 
                       type="button" 
                       variant="ghost" 
@@ -195,7 +237,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                     <Input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder="Stelle eine Frage oder füge eine Datei hinzu..."
+                      placeholder="Stelle eine Frage oder füge etwas hinzu..."
                       disabled={loading}
                       className="flex-1"
                       onKeyDown={(e) => {
@@ -205,13 +247,19 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                           }
                       }}
                     />
-                    <Button type="submit" size="icon" disabled={loading || (!input.trim() && selectedAttachments.length === 0)}>
+                    <Button type="submit" size="icon" disabled={loading || (!input.trim() && selectedAttachments.length === 0 && selectedStudySets.length === 0)}>
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       <span className="sr-only">Senden</span>
                     </Button>
                   </form>
                 </div>
               </Card>
+            <StudySetSelectionDialog
+              isOpen={isStudySetSelectorOpen}
+              onOpenChange={setStudySetSelectorOpen}
+              onStudySetsSelected={setSelectedStudySets}
+              allStudySets={studySets}
+            />
             <FileSelectionDialog 
                 isOpen={isAttachmentSelectorOpen}
                 onOpenChange={setAttachmentSelectorOpen}
