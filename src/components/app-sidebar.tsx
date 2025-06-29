@@ -1,6 +1,6 @@
 "use client";
 
-import type { Subject, AddSubjectData, AddGradeData, Grade } from '@/lib/types';
+import type { Subject, AddSubjectData, AddGradeData, Grade, AppView } from '@/lib/types';
 import { SidebarContent } from './sidebar-content';
 
 type AppSidebarProps = {
@@ -15,8 +15,8 @@ type AppSidebarProps = {
   oralGradesCount: number;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  currentView: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach';
-  onSetView: (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach') => void;
+  currentView: AppView;
+  onSetView: (view: AppView) => void;
 };
 
 export function AppSidebar(props: AppSidebarProps) {

@@ -59,4 +59,4 @@ export interface Award {
   };
 }
 
-export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach';
+export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards';

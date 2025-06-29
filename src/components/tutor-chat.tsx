@@ -102,7 +102,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
           <div>
             <h3 className="font-semibold text-lg flex items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
-                KI-Tutor
+                KI-Tutor & Coach
             </h3>
             <p className="text-sm text-muted-foreground">Stelle Fragen und erhalte eine Lernanalyse.</p>
           </div>

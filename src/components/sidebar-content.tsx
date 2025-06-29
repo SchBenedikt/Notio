@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { AddGradeData, AddSubjectData, Subject, Grade, Attachment } from '@/lib/types';
+import { AddGradeData, AddSubjectData, Subject, Grade, Attachment, AppView } from '@/lib/types';
 import { Textarea } from './ui/textarea';
 import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
@@ -62,8 +62,8 @@ type SidebarContentProps = {
   oralGradesCount: number;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  currentView: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach';
-  onSetView: (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach') => void;
+  currentView: AppView;
+  onSetView: (view: AppView) => void;
   onClose?: () => void;
 };
 
@@ -99,7 +99,7 @@ export function SidebarContent({
     const gradeAttachments = gradeForm.watch('attachments');
 
 
-    const handleViewChange = (view: 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'coach') => {
+    const handleViewChange = (view: AppView) => {
         onSetView(view);
         if (onClose) onClose();
     }
@@ -184,19 +184,12 @@ export function SidebarContent({
                     <Calculator className="mr-2 h-4 w-4" />
                     Notenrechner
                 </Button>
-                 <Button 
-                    variant={currentView === 'coach' ? "secondary" : "ghost"} 
-                    className="justify-start w-full"
-                    onClick={() => handleViewChange('coach')}>
-                     <BrainCircuit className="mr-2 h-4 w-4" />
-                    Lern-Coach
-                </Button>
                 <Button 
                     variant={currentView === 'tutor' ? "secondary" : "ghost"} 
                     className="justify-start w-full"
                     onClick={() => handleViewChange('tutor')}>
                      <MessageCircle className="mr-2 h-4 w-4" />
-                    KI-Tutor
+                    KI-Tutor & Coach
                 </Button>
                  <Button 
                     variant={currentView === 'data' ? "secondary" : "ghost"} 
