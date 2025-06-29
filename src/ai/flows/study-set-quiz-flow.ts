@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   input: {schema: StudySetQuizInputSchema},
   output: {schema: StudySetQuizOutputSchema},
   prompt: `Du bist ein erfahrener Lehrer, der Schülern beim Lernen hilft.
-Deine Aufgabe ist es, ein Multiple-Choice-Quiz aus dem folgenden Lernset zu erstellen.
+Deine Aufgabe ist es, ein Multiple-Choice-Quiz aus dem folgenden Lernset zu erstellen. Wichtig: Alle Fragen, Optionen und Erklärungen müssen auf Deutsch sein.
 Das Quiz sollte zwischen 5 und 10 Fragen umfassen.
 Die Fragen sollten das Wissen über die Begriffe und ihre Definitionen testen. Stelle abwechselnd Fragen, bei denen man den Begriff zu einer Definition finden muss und umgekehrt.
 Formuliere die Fragen klar und verständlich.

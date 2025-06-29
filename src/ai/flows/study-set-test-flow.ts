@@ -66,7 +66,7 @@ const prompt = ai.definePrompt({
   input: {schema: StudySetTestInputSchema},
   output: {schema: StudySetTestOutputSchema},
   prompt: `Du bist ein erfahrener Lehrer, der einen umfassenden Test aus einem Lernset erstellt.
-Deine Aufgabe ist es, einen Test mit 5 bis 10 Fragen zu generieren, der verschiedene Frage-Typen mischt: Multiple-Choice, offene schriftliche Fragen und Wahr/Falsch-Fragen.
+Deine Aufgabe ist es, einen Test mit 5 bis 10 Fragen zu generieren, der verschiedene Frage-Typen mischt: Multiple-Choice, offene schriftliche Fragen und Wahr/Falsch-Fragen. Wichtig: Alle Fragen, Antworten, Optionen und Erklärungen müssen auf Deutsch sein.
 - **Multiple-Choice:** Erstelle eine klare Frage mit 4 plausiblen Antwortmöglichkeiten, von denen nur eine korrekt ist.
 - **Schriftlich:** Gib eine Definition vor und frage nach dem korrekten Begriff.
 - **Wahr/Falsch:** Formuliere eine Aussage über einen Begriff und seine Definition. Diese Aussage muss entweder klar wahr oder klar falsch sein. Manchmal sollte die Aussage korrekt sein, manchmal sollte sie einen falschen Begriff zur Definition zuordnen.
