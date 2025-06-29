@@ -287,7 +287,7 @@ export default function LoginPage() {
                                     </RadioGroup>
                                 </div>
                                  <div className="space-y-2">
-                                    <Label htmlFor="signup-school">Schule</Label>
+                                    <Label>Schule</Label>
                                      <SchoolSelector
                                         schools={allSchools}
                                         value={signupSchoolId}
