@@ -16,7 +16,7 @@ const StudyCardSchema = z.object({
   definition: z.string(),
 });
 
-export const StudySetTestInputSchema = z.object({
+const StudySetTestInputSchema = z.object({
   title: z.string().describe('The title of the study set.'),
   description: z.string().optional().describe('The description of the study set.'),
   cards: z.array(StudyCardSchema).describe('The list of flashcards (term and definition).'),
@@ -51,7 +51,7 @@ const TestQuestionSchema = z.discriminatedUnion('type', [
     TrueFalseQuestionSchema
 ]);
 
-export const StudySetTestOutputSchema = z.object({
+const StudySetTestOutputSchema = z.object({
   questions: z.array(TestQuestionSchema).describe('An array of 5 to 10 generated test questions of various types.'),
 });
 export type StudySetTestOutput = z.infer<typeof StudySetTestOutputSchema>;
