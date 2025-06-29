@@ -17,6 +17,7 @@ import { Skeleton } from './ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { EditPostDialog } from './edit-post-dialog';
+import { PostComments } from './post-comments';
 
 const PostSkeleton = () => (
     <Card>
@@ -56,6 +57,7 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [visibleComments, setVisibleComments] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isFirebaseEnabled) {
@@ -108,6 +110,7 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
         authorName: user.displayName,
         content: newPostContent,
         likes: [],
+        commentCount: 0,
         createdAt: serverTimestamp(),
       });
       setNewPostContent('');
@@ -155,6 +158,10 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
       } catch (error) {
         toast({ variant: 'destructive', title: 'Fehler', description: 'Beitrag konnte nicht gelöscht werden.' });
       }
+  };
+
+  const toggleComments = (postId: string) => {
+    setVisibleComments(prev => prev === postId ? null : postId);
   };
 
   const profilesMap = new Map(profiles.map(p => [p.uid, p]));
@@ -273,9 +280,9 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                                 <Heart className={`mr-2 h-4 w-4 ${hasLiked ? 'text-red-500 fill-current' : ''}`} />
                                 <span>{post.likes.length}</span>
                             </Button>
-                             <Button variant="ghost" size="sm" disabled>
+                             <Button variant="ghost" size="sm" onClick={() => toggleComments(post.id)}>
                                 <MessageSquare className="mr-2 h-4 w-4" />
-                                <span>0</span>
+                                <span>{post.commentCount || 0}</span>
                             </Button>
                              <Button variant="ghost" size="sm" disabled>
                                 <Repeat className="mr-2 h-4 w-4" />
@@ -285,6 +292,9 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                                 <Flag className="h-4 w-4" />
                             </Button>
                         </div>
+                        {visibleComments === post.id && (
+                           <PostComments postId={post.id} />
+                        )}
                     </CardContent>
                   </Card>
               )

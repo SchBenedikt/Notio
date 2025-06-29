@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export interface Attachment {
   name: string;
   dataUrl: string;
@@ -53,13 +55,22 @@ export interface Profile {
   followers?: string[];
 }
 
+export interface Comment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: Timestamp;
+}
+
 export interface Post {
   id: string;
   authorId: string;
   authorName: string;
   content: string;
   likes: string[];
-  createdAt: any;
+  commentCount: number;
+  createdAt: Timestamp;
 }
 
 export interface Award {
