@@ -17,7 +17,7 @@ export interface Subject {
 }
 
 export interface Grade {
-  id: string;
+  id:string;
   subjectId: string;
   type: GradeType;
   name?: string;
@@ -49,6 +49,8 @@ export interface Profile {
   name: string;
   email: string;
   bio?: string;
+  following?: string[];
+  followers?: string[];
 }
 
 export interface Post {
@@ -75,4 +77,4 @@ export interface Award {
   };
 }
 
-export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community';
+export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile';

@@ -26,12 +26,14 @@ import { CommandPalette } from "./command-palette";
 import { useRouter } from "next/navigation";
 import { ProfilePage } from "./profile-page";
 import { CommunityPage } from "./community-page";
+import { UserProfilePage } from "./user-profile-page";
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
   const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   
   // Settings state
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
@@ -46,6 +48,7 @@ export default function Dashboard() {
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [view, setView] = useState<AppView>('subjects');
+  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
@@ -70,13 +73,21 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-    // If firebase is enabled and we have a user, fetch data from firestore
     if (isFirebaseEnabled && user) {
         setDataLoading(true);
 
         const fetchData = async () => {
           try {
-            setUserName(user.displayName);
+            // Fetch Profile
+            const profileRef = doc(db, 'profiles', user.uid);
+            const profileSnap = await getDoc(profileRef);
+            if (profileSnap.exists()) {
+                const profileData = profileSnap.data() as Profile;
+                setProfile(profileData);
+                setUserName(profileData.name);
+            } else {
+                 setUserName(user.displayName);
+            }
             
             // Fetch Settings
             if(settingsDocRef) {
@@ -102,7 +113,6 @@ export default function Dashboard() {
                   school: '',
                 };
                 await setDoc(settingsDocRef, defaultSettings);
-                // Set the state with the defaults we just saved
                 setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
                 setMainSubjectWeight(defaultSettings.mainSubjectWeight);
                 setMinorSubjectWeight(defaultSettings.minorSubjectWeight);
@@ -138,6 +148,17 @@ export default function Dashboard() {
           }
         };
         fetchData();
+
+        // Subscribe to profile changes
+        const unsubProfile = onSnapshot(doc(db, 'profiles', user.uid), (doc) => {
+            if (doc.exists()) {
+                setProfile(doc.data() as Profile);
+                setUserName(doc.data().name);
+            }
+        });
+
+        return () => unsubProfile();
+
     } else {
         // Demo mode: not logged in or firebase disabled
         setDataLoading(true);
@@ -166,9 +187,7 @@ export default function Dashboard() {
     }
   }, [isDarkMode]);
 
-
-  const subjectsForGradeLevel = subjects; // Already filtered by Firestore query or local state
-
+  const subjectsForGradeLevel = subjects;
 
   const mainSubjects = useMemo(() => {
     return subjectsForGradeLevel
@@ -489,7 +508,38 @@ export default function Dashboard() {
       toast({ title: "Fehler beim Abmelden", variant: "destructive" });
     }
   };
+  
+  const handleViewProfile = (userId: string) => {
+    setViewingProfileId(userId);
+    setView('user-profile');
+  };
 
+  const handleToggleFollow = async (targetUserId: string) => {
+    if (!user || !profile || user.uid === targetUserId) return;
+
+    const currentUserProfileRef = doc(db, 'profiles', user.uid);
+    const targetUserProfileRef = doc(db, 'profiles', targetUserId);
+
+    const isFollowing = profile.following?.includes(targetUserId);
+    
+    const batch = writeBatch(db);
+
+    batch.update(currentUserProfileRef, {
+        following: isFollowing ? arrayRemove(targetUserId) : arrayUnion(targetUserId)
+    });
+
+    batch.update(targetUserProfileRef, {
+        followers: isFollowing ? arrayRemove(user.uid) : arrayUnion(user.uid)
+    });
+
+    try {
+        await batch.commit();
+        toast({ title: isFollowing ? "Nicht mehr gefolgt" : "Gefolgt!", description: `Du folgst diesem Nutzer ${isFollowing ? 'nicht mehr' : 'jetzt'}.` });
+    } catch (error) {
+        console.error("Error toggling follow:", error);
+        toast({ variant: 'destructive', title: 'Fehler', description: 'Aktion konnte nicht ausgeführt werden.' });
+    }
+  }
 
   const sidebarProps = {
     subjects: subjectsForGradeLevel,
@@ -509,7 +559,7 @@ export default function Dashboard() {
   };
   
   const renderView = () => {
-    if (dataLoading && view !== 'community') {
+    if (dataLoading && !['community', 'user-profile'].includes(view)) {
       return <div>Loading...</div>; // Replace with a proper skeleton loader
     }
     switch (view) {
@@ -562,6 +612,7 @@ export default function Dashboard() {
         );
       case 'profile':
         return <ProfilePage 
+                  profile={profile}
                   userRole={userRole}
                   onUserRoleChange={(role) => {
                     setUserRole(role);
@@ -577,7 +628,21 @@ export default function Dashboard() {
                   }}
                />;
       case 'community':
-        return <CommunityPage />;
+        return <CommunityPage 
+                  currentUserProfile={profile}
+                  onViewProfile={handleViewProfile}
+                  onToggleFollow={handleToggleFollow}
+               />;
+      case 'user-profile':
+        if (viewingProfileId) {
+            return <UserProfilePage 
+                      userId={viewingProfileId} 
+                      onBack={() => setView('community')}
+                      onToggleFollow={handleToggleFollow}
+                      currentUserProfile={profile}
+                   />
+        }
+        return null;
       default:
         return null;
     }

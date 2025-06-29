@@ -39,6 +39,7 @@ const passwordFormSchema = z.object({
 });
 
 type ProfilePageProps = {
+  profile: Profile | null;
   userRole: string;
   onUserRoleChange: (role: 'student' | 'teacher') => void;
   userSchool: string;
@@ -47,14 +48,13 @@ type ProfilePageProps = {
 };
 
 
-export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserSchoolChange, onUserNameChange }: ProfilePageProps) {
+export function ProfilePage({ profile, userRole, onUserRoleChange, userSchool, onUserSchoolChange, onUserNameChange }: ProfilePageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState<Record<string, boolean>>({ page: true });
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [deletePassword, setDeletePassword] = useState("");
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
@@ -63,25 +63,18 @@ export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserScho
   });
 
   useEffect(() => {
-    if (user && isFirebaseEnabled) {
-      setLoading(p => ({...p, page: true}));
-      const profileRef = doc(db, 'profiles', user.uid);
-      getDoc(profileRef).then(profileSnap => {
-        if (profileSnap.exists()) {
-          const profileData = profileSnap.data() as Profile;
-          setProfile(profileData);
-          profileForm.reset({
-            name: profileData.name,
-            bio: profileData.bio || ""
-          });
-        }
-      }).finally(() => {
-        setLoading(p => ({...p, page: false}));
-      });
-    } else {
-        setLoading(p => ({...p, page: false}));
+    if (user && profile) {
+        profileForm.reset({
+            name: profile.name,
+            bio: profile.bio || ""
+        });
+    } else if (user) {
+        profileForm.reset({
+            name: user.displayName || "",
+            bio: ""
+        });
     }
-  }, [user, isFirebaseEnabled, profileForm]);
+  }, [user, profile, profileForm]);
 
   const emailForm = useForm<z.infer<typeof emailFormSchema>>({
     resolver: zodResolver(emailFormSchema),
@@ -103,7 +96,7 @@ export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserScho
   }
 
   const handleProfileUpdate = async (values: z.infer<typeof profileFormSchema>) => {
-    if (!user || !profile) return;
+    if (!user) return;
     setLoading(p => ({ ...p, profile: true }));
     try {
       if (user.displayName !== values.name) {
@@ -117,8 +110,6 @@ export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserScho
           bio: values.bio,
       };
       await setDoc(profileRef, updatedProfileData, { merge: true });
-
-      setProfile({ ...profile, ...updatedProfileData });
 
       toast({ title: "Erfolg", description: "Dein Profil wurde aktualisiert." });
       setIsEditing(false);
@@ -139,7 +130,6 @@ export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserScho
       
       const profileRef = doc(db, 'profiles', user.uid);
       await setDoc(profileRef, { email: values.newEmail }, { merge: true });
-      if (profile) setProfile({...profile, email: values.newEmail});
 
       toast({ title: "E-Mail aktualisiert", description: `Eine Bestätigungs-E-Mail wurde an ${values.newEmail} gesendet.` });
       emailForm.reset();
@@ -332,6 +322,16 @@ export function ProfilePage({ userRole, onUserRoleChange, userSchool, onUserScho
                     <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Biografie</p>
                         <p className="font-medium text-sm italic text-muted-foreground whitespace-pre-wrap">{profile?.bio || "Keine Biografie festgelegt."}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 border rounded-md">
+                    <div className="flex-1 space-y-1">
+                        <p className="text-xs text-muted-foreground">Follower</p>
+                        <p className="font-medium text-lg">{profile?.followers?.length || 0}</p>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                        <p className="text-xs text-muted-foreground">Ich folge</p>
+                        <p className="font-medium text-lg">{profile?.following?.length || 0}</p>
                     </div>
                 </div>
                 <div className="flex items-start gap-4 p-3 border rounded-md">
