@@ -17,11 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, User, KeyRound, Mail, Trash2, Pencil, Info } from "lucide-react";
+import { Loader2, User, KeyRound, Mail, Trash2, Pencil, Info, Briefcase, School as SchoolIcon } from "lucide-react";
 import { Textarea } from "./ui/textarea";
-import type { Profile } from "@/lib/types";
+import type { Profile, School } from "@/lib/types";
 import { Skeleton } from "./ui/skeleton";
 import { FollowListDialog } from "./follow-list-dialog";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { SchoolSelector } from "./school-selector";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein.").max(50, "Name darf nicht länger als 50 Zeichen sein."),
@@ -42,10 +44,26 @@ type ProfilePageProps = {
   profile: Profile | null;
   onUserNameChange: (name: string) => void;
   onToggleFollow: (targetUserId: string) => void;
+  userRole: string;
+  onUserRoleChange: (role: 'student' | 'teacher') => void;
+  userSchoolId: string;
+  onUserSchoolIdChange: (schoolId: string) => void;
+  allSchools: School[];
+  onAddSchool: (name: string, address: string) => Promise<string>;
 };
 
 
-export function ProfilePage({ profile, onUserNameChange, onToggleFollow }: ProfilePageProps) {
+export function ProfilePage({ 
+  profile, 
+  onUserNameChange, 
+  onToggleFollow, 
+  userRole, 
+  onUserRoleChange, 
+  userSchoolId, 
+  onUserSchoolIdChange,
+  allSchools,
+  onAddSchool
+}: ProfilePageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -212,6 +230,8 @@ export function ProfilePage({ profile, onUserNameChange, onToggleFollow }: Profi
         userIds: listType === 'followers' ? (profile.followers || []) : (profile.following || []),
     });
   }
+  
+  const selectedSchool = allSchools.find(s => s.id === userSchoolId);
 
   const profilesForDialog = useMemo(() => {
     if (!dialogState.userIds.length) return [];
@@ -266,7 +286,7 @@ export function ProfilePage({ profile, onUserNameChange, onToggleFollow }: Profi
         <Card>
             <CardHeader>
                 <CardTitle>Profil bearbeiten</CardTitle>
-                <CardDescription>Ändere hier deinen Namen, deine Biografie, E-Mail oder dein Passwort.</CardDescription>
+                <CardDescription>Ändere hier deine persönlichen Daten und Sicherheitseinstellungen.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <Form {...profileForm}>
@@ -285,6 +305,37 @@ export function ProfilePage({ profile, onUserNameChange, onToggleFollow }: Profi
                     </form>
                 </Form>
                 
+                <div className="space-y-4 p-4 border rounded-lg">
+                   <h4 className="font-medium flex items-center gap-2"><Briefcase className="h-4 w-4 text-muted-foreground" /> Persönliche Daten</h4>
+                   <div className="space-y-2">
+                        <Label>Rolle</Label>
+                        <RadioGroup
+                            value={userRole}
+                            onValueChange={(value) => onUserRoleChange(value as any)}
+                            className="flex space-x-4 pt-1"
+                        >
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="student" id="role-student" />
+                                <Label htmlFor="role-student" className="font-normal">Schüler</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="teacher" id="role-teacher" />
+                                <Label htmlFor="role-teacher" className="font-normal">Lehrer</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Schule</Label>
+                        <SchoolSelector
+                            schools={allSchools}
+                            value={userSchoolId}
+                            onChange={onUserSchoolIdChange}
+                            onAddSchool={onAddSchool}
+                        />
+                    </div>
+                     <p className="text-xs text-muted-foreground">Änderungen an Rolle und Schule werden sofort gespeichert.</p>
+                </div>
+
                 <Form {...emailForm}>
                     <form onSubmit={emailForm.handleSubmit(handleEmailUpdate)} className="space-y-4 p-4 border rounded-lg">
                         <h4 className="font-medium flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> E-Mail-Adresse ändern</h4>
@@ -370,6 +421,20 @@ export function ProfilePage({ profile, onUserNameChange, onToggleFollow }: Profi
                     <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Passwort</p>
                         <p className="font-medium text-muted-foreground italic">Zum Ändern bitte auf "Bearbeiten" klicken.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4 p-3 border rounded-md">
+                    <Briefcase className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Rolle</p>
+                        <p className="font-medium">{userRole === 'student' ? 'Schüler' : 'Lehrer'}</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4 p-3 border rounded-md">
+                    <SchoolIcon className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Schule</p>
+                        <p className="font-medium">{selectedSchool?.name || "Nicht festgelegt"}</p>
                     </div>
                 </div>
             </CardContent>

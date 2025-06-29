@@ -4,11 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Settings, Weight, Palette, Briefcase, School as SchoolIcon } from 'lucide-react';
+import { Settings, Weight, Palette } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { SchoolSelector } from "./school-selector";
-import type { School } from "@/lib/types";
 
 
 type SettingsPageProps = {
@@ -20,12 +17,6 @@ type SettingsPageProps = {
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
-  userRole: string;
-  onUserRoleChange: (role: 'student' | 'teacher') => void;
-  userSchoolId: string;
-  onUserSchoolIdChange: (schoolId: string) => void;
-  allSchools: School[];
-  onAddSchool: (name: string, address: string) => Promise<string>;
 };
 
 const themes = [
@@ -48,12 +39,6 @@ export function SettingsPage({
     onThemeChange,
     isDarkMode,
     onIsDarkModeChange,
-    userRole,
-    onUserRoleChange,
-    userSchoolId,
-    onUserSchoolIdChange,
-    allSchools,
-    onAddSchool,
 }: SettingsPageProps) {
 
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
@@ -147,45 +132,6 @@ export function SettingsPage({
                     </div>
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Persönliche Daten</CardTitle>
-                    <CardDescription>Diese Einstellungen sind privat und gelten nur für dich.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Schule</Label>
-                        <SchoolSelector
-                            schools={allSchools}
-                            value={userSchoolId}
-                            onChange={onUserSchoolIdChange}
-                            onAddSchool={onAddSchool}
-                        />
-                    </div>
-                    <div className="flex items-center gap-4 p-3 border rounded-md">
-                        <Briefcase className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-1">
-                            <Label className="text-xs text-muted-foreground">Rolle</Label>
-                            <RadioGroup
-                                value={userRole}
-                                onValueChange={(value) => onUserRoleChange(value as any)}
-                                className="flex space-x-4 pt-2"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="student" id="role-student" />
-                                    <Label htmlFor="role-student" className="font-normal">Schüler</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="teacher" id="role-teacher" />
-                                    <Label htmlFor="role-teacher" className="font-normal">Lehrer</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
         </div>
     );
 }

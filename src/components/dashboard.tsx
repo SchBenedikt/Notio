@@ -761,6 +761,18 @@ export default function Dashboard() {
                     setUserName(name);
                   }}
                   onToggleFollow={handleToggleFollow}
+                  userRole={userRole}
+                  onUserRoleChange={(role) => {
+                      setUserRole(role);
+                      updateSetting('role', role);
+                  }}
+                  userSchoolId={userSchoolId}
+                  onUserSchoolIdChange={(schoolId) => {
+                      setUserSchoolId(schoolId);
+                      updateSetting('schoolId', schoolId);
+                  }}
+                  allSchools={allSchools}
+                  onAddSchool={handleAddSchool}
                />;
       case 'community':
         return <CommunityPage 
@@ -802,18 +814,6 @@ export default function Dashboard() {
                 setIsDarkMode(isDark);
                 updateSetting('isDarkMode', isDark);
             }}
-            userRole={userRole}
-            onUserRoleChange={(role) => {
-                setUserRole(role);
-                updateSetting('role', role);
-            }}
-            userSchoolId={userSchoolId}
-            onUserSchoolIdChange={(schoolId) => {
-                setUserSchoolId(schoolId);
-                updateSetting('schoolId', schoolId);
-            }}
-            allSchools={allSchools}
-            onAddSchool={handleAddSchool}
         />;
       default:
         return null;
