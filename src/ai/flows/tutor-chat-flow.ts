@@ -1,8 +1,9 @@
 'use server';
 /**
- * @fileOverview An AI tutor that can chat with the student.
+ * @fileOverview An AI tutor that can chat with the student and process files.
  *
  * - getTutorResponse - A function that handles the chat conversation.
+ * - ChatMessage - The type for a single chat message.
  * - TutorChatInput - The input type for the getTutorResponse function.
  * - TutorChatOutput - The return type for the getTutorResponse function.
  */
@@ -10,9 +11,15 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const AttachmentSchema = z.object({
+  name: z.string(),
+  dataUrl: z.string(),
+});
+
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
   content: z.string(),
+  attachments: z.array(AttachmentSchema).optional(),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
@@ -64,20 +71,39 @@ const tutorChatFlow = ai.defineFlow(
 
     const systemPrompt = `Du bist ein hilfsbereiter und freundlicher KI-Tutor für einen Schüler in Deutschland. Deine Aufgabe ist es, Fragen zu beantworten, Konzepte zu erklären und bei den Hausaufgaben zu helfen.
 Du hast Zugriff auf die aktuellen Noten und Fächer des Schülers. Nutze diese Informationen, um kontextbezogene und hilfreiche Antworten zu geben. Wenn der Schüler z.B. fragt "Wie kann ich mich verbessern?", beziehe dich auf die Fächer mit schlechteren Noten und berücksichtige seine Wunschnote.
+Du kannst auch Dateien wie Bilder, PDFs oder andere Dokumente als Anhänge erhalten. Beziehe diese in deine Analyse und Antworten mit ein.
 
 ${subjectsInfo}
 
 Sei ermutigend, geduldig und sprich den Schüler mit "Du" an. Antworte immer auf Deutsch.`;
 
     const lastMessage = input.history[input.history.length - 1];
-    const historyForGenkit = input.history.slice(0, -1).map((msg) => ({
-        role: msg.role,
-        content: [{ text: msg.content }],
-    }));
+    
+    // Construct the history for Genkit, including attachments
+    const historyForGenkit = input.history.slice(0, -1).map((msg) => {
+        const content: ({ text: string } | { media: { url: string } })[] = [{ text: msg.content }];
+        if (msg.attachments) {
+            msg.attachments.forEach(att => {
+                content.push({ media: { url: att.dataUrl } });
+            });
+        }
+        return {
+            role: msg.role as 'user' | 'model',
+            content,
+        };
+    });
+
+    // Construct the prompt for the last message
+    const promptParts: ({ text: string } | { media: { url: string } })[] = [{ text: lastMessage.content }];
+    if (lastMessage.attachments) {
+        lastMessage.attachments.forEach(att => {
+            promptParts.push({ media: { url: att.dataUrl } });
+        });
+    }
     
     const response = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
-        prompt: lastMessage.content,
+        prompt: promptParts,
         history: historyForGenkit,
         system: systemPrompt,
         output: {

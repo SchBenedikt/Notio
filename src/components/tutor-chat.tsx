@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Send, Bot, User, Loader2, BrainCircuit } from "lucide-react";
+import { Send, Bot, User, Loader2, BrainCircuit, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,8 +10,9 @@ import { getTutorResponse, ChatMessage } from "@/ai/flows/tutor-chat-flow";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Subject, Grade } from "@/lib/types";
+import { Subject, Grade, Attachment } from "@/lib/types";
 import { StudyCoachDialog } from "./study-coach-dialog";
+import { FileSelectionDialog } from "./file-selection-dialog";
 
 type TutorChatProps = {
   subjects: Subject[];
@@ -20,12 +21,14 @@ type TutorChatProps = {
 
 export function TutorChat({ subjects, allGrades }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst auch den Lern-Coach für ein bestimmtes Fach starten." }
+    { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst auch den Lern-Coach für ein bestimmtes Fach starten oder mir Dateien zum Analysieren geben." }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [coachSubjectId, setCoachSubjectId] = useState<string | undefined>();
   const [isCoachOpen, setIsCoachOpen] = useState(false);
+  const [isAttachmentSelectorOpen, setAttachmentSelectorOpen] = useState(false);
+  const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const selectedCoachSubject = useMemo(() => coachSubjectId ? subjects.find(s => s.id === coachSubjectId) : undefined, [coachSubjectId, subjects]);
@@ -39,13 +42,18 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && selectedAttachments.length === 0) return;
 
-    const userMessage: ChatMessage = { role: 'user', content: input };
+    const userMessage: ChatMessage = { 
+      role: 'user', 
+      content: input,
+      attachments: selectedAttachments,
+    };
     const newMessages = [...messages, userMessage];
 
     setMessages(newMessages);
     setInput("");
+    setSelectedAttachments([]);
     setLoading(true);
 
     try {
@@ -78,6 +86,14 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
       setLoading(false);
     }
   };
+  
+  const removeSelectedAttachment = (indexToRemove: number) => {
+    setSelectedAttachments(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const hasAnyAttachments = useMemo(() => {
+    return allGrades.some(g => g.attachments && g.attachments.length > 0);
+  }, [allGrades]);
 
   return (
     <>
@@ -150,7 +166,17 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                     : "bg-muted"
                 )}
               >
-                <p>{message.content}</p>
+                {message.content && <p>{message.content}</p>}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className={cn("space-y-1", message.content && "border-t border-primary-foreground/20 pt-2 mt-2")}>
+                    {message.attachments.map((att, attIndex) => (
+                      <div key={attIndex} className="flex items-center gap-2 text-xs">
+                        <Paperclip className="h-3 w-3" />
+                        <span className="truncate max-w-[200px]">{att.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
                {message.role === 'user' && (
                 <Avatar className="h-8 w-8">
@@ -176,6 +202,22 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
         </div>
       </ScrollArea>
       <div className="p-4 border-t">
+        {selectedAttachments.length > 0 && (
+          <div className="mb-2 p-2 border rounded-lg">
+              <p className="text-xs text-muted-foreground font-medium mb-2">Anhänge:</p>
+              <div className="flex flex-wrap gap-2">
+              {selectedAttachments.map((att, index) => (
+                  <div key={index} className="flex items-center gap-1.5 bg-muted rounded-full pl-2 pr-1 py-0.5 text-sm">
+                      <Paperclip className="h-3 w-3" />
+                      <span className="truncate max-w-[150px]">{att.name}</span>
+                      <button onClick={() => removeSelectedAttachment(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5" title="Anhang entfernen">
+                          <X className="h-3 w-3" />
+                      </button>
+                  </div>
+              ))}
+              </div>
+          </div>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -183,10 +225,20 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
           }}
           className="flex items-center gap-2"
         >
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setAttachmentSelectorOpen(true)} 
+            disabled={loading || !hasAnyAttachments}
+            title={hasAnyAttachments ? 'Datei anhängen' : 'Keine Dateien zum Anhängen vorhanden'}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Stelle eine Frage..."
+            placeholder="Stelle eine Frage oder füge eine Datei hinzu..."
             disabled={loading}
             className="flex-1"
             onKeyDown={(e) => {
@@ -196,13 +248,20 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                 }
             }}
           />
-          <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+          <Button type="submit" size="icon" disabled={loading || (!input.trim() && selectedAttachments.length === 0)}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             <span className="sr-only">Senden</span>
           </Button>
         </form>
       </div>
     </div>
+    <FileSelectionDialog 
+      isOpen={isAttachmentSelectorOpen}
+      onOpenChange={setAttachmentSelectorOpen}
+      onFilesSelected={setSelectedAttachments}
+      subjects={subjects}
+      grades={allGrades}
+    />
     {selectedCoachSubject && (
         <StudyCoachDialog
             isOpen={isCoachOpen}
