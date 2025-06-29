@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { type Grade, type Subject, GradeType, SubjectCategory } from "@/lib/types";
+import { addDoc, collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
+import { db } from "./firebase";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -255,77 +257,93 @@ function parseCsvLine(line: string): string[] {
     return fields;
 }
 
-export function importDataFromCSV(
+export async function importDataFromCSV(
     csvContent: string,
     currentSubjects: Subject[],
     currentGrades: Grade[],
-    gradeLevel: number
-): { subjects: Subject[], grades: Grade[], importedCount: number, skippedCount: number } {
-    const newSubjects = [...currentSubjects];
-    const newGrades = [...currentGrades];
+    gradeLevel: number,
+    userId: string
+): Promise<{ newSubjects: Subject[], newGrades: Grade[], importedCount: number, skippedCount: number }> {
+    const subjectsMap = new Map(currentSubjects.map(s => [s.name.toLowerCase(), s]));
+    const newSubjects: Subject[] = [...currentSubjects];
+    const newGrades: Grade[] = [...currentGrades];
     const lines = csvContent.split(/\r?\n/).slice(1);
 
     let importedCount = 0;
     let skippedCount = 0;
+    
+    const batch = writeBatch(db);
+    const gradesToAdd = [];
 
-    lines.forEach(line => {
-        if (line.trim() === '') return;
+    for (const line of lines) {
+        if (line.trim() === '') continue;
         
         const [subjectName, category, type, name, valueStr, weightStr, dateStr, notes] = parseCsvLine(line);
 
         if (!subjectName || !category || !type || !valueStr || !weightStr || !dateStr) {
             console.warn("Skipping invalid CSV line:", line);
             skippedCount++;
-            return;
+            continue;
         }
         
         const value = parseFloat(valueStr);
         const weight = parseFloat(weightStr);
-        if (isNaN(value) || isNaN(weight)) {
-            console.warn("Skipping line with invalid number:", line);
+        const dateParts = dateStr.split('.');
+        const date = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`);
+
+        if (isNaN(value) || isNaN(weight) || isNaN(date.getTime())) {
+            console.warn("Skipping line with invalid data:", line);
             skippedCount++;
-            return;
+            continue;
         }
 
-        let subject = newSubjects.find(s => s.name.toLowerCase() === subjectName.toLowerCase() && s.gradeLevel === gradeLevel);
-
+        let subject = subjectsMap.get(subjectName.toLowerCase());
+        let isNewSubject = false;
         if (!subject) {
-            subject = {
-                id: crypto.randomUUID(),
+            const newSubjectData = {
                 gradeLevel,
                 name: subjectName,
                 category: category as SubjectCategory,
             };
+            const subjectDocRef = doc(collection(db, 'users', userId, 'subjects'));
+            batch.set(subjectDocRef, newSubjectData);
+            subject = { id: subjectDocRef.id, ...newSubjectData };
+            subjectsMap.set(subjectName.toLowerCase(), subject);
             newSubjects.push(subject);
-            importedCount++;
+            isNewSubject = true;
         }
-
-        const newGrade: Grade = {
-            id: crypto.randomUUID(),
+        
+        const newGradeData = {
             subjectId: subject.id,
             type: type as GradeType,
             name: name || undefined,
             value,
             weight,
-            date: new Date(dateStr.split('.').reverse().join('-')).toISOString(), 
+            date: date.toISOString(), 
             notes: notes || undefined,
         };
 
-        const gradeExists = newGrades.some(g => 
-            g.subjectId === newGrade.subjectId &&
-            g.value === newGrade.value &&
-            g.weight === newGrade.weight &&
-            new Date(g.date).toDateString() === new Date(newGrade.date).toDateString() &&
-            (g.name || '') === (newGrade.name || '')
+        const gradeExists = currentGrades.some(g => 
+            g.subjectId === newGradeData.subjectId &&
+            g.value === newGradeData.value &&
+            g.weight === newGradeData.weight &&
+            new Date(g.date).toDateString() === new Date(newGradeData.date).toDateString() &&
+            (g.name || '') === (newGradeData.name || '')
         );
         
         if (!gradeExists) {
-            newGrades.push(newGrade);
-            if (!subject) importedCount++; // Only count grade as new import if subject wasn't also new
+            const gradeDocRef = doc(collection(db, 'users', userId, 'grades'));
+            batch.set(gradeDocRef, newGradeData);
+            newGrades.push({ id: gradeDocRef.id, ...newGradeData });
+            importedCount++;
         } else {
             skippedCount++;
         }
-    });
+    }
 
-    return { subjects: newSubjects, grades: newGrades, importedCount, skippedCount };
+    if (importedCount > 0) {
+        await batch.commit();
+    }
+    
+    return { newSubjects, newGrades, importedCount, skippedCount };
 }

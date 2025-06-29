@@ -9,6 +9,9 @@ import {
   ListPlus,
   MessageCircle,
   Upload,
+  BrainCircuit,
+  Files,
+  Award
 } from "lucide-react";
 import {
   CommandDialog,
@@ -18,6 +21,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  CommandTitle,
+  CommandDescription
 } from "@/components/ui/command";
 import { Subject } from "@/lib/types";
 
@@ -25,7 +30,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "subjects" | "tutor" | "calculator") => void;
+  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -60,52 +65,64 @@ export function CommandPalette({
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange}>
-      <CommandInput placeholder="Befehl oder Suche eingeben..." />
-      <CommandList>
-        <CommandEmpty>Keine Ergebnisse gefunden.</CommandEmpty>
-        <CommandGroup heading="Navigation">
-          <CommandItem onSelect={() => runCommand(() => onNavigate("subjects"))}>
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Fächerübersicht</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => onNavigate("calculator"))}>
-            <Calculator className="mr-2 h-4 w-4" />
-            <span>Notenrechner</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => onNavigate("tutor"))}>
-            <MessageCircle className="mr-2 h-4 w-4" />
-            <span>KI-Tutor</span>
-          </CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading="Daten">
-          <CommandItem onSelect={() => runCommand(onImport)}>
-            <Upload className="mr-2 h-4 w-4" />
-            <span>Noten aus CSV importieren</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(onExport)}>
-            <Download className="mr-2 h-4 w-4" />
-            <span>Noten als CSV exportieren</span>
-          </CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading="Schnellerfassung">
-          <CommandItem onSelect={() => runCommand(onAddSubject)}>
-            <BookCopy className="mr-2 h-4 w-4" />
-            <span>Neues Fach hinzufügen</span>
-          </CommandItem>
-          {subjects.map((subject) => (
-            <CommandItem
-              key={subject.id}
-              value={`Note zu ${subject.name} hinzufügen`}
-              onSelect={() => runCommand(() => onAddGrade(subject.id))}
-            >
-              <ListPlus className="mr-2 h-4 w-4" />
-              <span>Neue Note für "{subject.name}"</span>
+        <CommandInput placeholder="Befehl oder Suche eingeben..." />
+        <CommandList>
+            <CommandEmpty>Keine Ergebnisse gefunden.</CommandEmpty>
+            <CommandGroup heading="Navigation">
+                <CommandItem onSelect={() => runCommand(() => onNavigate("subjects"))}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Fächerübersicht</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("calculator"))}>
+                    <Calculator className="mr-2 h-4 w-4" />
+                    <span>Notenrechner</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("tutor"))}>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <span>KI-Tutor & Coach</span>
+                </CommandItem>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("data"))}>
+                    <Download className="mr-2 h-4 w-4" />
+                    <span>Datenverwaltung</span>
+                </CommandItem>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("files"))}>
+                    <Files className="mr-2 h-4 w-4" />
+                    <span>Dateiverwaltung</span>
+                </CommandItem>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("awards"))}>
+                    <Award className="mr-2 h-4 w-4" />
+                    <span>Auszeichnungen</span>
+                </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="Daten">
+            <CommandItem onSelect={() => runCommand(onImport)}>
+                <Upload className="mr-2 h-4 w-4" />
+                <span>Noten aus CSV importieren</span>
             </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
+            <CommandItem onSelect={() => runCommand(onExport)}>
+                <Download className="mr-2 h-4 w-4" />
+                <span>Noten als CSV exportieren</span>
+            </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="Schnellerfassung">
+            <CommandItem onSelect={() => runCommand(onAddSubject)}>
+                <BookCopy className="mr-2 h-4 w-4" />
+                <span>Neues Fach hinzufügen</span>
+            </CommandItem>
+            {subjects.map((subject) => (
+                <CommandItem
+                key={subject.id}
+                value={`Note zu ${subject.name} hinzufügen`}
+                onSelect={() => runCommand(() => onAddGrade(subject.id))}
+                >
+                <ListPlus className="mr-2 h-4 w-4" />
+                <span>Neue Note für "{subject.name}"</span>
+                </CommandItem>
+            ))}
+            </CommandGroup>
+        </CommandList>
     </CommandDialog>
   );
 }

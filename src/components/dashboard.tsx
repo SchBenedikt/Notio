@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import useLocalStorage from "@/hooks/use-local-storage";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
@@ -20,29 +22,96 @@ import { FileManagementPage } from "./file-management-page";
 import { GradeInfoDialog } from "./grade-info-dialog";
 import { AwardsPage } from "./awards-page";
 import { awardsDefinitions } from "@/lib/awards";
+import { CommandPalette } from "./command-palette";
 
 export default function Dashboard() {
-  const [subjects, setSubjects] = useLocalStorage<Subject[]>("noten-meister-subjects", []);
-  const [grades, setGrades] = useLocalStorage<Grade[]>("noten-meister-grades", []);
-  const [selectedGradeLevel, setSelectedGradeLevel] = useLocalStorage<number>("noten-meister-grade-level", 10);
-  const [mainSubjectWeight, setMainSubjectWeight] = useLocalStorage<number>("noten-meister-main-weight", 2);
-  const [minorSubjectWeight, setMinorSubjectWeight] = useLocalStorage<number>("noten-meister-minor-weight", 1);
-  const [theme, setTheme] = useLocalStorage<string>("noten-meister-theme", "blue");
+  const { user } = useAuth();
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   
-  const [storedDarkMode, setStoredDarkMode] = useLocalStorage<boolean | null>('noten-meister-dark-mode', null);
+  // Settings state
+  const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
+  const [mainSubjectWeight, setMainSubjectWeight] = useState<number>(2);
+  const [minorSubjectWeight, setMinorSubjectWeight] = useState<number>(1);
+  const [theme, setTheme] = useState<string>("blue");
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [userRole, setUserRole] = useState('student');
+  const [userSchool, setUserSchool] = useState('');
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState<AppView>('subjects');
+  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
   const [gradeInfoDialogState, setGradeInfoDialogState] = useState<{isOpen: boolean, grade: Grade | null, subject: Subject | null}>({isOpen: false, grade: null, subject: null});
-
+  
+  const [dataLoading, setDataLoading] = useState(true);
 
   const { toast } = useToast();
+
+  const settingsDocRef = useMemo(() => user ? doc(db, 'users', user.uid, 'settings', 'main') : null, [user]);
+
+  const updateSetting = useCallback(async (key: string, value: any) => {
+    if (!settingsDocRef) return;
+    try {
+      await updateDoc(settingsDocRef, { [key]: value });
+    } catch (error) {
+      console.error("Error updating setting: ", error);
+      toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
+    }
+  }, [settingsDocRef, toast]);
+
+
+  useEffect(() => {
+    if (!user) return;
+    setDataLoading(true);
+
+    const fetchData = async () => {
+      try {
+        // Fetch Settings
+        if(settingsDocRef) {
+          const settingsSnap = await getDoc(settingsDocRef);
+          if (settingsSnap.exists()) {
+            const settingsData = settingsSnap.data();
+            setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
+            setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
+            setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
+            setTheme(settingsData.theme || 'blue');
+            setIsDarkMode(settingsData.isDarkMode || false);
+            setUserRole(settingsData.role || 'student');
+            setUserSchool(settingsData.school || '');
+          }
+        }
+        
+        // Fetch Subjects
+        const subjectsQuery = query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel));
+        const subjectsSnap = await getDocs(subjectsQuery);
+        const subjectsData = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
+        setSubjects(subjectsData);
+        
+        // Fetch Grades for these subjects
+        if (subjectsData.length > 0) {
+          const subjectIds = subjectsData.map(s => s.id);
+          const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
+          const gradesSnap = await getDocs(gradesQuery);
+          const gradesData = gradesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Grade[];
+          setGrades(gradesData);
+        } else {
+          setGrades([]);
+        }
+
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({ title: "Fehler beim Laden der Daten", variant: "destructive" });
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    fetchData();
+  }, [user, selectedGradeLevel, settingsDocRef, toast]);
+
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -51,32 +120,10 @@ export default function Dashboard() {
     if (theme !== "blue") {
       root.classList.add(`theme-${theme}`);
     }
-  }, [theme]);
+    if (user) updateSetting('theme', theme);
+  }, [theme, updateSetting, user]);
   
-  useEffect(() => {
-    const handleSystemPreference = (e: MediaQueryListEvent) => {
-        if (storedDarkMode === null) {
-          setIsDarkMode(e.matches);
-        }
-    };
-
-    if (storedDarkMode !== null) {
-        setIsDarkMode(storedDarkMode);
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        mediaQuery.removeEventListener('change', handleSystemPreference);
-        return;
-    }
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches);
-
-    mediaQuery.addEventListener('change', handleSystemPreference);
-
-    return () => {
-        mediaQuery.removeEventListener('change', handleSystemPreference);
-    };
-  }, [storedDarkMode]);
-
+  
   useEffect(() => {
     const root = window.document.documentElement;
     if (isDarkMode) {
@@ -84,62 +131,29 @@ export default function Dashboard() {
     } else {
       root.classList.remove('dark');
     }
-  }, [isDarkMode]);
+    if (user) updateSetting('isDarkMode', isDarkMode);
+  }, [isDarkMode, updateSetting, user]);
 
 
-  const subjectsForGradeLevel = useMemo(() => {
-    return subjects.filter((s) => s.gradeLevel === selectedGradeLevel);
-  }, [subjects, selectedGradeLevel]);
+  const subjectsForGradeLevel = subjects; // Already filtered by Firestore query
 
-  const filteredSubjects = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-
-    if (!lowercasedQuery) {
-      return subjectsForGradeLevel;
-    }
-
-    return subjectsForGradeLevel.filter((subject) => {
-      if (subject.name.toLowerCase().includes(lowercasedQuery)) {
-        return true;
-      }
-
-      const subjectGrades = grades.filter((g) => g.subjectId === subject.id);
-      return subjectGrades.some((grade) => {
-        const gradeName = grade.name || "";
-        const gradeNotes = grade.notes || "";
-        const gradeValueStr = String(grade.value);
-        
-        return (
-          gradeName.toLowerCase().includes(lowercasedQuery) ||
-          gradeNotes.toLowerCase().includes(lowercasedQuery) ||
-          gradeValueStr.includes(lowercasedQuery)
-        );
-      });
-    });
-  }, [subjectsForGradeLevel, grades, searchQuery]);
-
-
-  const gradesForFilteredSubjects = useMemo(() => {
-    const filteredSubjectIds = new Set(filteredSubjects.map(s => s.id));
-    return grades.filter(g => filteredSubjectIds.has(g.subjectId));
-  }, [grades, filteredSubjects]);
 
   const mainSubjects = useMemo(() => {
-    return filteredSubjects
+    return subjectsForGradeLevel
       .filter((s) => s.category === 'Hauptfach')
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [filteredSubjects]);
+  }, [subjectsForGradeLevel]);
 
   const minorSubjects = useMemo(() => {
-    return filteredSubjects
+    return subjectsForGradeLevel
       .filter((s) => s.category === 'Nebenfach')
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [filteredSubjects]);
+  }, [subjectsForGradeLevel]);
 
 
   const overallAverage = useMemo(() => {
-    return calculateOverallAverage(filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight);
-  }, [filteredSubjects, grades, mainSubjectWeight, minorSubjectWeight]);
+    return calculateOverallAverage(subjectsForGradeLevel, grades, mainSubjectWeight, minorSubjectWeight);
+  }, [subjectsForGradeLevel, grades, mainSubjectWeight, minorSubjectWeight]);
 
   const mainSubjectsAverage = useMemo(() => {
     return calculateCategoryAverage(mainSubjects, grades);
@@ -150,24 +164,24 @@ export default function Dashboard() {
   }, [minorSubjects, grades]);
   
   const writtenGradesCount = useMemo(() => {
-    return gradesForFilteredSubjects.filter(g => g.type === 'Schulaufgabe').length;
-  }, [gradesForFilteredSubjects]);
+    return grades.filter(g => g.type === 'Schulaufgabe').length;
+  }, [grades]);
 
   const oralGradesCount = useMemo(() => {
-     return gradesForFilteredSubjects.filter(g => g.type === 'mündliche Note').length;
-  }, [gradesForFilteredSubjects]);
+     return grades.filter(g => g.type === 'mündliche Note').length;
+  }, [grades]);
 
   const totalSubjectsCount = useMemo(() => {
-    return filteredSubjects.length;
-  }, [filteredSubjects]);
+    return subjectsForGradeLevel.length;
+  }, [subjectsForGradeLevel]);
 
   const totalGradesCount = useMemo(() => {
-    return gradesForFilteredSubjects.length;
-  }, [gradesForFilteredSubjects]);
+    return grades.length;
+  }, [grades]);
 
   const awards = useMemo<Award[]>(() => {
     return awardsDefinitions.map(def => {
-      const result = def.check(subjectsForGradeLevel, gradesForFilteredSubjects, overallAverage);
+      const result = def.check(subjectsForGradeLevel, grades, overallAverage);
       return {
         id: def.id,
         name: def.name,
@@ -180,84 +194,136 @@ export default function Dashboard() {
         progress: result.progress,
       };
     });
-  }, [subjectsForGradeLevel, gradesForFilteredSubjects, overallAverage]);
+  }, [subjectsForGradeLevel, grades, overallAverage]);
 
-  const handleAddSubject = (values: AddSubjectData) => {
-    const newSubject: Subject = {
-      id: crypto.randomUUID(),
+  const handleAddSubject = async (values: AddSubjectData) => {
+    if (!user) return;
+    const newSubjectData = {
       gradeLevel: selectedGradeLevel,
       name: values.name,
       category: values.category,
       ...(values.targetGrade && { targetGrade: values.targetGrade }),
       ...(values.category === 'Hauptfach' && { writtenWeight: 2, oralWeight: 1 }),
     };
-    setSubjects([...subjects, newSubject]);
-    toast({
-      title: "Fach hinzugefügt",
-      description: `Das Fach "${newSubject.name}" wurde erfolgreich erstellt.`,
-    });
+    
+    try {
+        const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), newSubjectData);
+        const newSubject: Subject = { id: docRef.id, ...newSubjectData } as Subject;
+        setSubjects([...subjects, newSubject]);
+        toast({
+            title: "Fach hinzugefügt",
+            description: `Das Fach "${newSubject.name}" wurde erfolgreich erstellt.`,
+        });
+    } catch (error) {
+        console.error("Error adding subject: ", error);
+        toast({ title: "Fehler beim Hinzufügen des Fachs", variant: "destructive"});
+    }
   };
 
-  const handleUpdateSubject = (subjectId: string, updatedValues: Partial<Omit<Subject, 'id' | 'gradeLevel'>>) => {
-    setSubjects(currentSubjects => 
-        currentSubjects.map(s => 
-            s.id === subjectId ? { ...s, ...updatedValues } : s
-        )
-    );
-    toast({
-      title: "Fach aktualisiert",
-      description: `Die Einstellungen für das Fach wurden gespeichert.`,
-    });
-     setEditSubjectState({ isOpen: false, subject: null });
+  const handleUpdateSubject = async (subjectId: string, updatedValues: Partial<Omit<Subject, 'id' | 'gradeLevel'>>) => {
+    if (!user) return;
+    const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
+    try {
+        await updateDoc(subjectDocRef, updatedValues);
+        setSubjects(currentSubjects => 
+            currentSubjects.map(s => 
+                s.id === subjectId ? { ...s, ...updatedValues } : s
+            )
+        );
+        toast({
+          title: "Fach aktualisiert",
+          description: `Die Einstellungen für das Fach wurden gespeichert.`,
+        });
+        setEditSubjectState({ isOpen: false, subject: null });
+    } catch(error) {
+        console.error("Error updating subject: ", error);
+        toast({ title: "Fehler beim Aktualisieren des Fachs", variant: "destructive"});
+    }
   };
 
-  const handleDeleteSubject = (subjectId: string) => {
+  const handleDeleteSubject = async (subjectId: string) => {
+    if(!user) return;
     const subjectName = subjects.find(s => s.id === subjectId)?.name || 'Das Fach';
-    setSubjects(subjects.filter((s) => s.id !== subjectId));
-    setGrades(grades.filter((g) => g.subjectId !== subjectId));
-    toast({
-      title: "Fach gelöscht",
-      description: `${subjectName} und alle zugehörigen Noten wurden gelöscht.`,
-      variant: "destructive",
-    });
+    
+    try {
+      const batch = writeBatch(db);
+      // Delete the subject document
+      const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
+      batch.delete(subjectDocRef);
+
+      // Find and delete all grades associated with the subject
+      const gradesToDeleteQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', '==', subjectId));
+      const gradesToDeleteSnap = await getDocs(gradesToDeleteQuery);
+      gradesToDeleteSnap.forEach(gradeDoc => {
+        batch.delete(gradeDoc.ref);
+      });
+      
+      await batch.commit();
+
+      setSubjects(subjects.filter((s) => s.id !== subjectId));
+      setGrades(grades.filter((g) => g.subjectId !== subjectId));
+      toast({
+        title: "Fach gelöscht",
+        description: `${subjectName} und alle zugehörigen Noten wurden gelöscht.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error("Error deleting subject and grades: ", error);
+      toast({ title: "Fehler beim Löschen des Fachs", variant: "destructive"});
+    }
   };
 
-  const handleSaveGrade = (subjectId: string, values: AddGradeData, gradeId?: string) => {
-    if (gradeId) {
-      setGrades(currentGrades =>
-        currentGrades.map(g =>
-          g.id === gradeId
-            ? { ...g, ...values, date: values.date.toISOString() }
-            : g
-        )
-      );
-      toast({
-        title: "Note aktualisiert",
-        description: "Die Änderungen an der Note wurden gespeichert.",
-      });
-    } else {
-      const newGrade: Grade = {
-        id: crypto.randomUUID(),
-        subjectId,
-        ...values,
-        date: values.date.toISOString(),
-      };
-      setGrades([...grades, newGrade]);
-      toast({
-        title: "Note hinzugefügt",
-        description: `Eine neue Note wurde erfolgreich gespeichert.`,
-      });
+  const handleSaveGrade = async (subjectId: string, values: AddGradeData, gradeId?: string) => {
+    if (!user) return;
+    const gradeData = {
+      subjectId,
+      ...values,
+      date: values.date.toISOString(),
+    };
+
+    try {
+      if (gradeId) {
+        const gradeDocRef = doc(db, 'users', user.uid, 'grades', gradeId);
+        await updateDoc(gradeDocRef, gradeData);
+        setGrades(currentGrades =>
+          currentGrades.map(g =>
+            g.id === gradeId ? { ...g, id: g.id, ...gradeData } : g
+          )
+        );
+        toast({
+          title: "Note aktualisiert",
+          description: "Die Änderungen an der Note wurden gespeichert.",
+        });
+      } else {
+        const docRef = await addDoc(collection(db, 'users', user.uid, 'grades'), gradeData);
+        const newGrade: Grade = { id: docRef.id, ...gradeData };
+        setGrades([...grades, newGrade]);
+        toast({
+          title: "Note hinzugefügt",
+          description: `Eine neue Note wurde erfolgreich gespeichert.`,
+        });
+      }
+    } catch (error) {
+       console.error("Error saving grade: ", error);
+       toast({ title: "Fehler beim Speichern der Note", variant: "destructive"});
     }
   };
 
 
-  const handleDeleteGrade = (gradeId: string) => {
-    setGrades(grades.filter((g) => g.id !== gradeId));
-     toast({
-      title: "Note gelöscht",
-      description: `Die ausgewählte Note wurde entfernt.`,
-      variant: "destructive",
-    });
+  const handleDeleteGrade = async (gradeId: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'grades', gradeId));
+      setGrades(grades.filter((g) => g.id !== gradeId));
+      toast({
+        title: "Note gelöscht",
+        description: `Die ausgewählte Note wurde entfernt.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error("Error deleting grade: ", error);
+      toast({ title: "Fehler beim Löschen der Note", variant: "destructive"});
+    }
   };
   
   const handleOpenAddGradeDialog = (subjectId: string) => {
@@ -289,7 +355,7 @@ export default function Dashboard() {
 
 
   const handleExportCSV = () => {
-    if (filteredSubjects.length === 0) {
+    if (subjectsForGradeLevel.length === 0) {
       toast({
         title: "Keine Daten zum Exportieren",
         description: "Für die ausgewählte Klassenstufe gibt es keine Fächer.",
@@ -297,7 +363,7 @@ export default function Dashboard() {
       });
       return;
     }
-    const csvContent = generateCSV(filteredSubjects, gradesForFilteredSubjects);
+    const csvContent = generateCSV(subjectsForGradeLevel, grades);
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -313,7 +379,8 @@ export default function Dashboard() {
     });
   };
   
-  const handleImportCSV = () => {
+  const handleImportCSV = async () => {
+    if (!user) return;
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv';
@@ -321,15 +388,27 @@ export default function Dashboard() {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 const csvContent = event.target?.result as string;
-                const { subjects: importedSubjects, grades: importedGrades, importedCount, skippedCount } = importDataFromCSV(csvContent, subjects, grades, selectedGradeLevel);
-                setSubjects(importedSubjects);
-                setGrades(importedGrades);
-                toast({
-                    title: "Import abgeschlossen",
-                    description: `${importedCount} Einträge wurden importiert, ${skippedCount} Duplikate oder fehlerhafte Zeilen übersprungen.`,
-                });
+                try {
+                  const { newSubjects, newGrades, importedCount, skippedCount } = await importDataFromCSV(csvContent, subjects, grades, selectedGradeLevel, user.uid);
+                  
+                  if (importedCount > 0) {
+                    setSubjects(newSubjects);
+                    setGrades(newGrades);
+                  }
+
+                  toast({
+                      title: "Import abgeschlossen",
+                      description: `${importedCount} Einträge wurden importiert, ${skippedCount} Duplikate oder fehlerhafte Zeilen übersprungen.`,
+                  });
+                } catch(error: any) {
+                   toast({
+                      title: "Import fehlgeschlagen",
+                      description: error.message,
+                      variant: "destructive"
+                   });
+                }
             };
             reader.readAsText(file);
         }
@@ -337,10 +416,19 @@ export default function Dashboard() {
     input.click();
   };
 
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      // The redirect will be handled by the main page component
+    } catch (error) {
+      toast({ title: "Fehler beim Abmelden", variant: "destructive" });
+    }
+  };
+
 
   const sidebarProps = {
-    subjects: filteredSubjects,
-    grades: gradesForFilteredSubjects,
+    subjects: subjectsForGradeLevel,
+    grades: grades,
     overallAverage: overallAverage,
     onAddSubject: handleAddSubject,
     onAddGrade: (subjectId: string, values: AddGradeData) => handleSaveGrade(subjectId, values),
@@ -355,6 +443,9 @@ export default function Dashboard() {
   };
   
   const renderView = () => {
+    if (dataLoading) {
+      return <div>Loading...</div>; // Replace with a proper skeleton loader
+    }
     switch (view) {
       case 'subjects':
         return (
@@ -366,8 +457,7 @@ export default function Dashboard() {
             onUpdateSubject={handleUpdateSubject}
             onAddSubject={() => setIsAddSubjectOpen(true)}
             totalSubjectsCount={subjectsForGradeLevel.length}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onAddGradeToSubject={handleOpenAddGradeDialog}
             onEditSubject={handleOpenEditSubjectDialog}
             onShowGradeInfo={handleOpenGradeInfoDialog}
@@ -424,22 +514,52 @@ export default function Dashboard() {
       <div className="flex-1 lg:pl-80">
         <AppHeader 
           selectedGradeLevel={selectedGradeLevel}
-          onGradeLevelChange={setSelectedGradeLevel}
+          onGradeLevelChange={(level) => {
+            setSelectedGradeLevel(level);
+            updateSetting('selectedGradeLevel', level);
+          }}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           overallAverage={overallAverage}
           mainSubjectWeight={mainSubjectWeight}
-          onMainSubjectWeightChange={setMainSubjectWeight}
+          onMainSubjectWeightChange={(weight) => {
+            setMainSubjectWeight(weight);
+            updateSetting('mainSubjectWeight', weight);
+          }}
           minorSubjectWeight={minorSubjectWeight}
-          onMinorSubjectWeightChange={setMinorSubjectWeight}
+          onMinorSubjectWeightChange={(weight) => {
+            setMinorSubjectWeight(weight);
+            updateSetting('minorSubjectWeight', weight);
+          }}
           theme={theme}
           onThemeChange={setTheme}
           isDarkMode={isDarkMode}
-          onIsDarkModeChange={(isDark) => setStoredDarkMode(isDark ? isDark : null)}
+          onIsDarkModeChange={setIsDarkMode}
+          onLogout={handleLogout}
+          userRole={userRole}
+          onUserRoleChange={(role) => {
+            setUserRole(role);
+            updateSetting('role', role);
+          }}
+          userSchool={userSchool}
+          onUserSchoolChange={(school) => {
+            setUserSchool(school);
+            updateSetting('school', school);
+          }}
         />
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
           {renderView()}
         </main>
       </div>
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        subjects={subjectsForGradeLevel}
+        onNavigate={setView}
+        onAddSubject={() => setIsAddSubjectOpen(true)}
+        onAddGrade={handleOpenAddGradeDialog}
+        onExport={handleExportCSV}
+        onImport={handleImportCSV}
+      />
       <AddSubjectDialog 
         isOpen={isAddSubjectOpen}
         onOpenChange={setIsAddSubjectOpen}

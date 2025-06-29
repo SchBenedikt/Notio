@@ -1,10 +1,9 @@
 "use client";
 
-import { Subject, Grade, AddGradeData } from "@/lib/types";
+import { Subject, Grade } from "@/lib/types";
 import { SubjectCard } from "./subject-card";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
 type SubjectListProps = {
@@ -15,11 +14,10 @@ type SubjectListProps = {
   onUpdateSubject: (subjectId: string, values: Partial<Subject>) => void;
   onAddSubject: () => void;
   totalSubjectsCount: number;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   onAddGradeToSubject: (subjectId: string) => void;
   onEditSubject: (subject: Subject) => void;
   onShowGradeInfo: (grade: Grade) => void;
+  onOpenCommandPalette: () => void;
 };
 
 export function SubjectList({ 
@@ -30,11 +28,10 @@ export function SubjectList({
   onUpdateSubject,
   onAddSubject,
   totalSubjectsCount,
-  searchQuery,
-  onSearchChange,
   onAddGradeToSubject,
   onEditSubject,
-  onShowGradeInfo
+  onShowGradeInfo,
+  onOpenCommandPalette
 }: SubjectListProps) {
   
   if (totalSubjectsCount === 0) {
@@ -69,27 +66,31 @@ export function SubjectList({
     </Accordion>
   );
   
-  const noSearchResults = mainSubjects.length === 0 && minorSubjects.length === 0 && searchQuery;
+  const noSearchResults = mainSubjects.length === 0 && minorSubjects.length === 0;
 
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-        <Input
-          type="search"
-          placeholder="Fächer, Noten oder Notizen suchen..."
-          className="w-full h-12 pl-11 text-base rounded-lg"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
+      <Button
+        variant="outline"
+        className="w-full h-12 text-base rounded-lg flex justify-start items-center text-muted-foreground"
+        onClick={onOpenCommandPalette}
+      >
+        <Search className="mr-3 h-5 w-5" />
+        Suchen oder Befehl ausführen...
+        <kbd className="pointer-events-none ml-auto hidden h-6 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </Button>
 
       {noSearchResults ? (
         <div className="text-center py-20 flex flex-col items-center justify-center min-h-[50vh] bg-background/50 rounded-lg">
-          <h2 className="text-2xl font-semibold">Keine Ergebnisse</h2>
+          <h2 className="text-2xl font-semibold">Keine Fächer gefunden</h2>
           <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-            Für deine Suche nach "{searchQuery}" wurde nichts gefunden.
+            Für die ausgewählte Klassenstufe gibt es keine Fächer.
           </p>
+           <Button onClick={onAddSubject} className="mt-6">
+              Neues Fach erstellen
+            </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-8 items-start">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Check, Menu } from "lucide-react";
+import { Settings, Check, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 type AppHeaderProps = {
   selectedGradeLevel: number;
@@ -33,6 +34,11 @@ type AppHeaderProps = {
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
+  onLogout: () => void;
+  userRole: string;
+  onUserRoleChange: (role: 'student' | 'teacher') => void;
+  userSchool: string;
+  onUserSchoolChange: (school: string) => void;
 };
 
 export function AppHeader({ 
@@ -48,6 +54,11 @@ export function AppHeader({
   onThemeChange,
   isDarkMode,
   onIsDarkModeChange,
+  onLogout,
+  userRole,
+  onUserRoleChange,
+  userSchool,
+  onUserSchoolChange
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -149,6 +160,36 @@ export function AppHeader({
                   </div>
                 </div>
                 <Separator />
+                 <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Profil</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Verwalte deine Profilinformationen.
+                  </p>
+                </div>
+                 <div className="grid gap-4">
+                   <div className="grid grid-cols-3 items-center gap-4">
+                     <Label htmlFor="school">Schule</Label>
+                     <Input id="school" value={userSchool} onChange={(e) => onUserSchoolChange(e.target.value)} className="col-span-2 h-8" />
+                   </div>
+                   <div className="grid grid-cols-3 items-center gap-4">
+                      <Label>Rolle</Label>
+                      <RadioGroup
+                        value={userRole}
+                        onValueChange={(value) => onUserRoleChange(value as any)}
+                        className="col-span-2 flex space-x-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="student" id="role-student" />
+                          <Label htmlFor="role-student" className="font-normal">Schüler</Label>
+                        </div>
+                         <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="teacher" id="role-teacher" />
+                          <Label htmlFor="role-teacher" className="font-normal">Lehrer</Label>
+                        </div>
+                      </RadioGroup>
+                   </div>
+                </div>
+                <Separator />
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">Erscheinungsbild</h4>
                   <p className="text-sm text-muted-foreground">
@@ -181,6 +222,11 @@ export function AppHeader({
                         onCheckedChange={onIsDarkModeChange}
                     />
                 </div>
+                <Separator />
+                <Button variant="outline" onClick={onLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Abmelden
+                </Button>
               </div>
             </PopoverContent>
           </Popover>
