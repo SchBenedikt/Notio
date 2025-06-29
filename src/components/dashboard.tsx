@@ -375,9 +375,7 @@ export default function Dashboard() {
         );
       case 'tutor':
         return (
-          <div className="h-[calc(100vh-10rem)]">
-            <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
-          </div>
+          <TutorChat subjects={subjectsForGradeLevel} allGrades={grades} />
         );
       case 'calculator':
         return (
@@ -403,7 +401,7 @@ export default function Dashboard() {
         );
       case 'awards':
         return (
-          <AwardsPage awards={awards} />
+          <AwardsPage awards={awards} selectedGradeLevel={selectedGradeLevel} />
         );
       default:
         return null;

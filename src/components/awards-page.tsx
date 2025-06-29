@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { Award as AwardType } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Award as AwardIcon } from "lucide-react";
+import { Lock, Award as AwardIcon, Share2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { AwardsShareDialog } from "./awards-share-dialog";
 
 const tierStyles = {
   bronze: {
@@ -103,13 +106,16 @@ const AwardCard = ({ award }: { award: AwardType }) => {
 
 type AwardsPageProps = {
   awards: AwardType[];
+  selectedGradeLevel: number;
 };
 
-export function AwardsPage({ awards }: AwardsPageProps) {
+export function AwardsPage({ awards, selectedGradeLevel }: AwardsPageProps) {
+    const [isShareDialogOpen, setShareDialogOpen] = useState(false);
     const unlockedAwards = awards.filter(a => a.unlocked).sort((a,b) => a.name.localeCompare(b.name));
     const lockedAwards = awards.filter(a => !a.unlocked).sort((a,b) => a.name.localeCompare(b.name));
 
   return (
+    <>
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="text-center">
          <div className="flex justify-center mb-4">
@@ -121,6 +127,12 @@ export function AwardsPage({ awards }: AwardsPageProps) {
         <p className="text-muted-foreground mt-2">
           Sammle Trophäen für deine Erfolge und deinen Fleiß in dieser Klassenstufe.
         </p>
+        <div className="mt-6">
+            <Button onClick={() => setShareDialogOpen(true)} disabled={unlockedAwards.length === 0}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Awards
+            </Button>
+        </div>
       </div>
       
       <div className="space-y-10">
@@ -147,5 +159,12 @@ export function AwardsPage({ awards }: AwardsPageProps) {
         )}
       </div>
     </div>
+    <AwardsShareDialog
+        isOpen={isShareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        unlockedAwards={unlockedAwards}
+        gradeLevel={selectedGradeLevel}
+    />
+    </>
   );
 }
