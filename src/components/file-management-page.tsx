@@ -4,8 +4,8 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import { Grade, Subject } from "@/lib/types";
-import { File as FileIcon, Folder, Search, Paperclip, ChevronDown } from "lucide-react";
+import { Grade, Subject, Attachment } from "@/lib/types";
+import { File as FileIcon, Folder, Search, Paperclip, ChevronDown, ExternalLink } from "lucide-react";
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Button } from './ui/button';
@@ -13,13 +13,14 @@ import { Button } from './ui/button';
 type FileManagementPageProps = {
   subjects: Subject[];
   grades: Grade[];
+  onEditGrade: (grade: Grade) => void;
 };
 
-export function FileManagementPage({ subjects, grades }: FileManagementPageProps) {
+export function FileManagementPage({ subjects, grades, onEditGrade }: FileManagementPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const attachmentsBySubject = useMemo(() => {
-    const grouped: { [subjectId: string]: { subject: Subject, files: any[] } } = {};
+    const grouped: { [subjectId: string]: { subject: Subject; files: { attachment: Attachment, grade: Grade }[] } } = {};
 
     grades.forEach(grade => {
       if (grade.attachments && grade.attachments.length > 0) {
@@ -35,9 +36,8 @@ export function FileManagementPage({ subjects, grades }: FileManagementPageProps
 
         grade.attachments.forEach(attachment => {
           grouped[grade.subjectId].files.push({
-            ...attachment,
-            gradeName: grade.name || grade.type,
-            gradeDate: grade.date,
+            attachment,
+            grade,
           });
         });
       }
@@ -50,8 +50,8 @@ export function FileManagementPage({ subjects, grades }: FileManagementPageProps
     const lowercasedQuery = searchQuery.toLowerCase();
     const filteredGroups = Object.values(grouped).map(group => {
         const filteredFiles = group.files.filter(file => 
-            file.name.toLowerCase().includes(lowercasedQuery) ||
-            file.gradeName.toLowerCase().includes(lowercasedQuery)
+            file.attachment.name.toLowerCase().includes(lowercasedQuery) ||
+            (file.grade.name || file.grade.type).toLowerCase().includes(lowercasedQuery)
         );
 
         if (group.subject.name.toLowerCase().includes(lowercasedQuery)) {
@@ -62,7 +62,7 @@ export function FileManagementPage({ subjects, grades }: FileManagementPageProps
             return { ...group, files: filteredFiles };
         }
         return null;
-    }).filter(group => group !== null) as { subject: Subject; files: any[]; }[];
+    }).filter(group => group !== null) as { subject: Subject; files: { attachment: Attachment; grade: Grade }[] }[];
 
     return filteredGroups;
 
@@ -112,7 +112,7 @@ export function FileManagementPage({ subjects, grades }: FileManagementPageProps
       </Card>
       
       {attachmentsBySubject.length > 0 ? (
-        <Accordion type="multiple" className="w-full space-y-2" defaultValue={attachmentsBySubject.map(g => g.subject.id)}>
+        <Accordion type="multiple" className="w-full space-y-2">
             {attachmentsBySubject.map(group => (
                 <AccordionItem key={group.subject.id} value={group.subject.id} className="border bg-card rounded-lg shadow-sm">
                     <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
@@ -130,24 +130,29 @@ export function FileManagementPage({ subjects, grades }: FileManagementPageProps
                                        <FileIcon className="h-5 w-5 text-muted-foreground shrink-0" />
                                        <div className="truncate">
                                            <a 
-                                                href={file.dataUrl} 
-                                                download={file.name}
+                                                href={file.attachment.dataUrl} 
+                                                download={file.attachment.name}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-sm font-medium text-primary hover:underline truncate block"
                                             >
-                                                {file.name}
+                                                {file.attachment.name}
                                            </a>
                                            <p className="text-xs text-muted-foreground truncate">
-                                                Gehört zu: {file.gradeName} vom {format(new Date(file.gradeDate), 'dd.MM.yyyy', { locale: de })}
+                                                Gehört zu: {file.grade.name || file.grade.type} vom {format(new Date(file.grade.date), 'dd.MM.yyyy', { locale: de })}
                                            </p>
                                        </div>
                                    </div>
-                                   <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                       <a href={file.dataUrl} download={file.name} target="_blank" rel="noopener noreferrer" title="Datei herunterladen">
-                                           <Paperclip className="h-4 w-4" />
-                                       </a>
-                                   </Button>
+                                   <div className="flex items-center shrink-0">
+                                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditGrade(file.grade)} title="Zugehörige Note anzeigen">
+                                          <ExternalLink className="h-4 w-4" />
+                                       </Button>
+                                       <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                           <a href={file.attachment.dataUrl} download={file.attachment.name} target="_blank" rel="noopener noreferrer" title="Datei herunterladen">
+                                               <Paperclip className="h-4 w-4" />
+                                           </a>
+                                       </Button>
+                                   </div>
                                </li>
                            ))}
                        </ul>

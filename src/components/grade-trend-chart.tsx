@@ -74,7 +74,7 @@ export function GradeTrendChart({ grades }: GradeTrendChartProps) {
                     />}
                 />
                 <Line type="monotone" dataKey="Note" stroke="var(--color-Note)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-Note)" }} />
-                <Line type="monotone" dataKey="Trend" stroke="var(--color-Trend)" strokeWidth={2} strokeDasharray="3 3" dot={false} activeDot={false} />
+                <Line type="linear" dataKey="Trend" stroke="var(--color-Trend)" strokeWidth={2} strokeDasharray="3 3" dot={false} activeDot={false} />
             </LineChart>
         </ChartContainer>
     </div>

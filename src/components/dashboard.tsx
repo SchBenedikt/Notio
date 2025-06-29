@@ -367,6 +367,7 @@ export default function Dashboard() {
           <FileManagementPage
             subjects={subjectsForGradeLevel}
             grades={grades}
+            onEditGrade={handleOpenEditGradeDialog}
           />
         );
       default:
