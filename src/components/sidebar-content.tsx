@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { AddGradeData, AddSubjectData, Subject, Grade, Attachment, AppView } from '@/lib/types';
 import { Textarea } from './ui/textarea';
-import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIcon, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit, User, Users, Settings } from 'lucide-react';
+import { BookUp, ListPlus, ChevronDown, Award, BookOpen, PenLine, MessageSquare, LayoutDashboard, MessageCircle, BookCopy, ClipboardList, Calendar as CalendarIconLucide, Calculator, UploadCloud, File as FileIcon, X, Database, Files, BrainCircuit, User, Users, Settings, CalendarDays } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Logo } from './logo';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -205,6 +205,13 @@ export function SidebarContent({
                                         Lernsets
                                     </Button>
                                     <Button 
+                                        variant={currentView === 'calendar' ? "secondary" : "ghost"} 
+                                        className="justify-start w-full"
+                                        onClick={() => handleViewChange('calendar')}>
+                                        <CalendarDays className="mr-2 h-4 w-4" />
+                                        Kalender
+                                    </Button>
+                                    <Button 
                                         variant={currentView === 'calculator' ? "secondary" : "ghost"} 
                                         className="justify-start w-full"
                                         onClick={() => handleViewChange('calculator')}>
@@ -393,7 +400,7 @@ export function SidebarContent({
                                                                 !field.value && "text-muted-foreground"
                                                               )}
                                                             >
-                                                              <CalendarIcon className="mr-2 h-4 w-4" />
+                                                              <CalendarIconLucide className="mr-2 h-4 w-4" />
                                                               {field.value ? (
                                                                 format(field.value, "PPP", { locale: de })
                                                               ) : (
