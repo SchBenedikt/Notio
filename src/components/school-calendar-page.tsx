@@ -9,7 +9,7 @@ import type { SchoolEvent, SchoolEventType } from "@/lib/types";
 import { Plus, CalendarDays } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { AddSchoolEventDialog } from './add-school-event-dialog';
+import { AddSchoolEventDialog } from './AddSchoolEventDialog';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
