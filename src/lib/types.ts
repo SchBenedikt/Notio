@@ -154,4 +154,4 @@ export interface SchoolEvent {
   createdAt: Timestamp;
 }
 
-export type AppView = 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'calendar';
+export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'calendar';

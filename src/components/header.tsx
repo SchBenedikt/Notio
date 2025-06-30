@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, LogOut, User, Settings as SettingsIcon, LayoutDashboard, BrainCircuit, Calculator, MessageCircle, Users, Award, CalendarDays } from "lucide-react";
+import { Menu, LogOut, User, Settings as SettingsIcon, LayoutDashboard, BrainCircuit, Calculator, MessageCircle, Users, Award, CalendarDays, BookCopy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -30,7 +30,8 @@ type AppHeaderProps = {
 };
 
 const navItems = [
-  { view: 'subjects' as AppView, label: 'Fächer', icon: LayoutDashboard },
+  { view: 'dashboard' as AppView, label: 'Dashboard', icon: LayoutDashboard },
+  { view: 'subjects' as AppView, label: 'Fächer', icon: BookCopy },
   { view: 'studysets' as AppView, label: 'Lernsets', icon: BrainCircuit },
   { view: 'calendar' as AppView, label: 'Kalender', icon: CalendarDays },
   { view: 'calculator' as AppView, label: 'Rechner', icon: Calculator },

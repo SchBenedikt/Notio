@@ -32,6 +32,7 @@ import { StudySetsPage } from "./study-sets-page";
 import { StudySetDetailPage } from "./study-set-detail-page";
 import { CreateEditStudySetPage } from "./create-edit-study-set-page";
 import { SchoolCalendarPage } from "./school-calendar-page";
+import { DashboardOverview } from "./dashboard-overview";
 
 
 export default function Dashboard() {
@@ -56,7 +57,7 @@ export default function Dashboard() {
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [view, setView] = useState<AppView>('subjects');
+  const [view, setView] = useState<AppView>('dashboard');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [viewingStudySetId, setViewingStudySetId] = useState<string | null>(null);
   const [editingStudySet, setEditingStudySet] = useState<StudySet | null>(null);
@@ -707,6 +708,20 @@ export default function Dashboard() {
       return <div>Loading...</div>; // Replace with a proper skeleton loader
     }
     switch (view) {
+      case 'dashboard':
+        return (
+          <DashboardOverview
+            userName={userName}
+            overallAverage={overallAverage}
+            mainSubjectsAverage={mainSubjectsAverage}
+            minorSubjectsAverage={minorSubjectsAverage}
+            totalSubjectsCount={totalSubjectsCount}
+            totalGradesCount={totalGradesCount}
+            upcomingEvents={schoolEvents}
+            onNavigate={setAppView}
+            onAddSubject={() => setIsAddSubjectOpen(true)}
+          />
+        );
       case 'subjects':
         return (
           <SubjectList

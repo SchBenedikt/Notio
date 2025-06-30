@@ -15,6 +15,7 @@ import {
   User,
   Users,
   Settings,
+  CalendarDays,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -33,7 +34,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets") => void;
+  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "calendar") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -72,13 +73,21 @@ export function CommandPalette({
         <CommandList>
             <CommandEmpty>Keine Ergebnisse gefunden.</CommandEmpty>
             <CommandGroup heading="Navigation">
-                <CommandItem onSelect={() => runCommand(() => onNavigate("subjects"))}>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("dashboard"))}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("subjects"))}>
+                    <BookCopy className="mr-2 h-4 w-4" />
                     <span>Fächerübersicht</span>
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("studysets"))}>
                     <BrainCircuit className="mr-2 h-4 w-4" />
                     <span>Lernsets</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("calendar"))}>
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    <span>Kalender</span>
                 </CommandItem>
                 <CommandItem onSelect={() => runCommand(() => onNavigate("calculator"))}>
                     <Calculator className="mr-2 h-4 w-4" />

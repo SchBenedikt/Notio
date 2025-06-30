@@ -190,11 +190,18 @@ export function SidebarContent({
                             </CollapsibleTrigger>
                             <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
                                 <div className="flex flex-col gap-1 pt-2">
+                                     <Button 
+                                        variant={currentView === 'dashboard' ? "secondary" : "ghost"} 
+                                        className="justify-start w-full"
+                                        onClick={() => handleViewChange('dashboard')}>
+                                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                                        Dashboard
+                                    </Button>
                                     <Button 
                                         variant={currentView === 'subjects' ? "secondary" : "ghost"} 
                                         className="justify-start w-full"
                                         onClick={() => handleViewChange('subjects')}>
-                                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                                        <BookCopy className="mr-2 h-4 w-4" />
                                         Fächerübersicht
                                     </Button>
                                     <Button 
