@@ -18,6 +18,7 @@ type SchoolCalendarPageProps = {
   schoolId: string | null;
   schoolName: string | null;
   events: SchoolEvent[];
+  userRole: 'student' | 'teacher';
   onAddEvent: (eventData: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt'>) => Promise<void>;
 };
 
@@ -29,7 +30,7 @@ const eventTypeColors: Record<SchoolEventType, string> = {
   Sonstiges: "bg-gray-500",
 };
 
-export function SchoolCalendarPage({ schoolId, schoolName, events, onAddEvent }: SchoolCalendarPageProps) {
+export function SchoolCalendarPage({ schoolId, schoolName, events, userRole, onAddEvent }: SchoolCalendarPageProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddEventOpen, setAddEventOpen] = useState(false);
 
@@ -74,12 +75,17 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, onAddEvent }:
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">Kalender: {schoolName}</h1>
-          <p className="text-muted-foreground">Geteilte Termine für alle Schüler deiner Schule.</p>
+          <p className="text-muted-foreground">
+            Geteilte Termine für alle Schüler deiner Schule.
+            {userRole === 'student' && ' Als Lehrer kannst du hier neue Termine für alle hinzufügen.'}
+          </p>
         </div>
-        <Button onClick={() => setAddEventOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Neuer Termin
-        </Button>
+        {userRole === 'teacher' && (
+            <Button onClick={() => setAddEventOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Neuer Termin
+            </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

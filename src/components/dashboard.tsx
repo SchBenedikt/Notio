@@ -33,7 +33,24 @@ import { StudySetDetailPage } from "./study-set-detail-page";
 import { CreateEditStudySetPage } from "./create-edit-study-set-page";
 import { SchoolCalendarPage } from "./school-calendar-page";
 import { DashboardOverview } from "./dashboard-overview";
+import { Skeleton } from "./ui/skeleton";
 
+
+const DashboardSkeleton = () => (
+  <div className="space-y-6 animate-pulse">
+    <div>
+      <Skeleton className="h-8 w-1/2 mb-2" />
+      <Skeleton className="h-4 w-3/4" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <Skeleton className="h-64 rounded-lg xl:col-span-2" />
+      <Skeleton className="h-64 rounded-lg" />
+      <Skeleton className="h-64 rounded-lg" />
+      <Skeleton className="h-64 rounded-lg" />
+      <Skeleton className="h-64 rounded-lg" />
+    </div>
+  </div>
+);
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
@@ -51,7 +68,7 @@ export default function Dashboard() {
   const [minorSubjectWeight, setMinorSubjectWeight] = useState<number>(1);
   const [theme, setTheme] = useState<string>("blue");
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [userRole, setUserRole] = useState('student');
+  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
   const [userSchoolId, setUserSchoolId] = useState('');
   const [userName, setUserName] = useState<string | null>(null);
 
@@ -90,15 +107,33 @@ export default function Dashboard() {
 
         const fetchData = async () => {
           try {
-            // Fetch Profile and create if it doesn't exist
-            const profileRef = doc(db, 'profiles', user.uid);
-            const profileSnap = await getDoc(profileRef);
+             // Parallelize non-dependent fetches
+            const profilePromise = getDoc(doc(db, 'profiles', user.uid));
+            const schoolsPromise = getDocs(query(collection(db, 'schools')));
+            const settingsPromise = settingsDocRef ? getDoc(settingsDocRef) : Promise.resolve(null);
+            const subjectsPromise = getDocs(query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel)));
+            const studySetsPromise = getDocs(query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', selectedGradeLevel)));
+            
+            const [
+              profileSnap,
+              schoolsSnap,
+              settingsSnap,
+              subjectsSnap,
+              studySetsSnap,
+            ] = await Promise.all([
+              profilePromise,
+              schoolsPromise,
+              settingsPromise,
+              subjectsPromise,
+              studySetsPromise
+            ]);
+
+            // Process Profile
             if (profileSnap.exists()) {
                 const profileData = profileSnap.data() as Profile;
                 setProfile(profileData);
                 setUserName(profileData.name);
             } else {
-                // Profile doesn't exist, so create it
                  const newProfileData = {
                     uid: user.uid,
                     name: user.displayName || 'Neuer Nutzer',
@@ -107,58 +142,50 @@ export default function Dashboard() {
                     followers: [],
                     following: []
                  };
-                 await setDoc(profileRef, newProfileData);
+                 await setDoc(doc(db, 'profiles', user.uid), newProfileData);
                  setProfile(newProfileData as Profile);
                  setUserName(newProfileData.name);
             }
             
-            // Fetch All Schools
-            const schoolsQuery = query(collection(db, 'schools'));
-            const schoolsSnap = await getDocs(schoolsQuery);
+            // Process All Schools
             const schoolsData = schoolsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
             setAllSchools(schoolsData.sort((a, b) => a.name.localeCompare(b.name)));
 
-            // Fetch Settings
-            if(settingsDocRef) {
-              const settingsSnap = await getDoc(settingsDocRef);
-              if (settingsSnap.exists()) {
-                const settingsData = settingsSnap.data();
-                setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
-                setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
-                setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
-                setTheme(settingsData.theme || 'blue');
-                setIsDarkMode(settingsData.isDarkMode || false);
-                setUserRole(settingsData.role || 'student');
-                setUserSchoolId(settingsData.schoolId || '');
-              } else {
-                 // Settings document doesn't exist, create it with defaults
-                const defaultSettings = {
-                  selectedGradeLevel: 10,
-                  mainSubjectWeight: 2,
-                  minorSubjectWeight: 1,
-                  theme: 'blue',
-                  isDarkMode: false,
-                  role: 'student',
-                  schoolId: '',
-                };
-                await setDoc(settingsDocRef, defaultSettings);
-                setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
-                setMainSubjectWeight(defaultSettings.mainSubjectWeight);
-                setMinorSubjectWeight(defaultSettings.minorSubjectWeight);
-                setTheme(defaultSettings.theme);
-                setIsDarkMode(defaultSettings.isDarkMode);
-                setUserRole(defaultSettings.role as 'student' | 'teacher');
-                setUserSchoolId(defaultSettings.schoolId);
-              }
+            // Process Settings
+            if(settingsSnap && settingsSnap.exists()) {
+              const settingsData = settingsSnap.data();
+              setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
+              setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
+              setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
+              setTheme(settingsData.theme || 'blue');
+              setIsDarkMode(settingsData.isDarkMode || false);
+              setUserRole(settingsData.role || 'student');
+              setUserSchoolId(settingsData.schoolId || '');
+            } else if (settingsDocRef) {
+               const defaultSettings = {
+                selectedGradeLevel: 10,
+                mainSubjectWeight: 2,
+                minorSubjectWeight: 1,
+                theme: 'blue',
+                isDarkMode: false,
+                role: 'student',
+                schoolId: '',
+              };
+              await setDoc(settingsDocRef, defaultSettings);
+              setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
+              setMainSubjectWeight(defaultSettings.mainSubjectWeight);
+              setMinorSubjectWeight(defaultSettings.minorSubjectWeight);
+              setTheme(defaultSettings.theme);
+              setIsDarkMode(defaultSettings.isDarkMode);
+              setUserRole(defaultSettings.role as 'student' | 'teacher');
+              setUserSchoolId(defaultSettings.schoolId);
             }
             
-            // Fetch Subjects
-            const subjectsQuery = query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel));
-            const subjectsSnap = await getDocs(subjectsQuery);
+            // Process Subjects
             const subjectsData = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
             setSubjects(subjectsData);
             
-            // Fetch Grades for these subjects
+            // Fetch and process Grades (dependent on subjects)
             if (subjectsData.length > 0) {
               const subjectIds = subjectsData.map(s => s.id);
               const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
@@ -169,9 +196,7 @@ export default function Dashboard() {
               setGrades([]);
             }
 
-            // Fetch Study Sets
-            const studySetsQuery = query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', selectedGradeLevel));
-            const studySetsSnap = await getDocs(studySetsQuery);
+            // Process Study Sets
             const studySetsData = studySetsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as StudySet[];
             setStudySets(studySetsData);
 
@@ -705,7 +730,7 @@ export default function Dashboard() {
   
   const renderView = () => {
     if (dataLoading && !['community', 'user-profile'].includes(view)) {
-      return <div>Loading...</div>; // Replace with a proper skeleton loader
+      return <DashboardSkeleton />;
     }
     switch (view) {
       case 'dashboard':
@@ -855,6 +880,7 @@ export default function Dashboard() {
             schoolName={school?.name || null}
             events={schoolEvents}
             onAddEvent={handleAddSchoolEvent}
+            userRole={userRole}
         />;
       case 'settings':
         return <SettingsPage

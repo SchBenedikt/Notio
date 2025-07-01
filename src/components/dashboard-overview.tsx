@@ -53,7 +53,7 @@ export function DashboardOverview({
             <h1 className="text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
             <p className="text-muted-foreground">Willkommen zurück. Hier ist deine Übersicht.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
             {/* Main Stats Card */}
             <Card className="xl:col-span-2">
                 <CardHeader>
@@ -61,9 +61,9 @@ export function DashboardOverview({
                     <CardDescription>Deine wichtigsten Kennzahlen auf einen Blick.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="p-6 bg-primary/5 rounded-lg text-center flex flex-col justify-center">
+                    <div className="p-4 sm:p-6 bg-primary/5 rounded-lg text-center flex flex-col justify-center">
                         <p className="text-sm font-medium text-primary">Gesamtschnitt</p>
-                        <p className="text-6xl font-extrabold text-primary">{overallAverage}</p>
+                        <p className="text-5xl sm:text-6xl font-extrabold text-primary">{overallAverage}</p>
                     </div>
                      <div className="space-y-4">
                         <StatCard title="Hauptfächer" value={mainSubjectsAverage} icon={TrendingUp} />
