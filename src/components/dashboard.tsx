@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -119,8 +120,8 @@ export default function Dashboard() {
               settingsSnap,
             ] = await Promise.all([
               profilePromise,
-              schoolsSnap,
-              settingsSnap
+              schoolsPromise,
+              settingsPromise
             ]);
 
             let gradeLevelFromSettings = 10;
