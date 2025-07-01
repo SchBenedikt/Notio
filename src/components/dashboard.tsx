@@ -207,6 +207,7 @@ export default function Dashboard() {
             setDataLoading(false);
           }
         };
+        
         fetchData();
 
         // Subscribe to profile changes
@@ -217,23 +218,8 @@ export default function Dashboard() {
             }
         });
         
-        let unsubSchoolEvents = () => {};
-        if (userSchoolId) {
-            const eventsQuery = query(collection(db, 'schoolEvents'), where('schoolId', '==', userSchoolId), orderBy('date', 'asc'));
-            unsubSchoolEvents = onSnapshot(eventsQuery, (snapshot) => {
-                const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SchoolEvent[];
-                setSchoolEvents(eventsData);
-            }, (error) => {
-                console.error("Error fetching school events:", error);
-                toast({ title: "Fehler beim Laden der Kalender-Termine", variant: "destructive" });
-            });
-        } else {
-            setSchoolEvents([]);
-        }
-
         return () => {
           unsubProfile();
-          unsubSchoolEvents();
         };
 
     } else {
@@ -246,7 +232,27 @@ export default function Dashboard() {
         setSchoolEvents([]);
         setDataLoading(false);
     }
-  }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled, userSchoolId]);
+  }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
+
+  // Effect for fetching school events, depends on userSchoolId
+  useEffect(() => {
+    if (!isFirebaseEnabled || !user || !userSchoolId) {
+        setSchoolEvents([]);
+        return;
+    }
+
+    const eventsQuery = query(collection(db, 'schoolEvents'), where('schoolId', '==', userSchoolId), orderBy('date', 'asc'));
+    const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
+        const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SchoolEvent[];
+        setSchoolEvents(eventsData);
+    }, (error) => {
+        console.error("Error fetching school events:", error);
+        toast({ title: "Fehler beim Laden der Kalender-Termine", variant: "destructive" });
+    });
+
+    return () => unsubscribe();
+  }, [user, userSchoolId, isFirebaseEnabled, toast]);
+
 
   useEffect(() => {
     const root = window.document.documentElement;
