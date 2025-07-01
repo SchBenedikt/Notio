@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     createUserWithEmailAndPassword, 
@@ -9,7 +9,7 @@ import {
     GoogleAuthProvider,
     signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, addDoc, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,9 @@ import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { SchoolSelector } from '@/components/school-selector';
+import type { School } from '@/lib/types';
+
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
@@ -46,12 +49,25 @@ export default function LoginPage() {
     const [signupPassword, setSignupPassword] = useState('');
     const [signupName, setSignupName] = useState('');
     const [signupRole, setSignupRole] = useState('student');
-    const [signupSchool, setSignupSchool] = useState('');
+    const [signupSchoolId, setSignupSchoolId] = useState('');
+    const [allSchools, setAllSchools] = useState<School[]>([]);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
     const { isFirebaseEnabled, firebaseError } = useAuth();
+    
+    useEffect(() => {
+        if (isFirebaseEnabled) {
+            const fetchSchools = async () => {
+                const schoolsCol = collection(db, 'schools');
+                const schoolSnapshot = await getDocs(schoolsCol);
+                const schoolList = schoolSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
+                setAllSchools(schoolList.sort((a,b) => a.name.localeCompare(b.name)));
+            };
+            fetchSchools();
+        }
+    }, [isFirebaseEnabled]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +84,13 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
+    };
+    
+    const handleAddSchool = async (name: string, address: string): Promise<string> => {
+        const docRef = await addDoc(collection(db, "schools"), { name, address });
+        const newSchool = { id: docRef.id, name, address };
+        setAllSchools(prev => [...prev, newSchool].sort((a, b) => a.name.localeCompare(b.name)));
+        return docRef.id;
     };
 
     const handleSignUp = async (e: React.FormEvent) => {
@@ -87,7 +110,7 @@ export default function LoginPage() {
                 theme: 'blue',
                 isDarkMode: false,
                 role: signupRole,
-                school: signupSchool,
+                schoolId: signupSchoolId,
             });
 
             // Create profile document
@@ -130,7 +153,7 @@ export default function LoginPage() {
                     theme: 'blue',
                     isDarkMode: false,
                     role: 'student',
-                    school: '',
+                    schoolId: '',
                 });
             }
 
@@ -264,8 +287,13 @@ export default function LoginPage() {
                                     </RadioGroup>
                                 </div>
                                  <div className="space-y-2">
-                                    <Label htmlFor="signup-school">Schule (optional)</Label>
-                                    <Input id="signup-school" placeholder="Name deiner Schule" value={signupSchool} onChange={(e) => setSignupSchool(e.target.value)} />
+                                    <Label>Schule</Label>
+                                     <SchoolSelector
+                                        schools={allSchools}
+                                        value={signupSchoolId}
+                                        onChange={setSignupSchoolId}
+                                        onAddSchool={handleAddSchool}
+                                     />
                                 </div>
                                 <Button type="submit" className="w-full" disabled={loading || googleLoading}>
                                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -1,99 +1,49 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
     function isSignedIn() {
       return request.auth != null;
     }
-    function isValidPostCreate() {
-      let data = request.resource.data;
-      // Validate core fields
-      let coreValid = isOwner(data.authorId) &&
-             data.authorName == request.auth.token.name &&
-             data.content is string && data.content.size() <= 1000 &&
-             data.likes == [] &&
-             data.commentCount == 0 &&
-             data.createdAt == request.time;
-    
-      // Validate attachments if they exist
-      let attachmentsValid = !('attachments' in data) || (
-          data.attachments is list &&
-          data.attachments.size() <= 5 &&
-          (data.attachments.size() == 0 ||
-           (data.attachments[0].name is string && data.attachments[0].dataUrl is string)
-          )
-      );
 
-      // A post must have either content or an attachment
-      let hasContent = data.content.size() > 0 || ( 'attachments' in data && data.attachments.size() > 0);
-      
-      return coreValid && attachmentsValid && hasContent;
-    }
-    function isValidCommentCreate() {
-      let data = request.resource.data;
-      return isOwner(data.authorId) &&
-             data.authorName == request.auth.token.name &&
-             data.content is string &&
-             data.content.size() > 0 && data.content.size() <= 1000 &&
-             data.createdAt == request.time;
-    }
-    function isLiking() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
-    }
-    function isEditingContent() {
-        return isOwner(resource.data.authorId) &&
-               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
-    }
-    function isIncrementingCommentCount() {
-        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) &&
-               request.resource.data.commentCount == resource.data.commentCount + 1;
-    }
-    function isDecrementingCommentCount() {
-        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) &&
-               request.resource.data.commentCount == resource.data.commentCount - 1;
-    }
-    function isEditingCommentContent() {
-      return isOwner(resource.data.authorId) &&
-             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // --- Private User Data ---
     match /users/{userId}/{document=**} {
       allow read, write: if isOwner(userId);
     }
 
-    // --- Public Profiles ---
+    match /schools/{schoolId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+    }
+    
     match /profiles/{userId} {
       allow read: if isSignedIn();
-      allow create, delete: if isOwner(userId);
-      allow update: if isOwner(userId) || 
-                     (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']));
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']));
     }
-    match /users/{userId}/studySets/{studySetId} {
-      allow read, write: if isOwner(userId);
-    }
-    // --- Schools ---
-    match /schools/{schoolId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if false;
-    }
-    // --- Community Posts & Comments ---
+
     match /posts/{postId} {
       allow read: if isSignedIn();
+      allow create: if isOwner(request.resource.data.authorId);
       allow delete: if isOwner(resource.data.authorId);
-      allow create: if isSignedIn() && isValidPostCreate();
-      allow update: if isEditingContent() || isLiking() || isIncrementingCommentCount() || isDecrementingCommentCount();
+      allow update: if (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content'])) ||
+                     (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']));
 
       match /comments/{commentId} {
         allow read: if isSignedIn();
+        allow create: if isOwner(request.resource.data.authorId); 
         allow delete: if isOwner(resource.data.authorId);
-        allow create: if isSignedIn() && isValidCommentCreate();
-        allow update: if isSignedIn() && isEditingCommentContent();
+        allow update: if isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
       }
+    }
+    
+    match /posts/{postId} {
+        allow update: if isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']);
     }
   }
 }
