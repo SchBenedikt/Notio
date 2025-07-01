@@ -31,8 +31,10 @@ import { SettingsPage } from "./settings-page";
 import { StudySetsPage } from "./study-sets-page";
 import { StudySetDetailPage } from "./study-set-detail-page";
 import { CreateEditStudySetPage } from "./create-edit-study-set-page";
-import { DashboardOverview } from "./dashboard-overview";
+import { DashboardOverview, defaultLayouts } from "./dashboard-overview";
 import { Skeleton } from "./ui/skeleton";
+import type { Layouts } from "react-grid-layout";
+import { debounce } from "lodash-es";
 
 
 const DashboardSkeleton = () => (
@@ -69,6 +71,7 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
   const [userSchoolId, setUserSchoolId] = useState('');
   const [userName, setUserName] = useState<string | null>(null);
+  const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -116,8 +119,8 @@ export default function Dashboard() {
               settingsSnap,
             ] = await Promise.all([
               profilePromise,
-              schoolsPromise,
-              settingsPromise
+              schoolsSnap,
+              settingsSnap
             ]);
 
             let gradeLevelFromSettings = 10;
@@ -132,6 +135,20 @@ export default function Dashboard() {
               setIsDarkMode(settingsData.isDarkMode || false);
               setUserRole(settingsData.role || 'student');
               setUserSchoolId(settingsData.schoolId || '');
+              const savedLayouts = settingsData.dashboardLayouts;
+              if (savedLayouts) {
+                  // Merge with default to ensure all widgets are present if new ones are added
+                  const mergedLayouts: Layouts = {};
+                  for (const breakpoint in defaultLayouts) {
+                      mergedLayouts[breakpoint] = defaultLayouts[breakpoint as keyof typeof defaultLayouts].map(defaultItem => {
+                          const savedItem = savedLayouts[breakpoint]?.find((item: { i: string; }) => item.i === defaultItem.i);
+                          return savedItem || defaultItem;
+                      });
+                  }
+                  setLayouts(mergedLayouts);
+              } else {
+                  setLayouts(defaultLayouts);
+              }
             } else if (settingsDocRef) {
                const defaultSettings = {
                 selectedGradeLevel: 10,
@@ -141,6 +158,7 @@ export default function Dashboard() {
                 isDarkMode: false,
                 role: 'student',
                 schoolId: '',
+                dashboardLayouts: defaultLayouts,
               };
               await setDoc(settingsDocRef, defaultSettings);
               setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
@@ -150,6 +168,7 @@ export default function Dashboard() {
               setIsDarkMode(defaultSettings.isDarkMode);
               setUserRole(defaultSettings.role as 'student' | 'teacher');
               setUserSchoolId(defaultSettings.schoolId);
+              setLayouts(defaultSettings.dashboardLayouts);
             }
 
             const subjectsPromise = getDocs(query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', gradeLevelFromSettings)));
@@ -688,6 +707,15 @@ export default function Dashboard() {
       return docRef.id;
   }
   
+  const saveLayouts = useCallback(debounce((newLayouts: Layouts) => {
+    updateSetting('dashboardLayouts', newLayouts);
+  }, 1000), [updateSetting]);
+
+  const handleLayoutChange = (currentLayout: ReactGridLayout.Layout[], allLayouts: Layouts) => {
+      setLayouts(allLayouts);
+      saveLayouts(allLayouts);
+  };
+
   const sidebarProps = {
     currentView: view,
     onSetView: setAppView,
@@ -713,6 +741,8 @@ export default function Dashboard() {
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
             onAddGrade={handleOpenAddGradeDialog}
+            layouts={layouts}
+            onLayoutChange={handleLayoutChange}
           />
         );
       case 'subjects':
