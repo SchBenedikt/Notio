@@ -385,7 +385,8 @@ export default function Dashboard() {
 
     const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
     try {
-        await setDoc(subjectDocRef, updatedValues, { merge: true });
+        const sanitizedValues = JSON.parse(JSON.stringify(updatedValues));
+        await setDoc(subjectDocRef, sanitizedValues, { merge: true });
         setSubjects(currentSubjects => 
             currentSubjects.map(s => 
                 s.id === subjectId ? { ...s, ...updatedValues } : s
@@ -459,9 +460,10 @@ export default function Dashboard() {
     }
 
     try {
+      const sanitizedGradeData = JSON.parse(JSON.stringify(gradeData));
       if (gradeId) {
         const gradeDocRef = doc(db, 'users', user.uid, 'grades', gradeId);
-        await setDoc(gradeDocRef, gradeData, { merge: true });
+        await setDoc(gradeDocRef, sanitizedGradeData, { merge: true });
         setGrades(currentGrades =>
           currentGrades.map(g =>
             g.id === gradeId ? { ...g, id: g.id, ...gradeData } as Grade : g
@@ -469,7 +471,7 @@ export default function Dashboard() {
         );
         toast({ title: "Note aktualisiert", description: "Die Änderungen an der Note wurden gespeichert." });
       } else {
-        const docRef = await addDoc(collection(db, 'users', user.uid, 'grades'), gradeData);
+        const docRef = await addDoc(collection(db, 'users', user.uid, 'grades'), sanitizedGradeData);
         const newGrade: Grade = { id: docRef.id, ...gradeData } as Grade;
         setGrades([...grades, newGrade]);
         toast({ title: "Note hinzugefügt", description: `Eine neue Note wurde erfolgreich gespeichert.` });
@@ -508,14 +510,15 @@ export default function Dashboard() {
         return;
     }
     const data = { ...values, gradeLevel: selectedGradeLevel };
+    const sanitizedData = JSON.parse(JSON.stringify(data));
     try {
         if (setId) {
             const setRef = doc(db, 'users', user.uid, 'studySets', setId);
-            await setDoc(setRef, data, { merge: true });
+            await setDoc(setRef, sanitizedData, { merge: true });
             setStudySets(currentSets => currentSets.map(s => s.id === setId ? { ...s, ...data } as StudySet : s));
             toast({ title: "Lernset aktualisiert" });
         } else {
-            const setRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
+            const setRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), sanitizedData);
             setStudySets(currentSets => [...currentSets, { id: setRef.id, ...data } as StudySet]);
             toast({ title: "Lernset erstellt" });
         }
@@ -709,7 +712,8 @@ export default function Dashboard() {
   }
   
   const saveLayouts = useCallback(debounce((newLayouts: Layouts) => {
-    updateSetting('dashboardLayouts', newLayouts);
+    const sanitizedLayouts = JSON.parse(JSON.stringify(newLayouts));
+    updateSetting('dashboardLayouts', sanitizedLayouts);
   }, 1000), [updateSetting]);
 
   const handleLayoutChange = (currentLayout: ReactGridLayout.Layout[], allLayouts: Layouts) => {

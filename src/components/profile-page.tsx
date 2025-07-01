@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -136,7 +137,8 @@ export function ProfilePage({
           name: values.name,
           bio: values.bio,
       };
-      await setDoc(profileRef, updatedProfileData, { merge: true });
+      const sanitizedProfileData = JSON.parse(JSON.stringify(updatedProfileData));
+      await setDoc(profileRef, sanitizedProfileData, { merge: true });
 
       toast({ title: "Erfolg", description: "Dein Profil wurde aktualisiert." });
       setIsEditing(false);
