@@ -42,6 +42,81 @@ export function SidebarContent({
         if (onClose) onClose();
     }
 
+    const navLinksContent = (
+      <div className="flex flex-col gap-1 pt-2">
+           <Button 
+              variant={currentView === 'dashboard' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('dashboard')}>
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+          </Button>
+          <Button 
+              variant={currentView === 'subjects' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('subjects')}>
+              <BookCopy className="mr-2 h-4 w-4" />
+              Fächerübersicht
+          </Button>
+          <Button 
+              variant={currentView === 'studysets' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('studysets')}>
+              <BrainCircuit className="mr-2 h-4 w-4" />
+              Lernsets
+          </Button>
+          <Button 
+              variant={currentView === 'calculator' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('calculator')}>
+              <Calculator className="mr-2 h-4 w-4" />
+              Notenrechner
+          </Button>
+          <Button 
+              variant={currentView === 'tutor' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('tutor')}>
+              <MessageCircle className="mr-2 h-4 w-4" />
+              KI-Tutor & Coach
+          </Button>
+          <Button 
+              variant={currentView === 'community' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('community')}>
+              <Users className="mr-2 h-4 w-4" />
+              Community
+          </Button>
+          <Button 
+              variant={currentView === 'awards' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('awards')}>
+              <Award className="mr-2 h-4 w-4" />
+              Auszeichnungen
+          </Button>
+          <Button 
+              variant={currentView === 'files' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('files')}>
+              <Files className="mr-2 h-4 w-4" />
+              Dateiverwaltung
+          </Button>
+          <Button 
+              variant={currentView === 'data' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('data')}>
+              <Database className="mr-2 h-4 w-4" />
+              Datenverwaltung
+          </Button>
+          <Button 
+              variant={currentView === 'settings' ? "secondary" : "ghost"} 
+              className="justify-start w-full"
+              onClick={() => handleViewChange('settings')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Einstellungen
+          </Button>
+      </div>
+    );
+
     return (
         <>
             <div className="flex flex-col gap-1 px-2">
@@ -59,6 +134,7 @@ export function SidebarContent({
             <ScrollArea className="flex-1 -mx-6">
                 <div className="px-6 space-y-4 py-4">
 
+                    {/* Mobile Navigation */}
                     <div className="lg:hidden">
                         <Collapsible defaultOpen={true}>
                             <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-2 py-1 font-semibold text-base hover:bg-muted [&[data-state=open]>svg]:rotate-180">
@@ -66,81 +142,17 @@ export function SidebarContent({
                                 <ChevronDown className="h-5 w-5 transition-transform duration-200" />
                             </CollapsibleTrigger>
                             <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
-                                <div className="flex flex-col gap-1 pt-2">
-                                     <Button 
-                                        variant={currentView === 'dashboard' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('dashboard')}>
-                                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                                        Dashboard
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'subjects' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('subjects')}>
-                                        <BookCopy className="mr-2 h-4 w-4" />
-                                        Fächerübersicht
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'studysets' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('studysets')}>
-                                        <BrainCircuit className="mr-2 h-4 w-4" />
-                                        Lernsets
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'calculator' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('calculator')}>
-                                        <Calculator className="mr-2 h-4 w-4" />
-                                        Notenrechner
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'tutor' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('tutor')}>
-                                        <MessageCircle className="mr-2 h-4 w-4" />
-                                        KI-Tutor & Coach
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'community' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('community')}>
-                                        <Users className="mr-2 h-4 w-4" />
-                                        Community
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'awards' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('awards')}>
-                                        <Award className="mr-2 h-4 w-4" />
-                                        Auszeichnungen
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'files' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('files')}>
-                                        <Files className="mr-2 h-4 w-4" />
-                                        Dateiverwaltung
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'data' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('data')}>
-                                        <Database className="mr-2 h-4 w-4" />
-                                        Datenverwaltung
-                                    </Button>
-                                    <Button 
-                                        variant={currentView === 'settings' ? "secondary" : "ghost"} 
-                                        className="justify-start w-full"
-                                        onClick={() => handleViewChange('settings')}>
-                                        <Settings className="mr-2 h-4 w-4" />
-                                        Einstellungen
-                                    </Button>
-                                </div>
+                                {navLinksContent}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>
+
+                    {/* Desktop Navigation */}
+                    <div className="hidden lg:block space-y-1">
+                        {navLinksContent}
+                    </div>
+
+                    <Separator />
                     
                     <Collapsible defaultOpen={true}>
                         <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-2 py-1 font-semibold text-base hover:bg-muted [&[data-state=open]>svg]:rotate-180">
