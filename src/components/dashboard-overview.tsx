@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AppView, Grade, Subject } from "@/lib/types";
-import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, Palette } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -51,9 +51,15 @@ export function DashboardOverview({
 
   return (
     <div className="container mx-auto space-y-6">
-        <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
-            <p className="text-muted-foreground">Willkommen zurück in deinem Noten-Cockpit.</p>
+        <div className="flex items-center justify-between">
+            <div className="space-y-1">
+                <h1 className="text-2xl md:text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
+                <p className="text-muted-foreground">Willkommen zurück in deinem Noten-Cockpit.</p>
+            </div>
+            <Button variant="outline" onClick={() => onNavigate('settings')}>
+                <Palette className="mr-2 h-4 w-4" />
+                Anpassen
+            </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -74,19 +80,21 @@ export function DashboardOverview({
                         <StatCard title="Noten" value={totalGradesCount} icon={CheckCircle} />
                     </div>
                 </CardContent>
+                 <CardFooter>
+                    <Button variant="ghost" className="text-muted-foreground" onClick={() => onNavigate('subjects')}>
+                        Alle Fächer im Detail ansehen <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </CardFooter>
             </Card>
 
             {/* Quick Actions Card */}
             <Card className="flex flex-col">
                 <CardHeader>
-                    <CardTitle>Schnellstart</CardTitle>
+                    <CardTitle>Aktionen</CardTitle>
                     <CardDescription>Direkt loslegen.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-center space-y-3">
-                    <Button onClick={() => onNavigate('subjects')} size="lg" className="w-full justify-start">
-                        <BookCopy className="mr-3" /> Alle Fächer anzeigen
-                    </Button>
-                    <Button onClick={onAddSubject} size="lg" variant="secondary" className="w-full justify-start">
+                    <Button onClick={onAddSubject} size="lg" className="w-full justify-start">
                         <Plus className="mr-3" /> Neues Fach anlegen
                     </Button>
                      <Button onClick={() => onNavigate('studysets')} size="lg" variant="secondary" className="w-full justify-start">

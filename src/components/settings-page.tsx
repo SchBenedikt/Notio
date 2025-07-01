@@ -58,7 +58,7 @@ export function SettingsPage({
                 </div>
                 <h1 className="text-3xl font-bold">Einstellungen</h1>
                 <p className="text-muted-foreground mt-2">
-                    Passe die App an deine Bedürfnisse an.
+                    Passe die App an deine Bedürfnisse an. Änderungen werden automatisch gespeichert.
                 </p>
             </div>
 
@@ -66,12 +66,12 @@ export function SettingsPage({
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Weight className="h-5 w-5 text-muted-foreground" />Notengewichtung</CardTitle>
                     <CardDescription>
-                        Passe die globale Gewichtung für Haupt- und Nebenfächer an.
+                        Lege die globale Gewichtung für Haupt- und Nebenfächer fest, die zur Berechnung deines Gesamtschnitts verwendet wird.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between p-3 border rounded-md">
-                        <Label htmlFor="main-weight">Hauptfach</Label>
+                        <Label htmlFor="main-weight" className="font-medium">Hauptfächer</Label>
                         <Input
                             id="main-weight"
                             type="number"
@@ -83,7 +83,7 @@ export function SettingsPage({
                         />
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-md">
-                        <Label htmlFor="minor-weight">Nebenfach</Label>
+                        <Label htmlFor="minor-weight" className="font-medium">Nebenfächer</Label>
                         <Input
                             id="minor-weight"
                             type="number"
@@ -101,12 +101,12 @@ export function SettingsPage({
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5 text-muted-foreground" />Erscheinungsbild</CardTitle>
                     <CardDescription>
-                        Passe das Farbschema und den Dark Mode an.
+                        Personalisiere das Farbschema und den Dark Mode der App.
                     </CardDescription>
                 </CardHeader>
                  <CardContent className="space-y-4">
-                    <div>
-                        <Label>Farbschema</Label>
+                    <div className="p-3 border rounded-md">
+                        <Label className="font-medium">Farbschema</Label>
                          <div className="flex items-center flex-wrap gap-2 pt-2">
                             {themes.map((t) => (
                                 <button
@@ -114,7 +114,7 @@ export function SettingsPage({
                                 onClick={() => onThemeChange(t.name)}
                                 className={cn(
                                     "h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all",
-                                    theme === t.name ? "border-ring scale-110" : "border-transparent"
+                                    theme === t.name ? "border-primary ring-2 ring-offset-2 ring-ring scale-110" : "border-transparent"
                                 )}
                                 style={{ backgroundColor: t.color }}
                                 aria-label={`Farbe ${t.label} auswählen`}
@@ -123,7 +123,7 @@ export function SettingsPage({
                         </div>
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-md">
-                        <Label htmlFor="dark-mode">Dark Mode</Label>
+                        <Label htmlFor="dark-mode" className="font-medium">Dark Mode</Label>
                         <Switch
                             id="dark-mode"
                             checked={isDarkMode}
