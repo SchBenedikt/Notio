@@ -2,11 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SchoolEvent } from "@/lib/types";
 import { AppView } from "@/lib/types";
-import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, Users } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { ArrowRight, BookCopy, BrainCircuit, CheckCircle, Plus, Sparkles, TrendingUp, Users } from "lucide-react";
 import { CardFooter } from "./ui/card";
 
 type DashboardOverviewProps = {
@@ -16,7 +13,6 @@ type DashboardOverviewProps = {
   minorSubjectsAverage: string;
   totalSubjectsCount: number;
   totalGradesCount: number;
-  upcomingEvents: SchoolEvent[];
   onNavigate: (view: AppView) => void;
   onAddSubject: () => void;
 };
@@ -40,12 +36,9 @@ export function DashboardOverview({
     minorSubjectsAverage,
     totalSubjectsCount,
     totalGradesCount,
-    upcomingEvents,
     onNavigate,
     onAddSubject
 }: DashboardOverviewProps) {
-  
-  const nextThreeEvents = upcomingEvents.filter(e => new Date(e.date) >= new Date()).slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -53,9 +46,9 @@ export function DashboardOverview({
             <h1 className="text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
             <p className="text-muted-foreground">Willkommen zurück. Hier ist deine Übersicht.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Main Stats Card */}
-            <Card className="xl:col-span-2">
+            <Card className="md:col-span-2">
                 <CardHeader>
                     <CardTitle>Dein Noten-Cockpit</CardTitle>
                     <CardDescription>Deine wichtigsten Kennzahlen auf einen Blick.</CardDescription>
@@ -91,39 +84,6 @@ export function DashboardOverview({
                         <BrainCircuit className="mr-3" /> Zu den Lernsets
                     </Button>
                 </CardContent>
-            </Card>
-
-            {/* Upcoming Events Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Anstehende Termine</CardTitle>
-                    <CardDescription>Das steht als Nächstes an.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {nextThreeEvents.length > 0 ? (
-                        <div className="space-y-3">
-                            {nextThreeEvents.map(event => (
-                                <div key={event.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-md">
-                                    <div className="flex flex-col items-center justify-center p-2 bg-background rounded-md">
-                                        <span className="text-xs font-bold text-primary uppercase">{format(new Date(event.date), 'MMM', { locale: de })}</span>
-                                        <span className="text-lg font-bold">{format(new Date(event.date), 'dd')}</span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-sm">{event.title}</p>
-                                        <p className="text-xs text-muted-foreground">{event.type}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">Keine anstehenden Termine im Kalender.</p>
-                    )}
-                </CardContent>
-                <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={() => onNavigate('calendar')}>
-                        <Calendar className="mr-2"/> Zum Kalender
-                    </Button>
-                </CardFooter>
             </Card>
 
              {/* AI/Community Cards */}

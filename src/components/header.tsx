@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, LogOut, User, Settings as SettingsIcon, LayoutDashboard, BrainCircuit, Calculator, MessageCircle, Users, Award, CalendarDays, BookCopy } from "lucide-react";
+import { Menu, LogOut, User, Settings as SettingsIcon, LayoutDashboard, BrainCircuit, Calculator, MessageCircle, Users, Award, BookCopy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -33,7 +33,6 @@ const navItems = [
   { view: 'dashboard' as AppView, label: 'Dashboard', icon: LayoutDashboard },
   { view: 'subjects' as AppView, label: 'Fächer', icon: BookCopy },
   { view: 'studysets' as AppView, label: 'Lernsets', icon: BrainCircuit },
-  { view: 'calendar' as AppView, label: 'Kalender', icon: CalendarDays },
   { view: 'calculator' as AppView, label: 'Rechner', icon: Calculator },
   { view: 'tutor' as AppView, label: 'KI-Tutor', icon: MessageCircle },
   { view: 'community' as AppView, label: 'Community', icon: Users },

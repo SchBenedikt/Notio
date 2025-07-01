@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School, SchoolEvent } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -31,7 +31,6 @@ import { SettingsPage } from "./settings-page";
 import { StudySetsPage } from "./study-sets-page";
 import { StudySetDetailPage } from "./study-set-detail-page";
 import { CreateEditStudySetPage } from "./create-edit-study-set-page";
-import { SchoolCalendarPage } from "./school-calendar-page";
 import { DashboardOverview } from "./dashboard-overview";
 import { Skeleton } from "./ui/skeleton";
 
@@ -60,7 +59,6 @@ export default function Dashboard() {
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allSchools, setAllSchools] = useState<School[]>([]);
-  const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
   
   // Settings state
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
@@ -229,29 +227,9 @@ export default function Dashboard() {
         setGrades([]);
         setStudySets([]);
         setAllSchools([]);
-        setSchoolEvents([]);
         setDataLoading(false);
     }
   }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
-
-  // Effect for fetching school events, depends on userSchoolId
-  useEffect(() => {
-    if (!isFirebaseEnabled || !user || !userSchoolId) {
-        setSchoolEvents([]);
-        return;
-    }
-
-    const eventsQuery = query(collection(db, 'schoolEvents'), where('schoolId', '==', userSchoolId), orderBy('date', 'asc'));
-    const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
-        const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SchoolEvent[];
-        setSchoolEvents(eventsData);
-    }, (error) => {
-        console.error("Error fetching school events:", error);
-        toast({ title: "Fehler beim Laden der Kalender-Termine", variant: "destructive" });
-    });
-
-    return () => unsubscribe();
-  }, [user, userSchoolId, isFirebaseEnabled, toast]);
 
 
   useEffect(() => {
@@ -696,39 +674,6 @@ export default function Dashboard() {
       return docRef.id;
   }
   
-  const handleAddSchoolEvent = async (eventData: any) => {
-    if (!user || !userSchoolId || !profile) {
-        toast({ title: "Fehler", description: "Du musst angemeldet sein und eine Schule ausgewählt haben.", variant: "destructive" });
-        return;
-    }
-    try {
-        const dataToAdd: Omit<SchoolEvent, 'id' | 'createdAt'> = {
-            schoolId: userSchoolId,
-            authorId: user.uid,
-            authorName: profile.name,
-            title: eventData.title,
-            description: eventData.description,
-            date: eventData.date.toISOString(),
-            type: eventData.type,
-            target: eventData.target,
-        };
-
-        if (eventData.target === 'gradeLevel') {
-            dataToAdd.gradeLevel = selectedGradeLevel;
-        }
-
-        await addDoc(collection(db, 'schoolEvents'), {
-            ...dataToAdd,
-            createdAt: serverTimestamp(),
-        });
-        toast({ title: "Termin erstellt", description: "Der Termin wurde zum Schulkalender hinzugefügt." });
-    } catch (error) {
-        console.error("Error adding school event:", error);
-        toast({ title: "Fehler beim Erstellen des Termins", variant: "destructive" });
-    }
-  };
-
-
   const sidebarProps = {
     subjects: subjectsForGradeLevel,
     grades: grades,
@@ -760,7 +705,6 @@ export default function Dashboard() {
             minorSubjectsAverage={minorSubjectsAverage}
             totalSubjectsCount={totalSubjectsCount}
             totalGradesCount={totalGradesCount}
-            upcomingEvents={schoolEvents}
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
           />
@@ -891,15 +835,6 @@ export default function Dashboard() {
                    />
         }
         return null;
-      case 'calendar':
-        const school = allSchools.find(s => s.id === userSchoolId);
-        return <SchoolCalendarPage 
-            schoolId={userSchoolId}
-            schoolName={school?.name || null}
-            events={schoolEvents}
-            selectedGradeLevel={selectedGradeLevel}
-            onAddEvent={handleAddSchoolEvent}
-        />;
       case 'settings':
         return <SettingsPage
             mainSubjectWeight={mainSubjectWeight}

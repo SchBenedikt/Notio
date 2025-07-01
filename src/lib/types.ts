@@ -140,20 +140,4 @@ export interface School {
   address?: string;
 }
 
-export type SchoolEventType = "Prüfung" | "Hausaufgabe" | "Ferien" | "Veranstaltung" | "Sonstiges";
-
-export interface SchoolEvent {
-  id: string;
-  schoolId: string;
-  authorId: string;
-  authorName: string;
-  title: string;
-  description?: string;
-  date: string; // ISO String
-  type: SchoolEventType;
-  createdAt: Timestamp;
-  target: 'school' | 'gradeLevel';
-  gradeLevel?: number;
-}
-
-export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'calendar';
+export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit';

@@ -3,28 +3,23 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Helper Functions ---
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
-    function getUserSchoolId() {
-      // Safely get the user's schoolId from their settings document.
-      // Returns null if the document or field doesn't exist.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)/settings/main).data.schoolId;
+    function isSignedIn() {
+      return request.auth != null;
     }
-
     function isValidPostCreate() {
       let data = request.resource.data;
+      // Validate core fields
       let coreValid = isOwner(data.authorId) &&
              data.authorName == request.auth.token.name &&
              data.content is string && data.content.size() <= 1000 &&
              data.likes == [] &&
              data.commentCount == 0 &&
              data.createdAt == request.time;
+    
+      // Validate attachments if they exist
       let attachmentsValid = !('attachments' in data) || (
           data.attachments is list &&
           data.attachments.size() <= 5 &&
@@ -32,10 +27,12 @@ service cloud.firestore {
            (data.attachments[0].name is string && data.attachments[0].dataUrl is string)
           )
       );
+
+      // A post must have either content or an attachment
       let hasContent = data.content.size() > 0 || ( 'attachments' in data && data.attachments.size() > 0);
+      
       return coreValid && attachmentsValid && hasContent;
     }
-
     function isValidCommentCreate() {
       let data = request.resource.data;
       return isOwner(data.authorId) &&
@@ -44,34 +41,27 @@ service cloud.firestore {
              data.content.size() > 0 && data.content.size() <= 1000 &&
              data.createdAt == request.time;
     }
-
     function isLiking() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
     }
-
     function isEditingContent() {
         return isOwner(resource.data.authorId) &&
                request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
     }
-
     function isIncrementingCommentCount() {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) &&
                request.resource.data.commentCount == resource.data.commentCount + 1;
     }
-    
     function isDecrementingCommentCount() {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) &&
                request.resource.data.commentCount == resource.data.commentCount - 1;
     }
-    
     function isEditingCommentContent() {
       return isOwner(resource.data.authorId) &&
              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
     }
 
-
     // --- Private User Data ---
-    // Includes subjects, grades, study sets, settings.
     match /users/{userId}/{document=**} {
       allow read, write: if isOwner(userId);
     }
@@ -80,33 +70,17 @@ service cloud.firestore {
     match /profiles/{userId} {
       allow read: if isSignedIn();
       allow create, delete: if isOwner(userId);
-      // Allow user to update their own profile, or other users to update the followers list.
       allow update: if isOwner(userId) || 
                      (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']));
     }
-    
-    // --- Schools List ---
+    match /users/{userId}/studySets/{studySetId} {
+      allow read, write: if isOwner(userId);
+    }
+    // --- Schools ---
     match /schools/{schoolId} {
-      allow read, create: if isSignedIn();
-      // Prevent accidental deletion/modification of school entries by users.
-      allow update, delete: if false; 
+      allow read, create: if request.auth != null;
+      allow update, delete: if false;
     }
-
-    // --- Shared School Calendar Events ---
-    match /schoolEvents/{eventId} {
-      // A user can read an event if they are signed in AND the event's schoolId
-      // matches the schoolId stored in that user's settings document.
-      allow read: if isSignedIn() && getUserSchoolId() == resource.data.schoolId;
-      
-      // A user can create an event if they are the author and the event is for their own school.
-      allow create: if isSignedIn() &&
-                       request.resource.data.authorId == request.auth.uid &&
-                       request.resource.data.schoolId == getUserSchoolId();
-                       
-      // Only the original author can update or delete their event.
-      allow update, delete: if isSignedIn() && isOwner(resource.data.authorId);
-    }
-
     // --- Community Posts & Comments ---
     match /posts/{postId} {
       allow read: if isSignedIn();
