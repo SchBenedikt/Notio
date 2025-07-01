@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { calculateOverallAverage, calculateCategoryAverage, generateCSV, importDataFromCSV } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { TutorChat } from "./tutor-chat";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar-content";
 import { GradeCalculatorPage } from "./grade-calculator-page";
 import { AddGradeDialog } from "./add-grade-dialog";
@@ -915,12 +915,18 @@ export default function Dashboard() {
       <AppSidebar {...sidebarProps} />
       <Sheet open={isMobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
         <SheetContent side="left" className="p-0 lg:hidden w-80">
-            <div className="flex flex-col gap-4 h-full p-6">
-                <SidebarContent
-                    {...sidebarProps}
-                    onClose={() => setMobileSidebarOpen(false)}
-                />
-            </div>
+          <SheetHeader className="sr-only">
+            <SheetTitle>Hauptnavigation</SheetTitle>
+            <SheetDescription>
+              Navigiere durch die Hauptbereiche der Anwendung.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 h-full p-6">
+            <SidebarContent
+              {...sidebarProps}
+              onClose={() => setMobileSidebarOpen(false)}
+            />
+          </div>
         </SheetContent>
       </Sheet>
       <div className="flex-1 lg:pl-80">
