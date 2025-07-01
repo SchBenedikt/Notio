@@ -690,17 +690,29 @@ export default function Dashboard() {
       return docRef.id;
   }
   
-  const handleAddSchoolEvent = async (eventData: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt'>) => {
+  const handleAddSchoolEvent = async (eventData: any) => {
     if (!user || !userSchoolId || !profile) {
         toast({ title: "Fehler", description: "Du musst angemeldet sein und eine Schule ausgewählt haben.", variant: "destructive" });
         return;
     }
     try {
-        await addDoc(collection(db, 'schoolEvents'), {
-            ...eventData,
+        const dataToAdd: Omit<SchoolEvent, 'id' | 'createdAt'> = {
             schoolId: userSchoolId,
             authorId: user.uid,
             authorName: profile.name,
+            title: eventData.title,
+            description: eventData.description,
+            date: eventData.date.toISOString(),
+            type: eventData.type,
+            target: eventData.target,
+        };
+
+        if (eventData.target === 'gradeLevel') {
+            dataToAdd.gradeLevel = selectedGradeLevel;
+        }
+
+        await addDoc(collection(db, 'schoolEvents'), {
+            ...dataToAdd,
             createdAt: serverTimestamp(),
         });
         toast({ title: "Termin erstellt", description: "Der Termin wurde zum Schulkalender hinzugefügt." });
@@ -879,8 +891,8 @@ export default function Dashboard() {
             schoolId={userSchoolId}
             schoolName={school?.name || null}
             events={schoolEvents}
+            selectedGradeLevel={selectedGradeLevel}
             onAddEvent={handleAddSchoolEvent}
-            userRole={userRole}
         />;
       case 'settings':
         return <SettingsPage

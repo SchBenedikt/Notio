@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isValidPostCreate() {
+      let data = request.resource.data;
+      // Validate core fields
+      let coreValid = isOwner(data.authorId) &&
+             data.authorName == request.auth.token.name &&
+             data.content is string && data.content.size() <= 1000 &&
+             data.likes == [] &&
+             data.commentCount == 0 &&
+             data.createdAt == request.time;
+    
+      // Validate attachments if they exist
+      let attachmentsValid = !('attachments' in data) || (
+          data.attachments is list &&
+          data.attachments.size() <= 5 &&
+          (data.attachments.size() == 0 ||
+           (data.attachments[0].name is string && data.attachments[0].dataUrl is string)
+          )
+      );
+
+      // A post must have either content or an attachment
+      let hasContent = data.content.size() > 0 || ( 'attachments' in data && data.attachments.size() > 0);
+      
+      return coreValid && attachmentsValid && hasContent;
+    }
+    function isValidCommentCreate() {
+      let data = request.resource.data;
+      return isOwner(data.authorId) &&
+             data.authorName == request.auth.token.name &&
+             data.content is string &&
+             data.content.size() > 0 && data.content.size() <= 1000 &&
+             data.createdAt == request.time;
+    }
+    function isLiking() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+    }
+    function isEditingContent() {
+        return isOwner(resource.data.authorId) &&
+               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
+    }
+    function isIncrementingCommentCount() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) &&
+               request.resource.data.commentCount == resource.data.commentCount + 1;
+    }
+    function isDecrementingCommentCount() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) &&
+               request.resource.data.commentCount == resource.data.commentCount - 1;
+    }
+    function isEditingCommentContent() {
+      return isOwner(resource.data.authorId) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content']);
+    }
+
+    function isValidEventCreate() {
+      let data = request.resource.data;
+      let hasContent = data.title is string && data.title.size() > 0 && data.title.size() <= 50 &&
+                       data.date is string &&
+                       data.type is string &&
+                       data.target is string && (data.target == 'school' || data.target == 'gradeLevel');
+      
+      let hasCorrectGradeLevel = (data.target == 'gradeLevel' && data.gradeLevel is number) || data.target == 'school';
+
+      return isOwner(data.authorId) &&
+             data.authorName == request.auth.token.name &&
+             data.schoolId is string &&
+             data.createdAt == request.time &&
+             hasContent && hasCorrectGradeLevel;
+    }
+
+    function isValidEventUpdate() {
+      // Can only update title, description, date, type, target, gradeLevel
+      let allowedFields = ['title', 'description', 'date', 'type', 'target', 'gradeLevel'];
+      return isOwner(resource.data.authorId) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+
+
+    // --- Private User Data ---
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/studySets/{studySetId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // --- Public Profiles ---
+    match /profiles/{userId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isOwner(userId);
+      allow update: if isOwner(userId) || 
+                     (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']));
+    }
+    
+    // --- Schools ---
+    match /schools/{schoolId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if false; // Schools are public and shouldn't be changed by users easily
+    }
+
+    // --- School Events ---
+    match /schoolEvents/{eventId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidEventCreate();
+        allow update: if isSignedIn() && isValidEventUpdate();
+        allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+    }
+    
+    // --- Community Posts & Comments ---
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow delete: if isOwner(resource.data.authorId);
+      allow create: if isSignedIn() && isValidPostCreate();
+      allow update: if isEditingContent() || isLiking() || isIncrementingCommentCount() || isDecrementingCommentCount();
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow delete: if isOwner(resource.data.authorId);
+        allow create: if isSignedIn() && isValidCommentCreate();
+        allow update: if isSignedIn() && isEditingCommentContent();
+      }
+    }
+  }
+}

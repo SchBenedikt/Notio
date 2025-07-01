@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SchoolEvent, SchoolEventType } from "@/lib/types";
-import { Plus, CalendarDays } from 'lucide-react';
+import { Plus, CalendarDays, Users, GraduationCap } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { AddSchoolEventDialog } from './AddSchoolEventDialog';
@@ -18,8 +18,8 @@ type SchoolCalendarPageProps = {
   schoolId: string | null;
   schoolName: string | null;
   events: SchoolEvent[];
-  userRole: 'student' | 'teacher';
-  onAddEvent: (eventData: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt'>) => Promise<void>;
+  selectedGradeLevel: number;
+  onAddEvent: (eventData: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>) => Promise<void>;
 };
 
 const eventTypeColors: Record<SchoolEventType, string> = {
@@ -30,29 +30,38 @@ const eventTypeColors: Record<SchoolEventType, string> = {
   Sonstiges: "bg-gray-500",
 };
 
-export function SchoolCalendarPage({ schoolId, schoolName, events, userRole, onAddEvent }: SchoolCalendarPageProps) {
+export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGradeLevel, onAddEvent }: SchoolCalendarPageProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddEventOpen, setAddEventOpen] = useState(false);
 
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+        if (event.target === 'school') {
+            return true;
+        }
+        if (event.target === 'gradeLevel' && event.gradeLevel === selectedGradeLevel) {
+            return true;
+        }
+        return false;
+    });
+  }, [events, selectedGradeLevel]);
+
   const eventDates = useMemo(() => {
-    return events.map(event => new Date(event.date));
-  }, [events]);
+    return filteredEvents.map(event => new Date(event.date));
+  }, [filteredEvents]);
 
   const selectedDayEvents = useMemo(() => {
-    return events
+    return filteredEvents
       .filter(event => isSameDay(new Date(event.date), selectedDate))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [events, selectedDate]);
+  }, [filteredEvents, selectedDate]);
   
   const handleDayClick = (day: Date) => {
     setSelectedDate(day);
   };
   
   const handleAddEventSubmit = async (values: any) => {
-    await onAddEvent({
-        ...values,
-        date: values.date.toISOString(),
-    });
+    await onAddEvent(values);
   };
 
   if (!schoolId || !schoolName) {
@@ -76,16 +85,13 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, userRole, onA
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">Kalender: {schoolName}</h1>
           <p className="text-muted-foreground">
-            Geteilte Termine für alle Schüler deiner Schule.
-            {userRole === 'student' && ' Als Lehrer kannst du hier neue Termine für alle hinzufügen.'}
+            Geteilte Termine für alle an deiner Schule.
           </p>
         </div>
-        {userRole === 'teacher' && (
-            <Button onClick={() => setAddEventOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Neuer Termin
-            </Button>
-        )}
+        <Button onClick={() => setAddEventOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Neuer Termin
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -101,7 +107,7 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, userRole, onA
               modifiersClassNames={{ events: 'day-with-event' }}
               components={{
                 DayContent: (props) => {
-                   const dayEvents = events.filter(event => isSameDay(new Date(event.date), props.date));
+                   const dayEvents = filteredEvents.filter(event => isSameDay(new Date(event.date), props.date));
                    return (
                      <div className="relative h-full w-full flex items-center justify-center">
                        <span>{format(props.date, 'd')}</span>
@@ -124,7 +130,15 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, userRole, onA
                 <ul className="space-y-3">
                   {selectedDayEvents.map(event => (
                     <li key={event.id} className="p-3 rounded-md bg-muted/50 border-l-4" style={{ borderColor: eventTypeColors[event.type] }}>
-                       <p className="font-semibold">{event.title}</p>
+                       <div className="flex justify-between items-start">
+                         <p className="font-semibold">{event.title}</p>
+                         <Badge variant="secondary" className="text-xs">
+                           {event.target === 'school' ? 
+                           <Users className="h-3 w-3 mr-1.5" /> : 
+                           <GraduationCap className="h-3 w-3 mr-1.5" />}
+                           {event.target === 'school' ? 'Schule' : `Kl. ${event.gradeLevel}`}
+                         </Badge>
+                       </div>
                        <p className="text-sm text-muted-foreground">{event.description}</p>
                        <div className="flex justify-between items-center mt-2">
                            <Badge variant="outline" className={cn("text-xs", event.type === "Prüfung" && "border-red-500/50 text-red-600")}>{event.type}</Badge>

@@ -31,6 +31,7 @@ import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import type { SchoolEventType } from "@/lib/types";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const eventTypes: SchoolEventType[] = ["Prüfung", "Hausaufgabe", "Ferien", "Veranstaltung", "Sonstiges"];
 
@@ -41,6 +42,9 @@ const formSchema = z.object({
   }),
   type: z.enum(eventTypes, {
     required_error: "Du musst einen Ereignistyp auswählen.",
+  }),
+  target: z.enum(['school', 'gradeLevel'], {
+    required_error: "Bitte wähle eine Zielgruppe aus."
   }),
   description: z.string().max(200, "Beschreibung darf nicht länger als 200 Zeichen sein.").optional(),
 });
@@ -64,6 +68,7 @@ export function AddSchoolEventDialog({ isOpen, onOpenChange, onSubmit, selectedD
         description: "",
         type: "Prüfung",
         date: selectedDate || new Date(),
+        target: 'school',
       });
     }
   }, [isOpen, selectedDate, form]);
@@ -80,7 +85,7 @@ export function AddSchoolEventDialog({ isOpen, onOpenChange, onSubmit, selectedD
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Neues Schulereignis erstellen</DialogTitle>
-          <DialogDescription>Füge einen neuen Termin für deine Schule hinzu. Alle Schüler deiner Schule werden ihn sehen.</DialogDescription>
+          <DialogDescription>Füge einen neuen Termin für deine Schule hinzu. Wähle aus, wer ihn sehen kann.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
@@ -136,6 +141,32 @@ export function AddSchoolEventDialog({ isOpen, onOpenChange, onSubmit, selectedD
                     </SelectContent>
                     </Select>
                     <FormMessage />
+                </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="target"
+                render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Sichtbar für</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex space-x-4"
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="school" /></FormControl>
+                        <FormLabel className="font-normal">Ganze Schule</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="gradeLevel" /></FormControl>
+                        <FormLabel className="font-normal">Nur meine Jahrgangsstufe</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
                 )}
             />
