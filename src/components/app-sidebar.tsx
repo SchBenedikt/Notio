@@ -1,14 +1,12 @@
 "use client";
 
-import type { Subject, AddSubjectData, AddGradeData, Grade, AppView } from '@/lib/types';
+import type { Subject, Grade, AppView } from '@/lib/types';
 import { SidebarContent } from './sidebar-content';
 
 type AppSidebarProps = {
   subjects: Subject[];
   grades: Grade[];
   overallAverage: string;
-  onAddSubject: (values: AddSubjectData) => void;
-  onAddGrade: (subjectId: string, values: Omit<AddGradeData, 'subjectId'>) => void;
   mainSubjectsAverage: string;
   minorSubjectsAverage: string;
   writtenGradesCount: number;

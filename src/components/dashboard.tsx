@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School, SchoolEvent } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -260,6 +260,12 @@ export default function Dashboard() {
   }, [isDarkMode]);
 
   const subjectsForGradeLevel = subjects;
+  
+  const plannedGrades = useMemo(() => {
+    return grades
+        .filter(g => g.value == null)
+        .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }, [grades])
 
   const mainSubjects = useMemo(() => {
     return subjectsForGradeLevel
@@ -287,11 +293,11 @@ export default function Dashboard() {
   }, [minorSubjects, grades]);
   
   const writtenGradesCount = useMemo(() => {
-    return grades.filter(g => g.type === 'Schulaufgabe').length;
+    return grades.filter(g => g.type === 'Schulaufgabe' && g.value != null).length;
   }, [grades]);
 
   const oralGradesCount = useMemo(() => {
-     return grades.filter(g => g.type === 'mündliche Note').length;
+     return grades.filter(g => g.type === 'mündliche Note' && g.value != null).length;
   }, [grades]);
 
   const totalSubjectsCount = useMemo(() => {
@@ -299,7 +305,7 @@ export default function Dashboard() {
   }, [subjectsForGradeLevel]);
 
   const totalGradesCount = useMemo(() => {
-    return grades.length;
+    return grades.filter(g => g.value != null).length;
   }, [grades]);
 
   const awards = useMemo<Award[]>(() => {
@@ -686,8 +692,6 @@ export default function Dashboard() {
     subjects: subjectsForGradeLevel,
     grades: grades,
     overallAverage: overallAverage,
-    onAddSubject: handleAddSubject,
-    onAddGrade: (subjectId: string, values: Omit<AddGradeData, 'subjectId'>) => handleSaveGrade(subjectId, values),
     mainSubjectsAverage: mainSubjectsAverage,
     minorSubjectsAverage: minorSubjectsAverage,
     writtenGradesCount: writtenGradesCount,
@@ -713,8 +717,11 @@ export default function Dashboard() {
             minorSubjectsAverage={minorSubjectsAverage}
             totalSubjectsCount={totalSubjectsCount}
             totalGradesCount={totalGradesCount}
+            plannedGrades={plannedGrades}
+            subjects={subjectsForGradeLevel}
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
+            onAddGrade={handleOpenAddGradeDialog}
           />
         );
       case 'subjects':
@@ -811,7 +818,7 @@ export default function Dashboard() {
                   onUserNameChange={(name) => {
                     setUserName(name);
                   }}
-                  onToggleFollow={handleToggleFollow}
+                  onToggleFollow={onToggleFollow}
                   userRole={userRole}
                   onUserRoleChange={(role) => {
                       setUserRole(role);

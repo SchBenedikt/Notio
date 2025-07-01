@@ -84,7 +84,7 @@ export function calculateOverallAverage(
     const subjectAverages: { average: number; weight: number }[] = [];
 
     subjects.forEach(subject => {
-        const subjectGrades = grades.filter(g => g.subjectId === subject.id);
+        const subjectGrades = grades.filter(g => g.subjectId === subject.id && g.value != null);
         if (subjectGrades.length > 0) {
             const finalGradeStr = calculateFinalGrade(subjectGrades, subject);
             if (finalGradeStr !== '-') {
@@ -124,7 +124,7 @@ export function calculateCategoryAverage(
     }
     
     const subjectFinalGrades = subjects.map(subject => {
-        const subjectGrades = grades.filter(g => g.subjectId === subject.id);
+        const subjectGrades = grades.filter(g => g.subjectId === subject.id && g.value != null);
         if (subjectGrades.length === 0) return null;
         const finalGradeStr = calculateFinalGrade(subjectGrades, subject);
         return finalGradeStr !== '-' ? parseFloat(finalGradeStr) : null;

@@ -1,10 +1,11 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AppView } from "@/lib/types";
-import { ArrowRight, BookCopy, BrainCircuit, CheckCircle, Plus, Sparkles, TrendingUp, Users } from "lucide-react";
-import { CardFooter } from "./ui/card";
+import { AppView, Grade, Subject } from "@/lib/types";
+import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp } from "lucide-react";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 type DashboardOverviewProps = {
   userName: string | null;
@@ -13,21 +14,24 @@ type DashboardOverviewProps = {
   minorSubjectsAverage: string;
   totalSubjectsCount: number;
   totalGradesCount: number;
+  plannedGrades: Grade[];
+  subjects: Subject[];
   onNavigate: (view: AppView) => void;
   onAddSubject: () => void;
+  onAddGrade: (subjectId: string) => void;
 };
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 rounded-lg bg-background p-4">
         <div className="p-3 bg-muted rounded-lg">
             <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
-            <p className="text-xs text-muted-foreground">{title}</p>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold">{value}</p>
         </div>
     </div>
-)
+);
 
 export function DashboardOverview({
     userName,
@@ -36,29 +40,34 @@ export function DashboardOverview({
     minorSubjectsAverage,
     totalSubjectsCount,
     totalGradesCount,
+    plannedGrades,
+    subjects,
     onNavigate,
-    onAddSubject
+    onAddSubject,
+    onAddGrade
 }: DashboardOverviewProps) {
+  
+  const subjectsMap = new Map(subjects.map(s => [s.id, s.name]));
 
   return (
     <div className="container mx-auto space-y-6">
-        <div>
-            <h1 className="text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
-            <p className="text-muted-foreground">Willkommen zurück. Hier ist deine Übersicht.</p>
+        <div className="space-y-1">
+            <h1 className="text-2xl md:text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
+            <p className="text-muted-foreground">Willkommen zurück in deinem Noten-Cockpit.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Stats Card */}
-            <Card className="md:col-span-2">
+            <Card className="lg:col-span-2">
                 <CardHeader>
-                    <CardTitle>Dein Noten-Cockpit</CardTitle>
-                    <CardDescription>Deine wichtigsten Kennzahlen auf einen Blick.</CardDescription>
+                    <CardTitle>Deine Leistungsübersicht</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="p-4 sm:p-6 bg-primary/5 rounded-lg text-center flex flex-col justify-center">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 bg-primary/5 rounded-xl flex flex-col justify-center items-center text-center">
                         <p className="text-sm font-medium text-primary">Gesamtschnitt</p>
-                        <p className="text-5xl sm:text-6xl font-extrabold text-primary">{overallAverage}</p>
+                        <p className="text-6xl font-extrabold text-primary tracking-tight">{overallAverage}</p>
                     </div>
-                     <div className="space-y-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <StatCard title="Hauptfächer" value={mainSubjectsAverage} icon={TrendingUp} />
                         <StatCard title="Nebenfächer" value={minorSubjectsAverage} icon={TrendingUp} />
                         <StatCard title="Fächer" value={totalSubjectsCount} icon={BookCopy} />
@@ -71,11 +80,11 @@ export function DashboardOverview({
             <Card className="flex flex-col">
                 <CardHeader>
                     <CardTitle>Schnellstart</CardTitle>
-                    <CardDescription>Häufige Aktionen direkt ausführen.</CardDescription>
+                    <CardDescription>Direkt loslegen.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-center space-y-3">
                     <Button onClick={() => onNavigate('subjects')} size="lg" className="w-full justify-start">
-                        <BookCopy className="mr-3" /> Fächerübersicht
+                        <BookCopy className="mr-3" /> Alle Fächer anzeigen
                     </Button>
                     <Button onClick={onAddSubject} size="lg" variant="secondary" className="w-full justify-start">
                         <Plus className="mr-3" /> Neues Fach anlegen
@@ -85,36 +94,60 @@ export function DashboardOverview({
                     </Button>
                 </CardContent>
             </Card>
+            
+            {/* Upcoming and AI */}
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle>Anstehende Termine</CardTitle>
+                    <CardDescription>Deine nächsten geplanten Prüfungen und Aufgaben.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {plannedGrades.length > 0 ? (
+                        <div className="space-y-3">
+                            {plannedGrades.slice(0, 4).map(grade => (
+                                <div key={grade.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                    <div>
+                                        <p className="font-semibold">{grade.name || grade.type}</p>
+                                        <p className="text-sm text-muted-foreground">{subjectsMap.get(grade.subjectId) || 'Unbekanntes Fach'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                       <p className="font-semibold">{format(new Date(grade.date), "dd. MMMM", { locale: de })}</p>
+                                       <p className="text-sm text-muted-foreground">{format(new Date(grade.date), "eeee", { locale: de })}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10">
+                            <Calendar className="h-10 w-10 mx-auto text-muted-foreground" />
+                            <p className="mt-4 font-semibold">Keine Termine geplant</p>
+                            <p className="text-sm text-muted-foreground">Füge eine Note ohne Wert hinzu, um einen Termin zu planen.</p>
+                             {subjects.length > 0 && (
+                                <Button variant="secondary" className="mt-4" onClick={() => onAddGrade(subjects[0].id)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Termin planen
+                                </Button>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-primary/90 to-primary text-primary-foreground flex flex-col">
+                <CardHeader>
+                    <CardTitle>KI-Tutor & Lern-Coach</CardTitle>
+                    <CardDescription className="text-primary-foreground/80">Erhalte Lerntipps, stelle Fragen oder übe mit deinen Lernsets.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 flex items-center justify-center">
+                    <Sparkles className="h-20 w-20 text-primary-foreground/30" />
+                </CardContent>
+                 <CardFooter>
+                     <Button variant="ghost" className="w-full bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground" onClick={() => onNavigate('tutor')}>
+                        Chat starten <ArrowRight className="ml-2"/>
+                    </Button>
+                </CardFooter>
+            </Card>
 
-             {/* AI/Community Cards */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>KI-Tutor</CardTitle>
-                    <CardDescription>Stelle Fragen, erhalte Lerntipps.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-center py-10">
-                    <Sparkles className="h-16 w-16 text-primary/30" />
-                </CardContent>
-                <CardFooter>
-                     <Button className="w-full" onClick={() => onNavigate('tutor')}>
-                        Tutor starten <ArrowRight className="ml-2"/>
-                    </Button>
-                </CardFooter>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Community</CardTitle>
-                    <CardDescription>Tausche dich mit anderen aus.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-center py-10">
-                     <Users className="h-16 w-16 text-primary/30" />
-                </CardContent>
-                <CardFooter>
-                     <Button className="w-full" onClick={() => onNavigate('community')}>
-                        Zum Feed <ArrowRight className="ml-2"/>
-                    </Button>
-                </CardFooter>
-            </Card>
         </div>
     </div>
   );
