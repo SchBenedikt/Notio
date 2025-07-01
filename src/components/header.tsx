@@ -62,10 +62,9 @@ export function AppHeader({
             <Menu className="h-6 w-6" />
             <span className="sr-only">Menü öffnen</span>
           </Button>
-           <div className="flex items-center gap-3">
-              <Logo />
-              <h1 className="text-xl font-bold hidden sm:block">Gradido</h1>
-            </div>
+          <button onClick={() => onNavigate('dashboard')} aria-label="Zum Dashboard">
+            <Logo />
+          </button>
         </div>
 
         <nav className="hidden lg:flex items-center gap-1 rounded-full bg-muted p-1">

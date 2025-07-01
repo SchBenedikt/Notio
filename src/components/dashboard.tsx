@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School, SchoolEvent } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -109,50 +109,23 @@ export default function Dashboard() {
             const profilePromise = getDoc(doc(db, 'profiles', user.uid));
             const schoolsPromise = getDocs(query(collection(db, 'schools')));
             const settingsPromise = settingsDocRef ? getDoc(settingsDocRef) : Promise.resolve(null);
-            const subjectsPromise = getDocs(query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel)));
-            const studySetsPromise = getDocs(query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', selectedGradeLevel)));
             
             const [
               profileSnap,
               schoolsSnap,
               settingsSnap,
-              subjectsSnap,
-              studySetsSnap,
             ] = await Promise.all([
               profilePromise,
               schoolsPromise,
-              settingsPromise,
-              subjectsPromise,
-              studySetsPromise
+              settingsPromise
             ]);
 
-            // Process Profile
-            if (profileSnap.exists()) {
-                const profileData = profileSnap.data() as Profile;
-                setProfile(profileData);
-                setUserName(profileData.name);
-            } else {
-                 const newProfileData = {
-                    uid: user.uid,
-                    name: user.displayName || 'Neuer Nutzer',
-                    email: user.email,
-                    bio: `Hallo! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`,
-                    followers: [],
-                    following: []
-                 };
-                 await setDoc(doc(db, 'profiles', user.uid), newProfileData);
-                 setProfile(newProfileData as Profile);
-                 setUserName(newProfileData.name);
-            }
-            
-            // Process All Schools
-            const schoolsData = schoolsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
-            setAllSchools(schoolsData.sort((a, b) => a.name.localeCompare(b.name)));
-
+            let gradeLevelFromSettings = 10;
             // Process Settings
             if(settingsSnap && settingsSnap.exists()) {
               const settingsData = settingsSnap.data();
-              setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
+              gradeLevelFromSettings = settingsData.selectedGradeLevel || 10;
+              setSelectedGradeLevel(gradeLevelFromSettings);
               setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
               setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
               setTheme(settingsData.theme || 'blue');
@@ -178,6 +151,41 @@ export default function Dashboard() {
               setUserRole(defaultSettings.role as 'student' | 'teacher');
               setUserSchoolId(defaultSettings.schoolId);
             }
+
+            const subjectsPromise = getDocs(query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', gradeLevelFromSettings)));
+            const studySetsPromise = getDocs(query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', gradeLevelFromSettings)));
+
+            const [
+              subjectsSnap,
+              studySetsSnap,
+            ] = await Promise.all([
+              subjectsPromise,
+              studySetsPromise
+            ]);
+
+
+            // Process Profile
+            if (profileSnap.exists()) {
+                const profileData = profileSnap.data() as Profile;
+                setProfile(profileData);
+                setUserName(profileData.name);
+            } else {
+                 const newProfileData = {
+                    uid: user.uid,
+                    name: user.displayName || 'Neuer Nutzer',
+                    email: user.email,
+                    bio: `Hallo! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`,
+                    followers: [],
+                    following: []
+                 };
+                 await setDoc(doc(db, 'profiles', user.uid), newProfileData);
+                 setProfile(newProfileData as Profile);
+                 setUserName(newProfileData.name);
+            }
+            
+            // Process All Schools
+            const schoolsData = schoolsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
+            setAllSchools(schoolsData.sort((a, b) => a.name.localeCompare(b.name)));
             
             // Process Subjects
             const subjectsData = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
@@ -894,7 +902,7 @@ export default function Dashboard() {
           onNavigate={setAppView}
           currentView={view}
         />
-        <main className="container mx-auto p-4 md:p-6 lg:p-8">
+        <main className="p-4 md:p-6 lg:p-8">
           {renderView()}
         </main>
       </div>

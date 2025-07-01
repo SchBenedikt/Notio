@@ -84,7 +84,7 @@ export function SubjectList({
   const noSearchResults = mainSubjects.length === 0 && minorSubjects.length === 0;
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto space-y-6">
       <Button
         variant="outline"
         className="w-full h-12 text-base rounded-lg flex justify-start items-center text-muted-foreground"
