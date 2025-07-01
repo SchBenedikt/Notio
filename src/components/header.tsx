@@ -25,7 +25,6 @@ type AppHeaderProps = {
   onOpenMobileSidebar: () => void;
   onLogout: () => void;
   onNavigate: (view: AppView) => void;
-  currentView: AppView;
 };
 
 export function AppHeader({ 

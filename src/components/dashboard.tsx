@@ -689,15 +689,6 @@ export default function Dashboard() {
   }
   
   const sidebarProps = {
-    subjects: subjectsForGradeLevel,
-    grades: grades,
-    overallAverage: overallAverage,
-    mainSubjectsAverage: mainSubjectsAverage,
-    minorSubjectsAverage: minorSubjectsAverage,
-    writtenGradesCount: writtenGradesCount,
-    oralGradesCount: oralGradesCount,
-    totalSubjectsCount: totalSubjectsCount,
-    totalGradesCount: totalGradesCount,
     currentView: view,
     onSetView: setAppView,
     userName: userName,
@@ -883,9 +874,9 @@ export default function Dashboard() {
       <AppSidebar {...sidebarProps} />
       <Sheet open={isMobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
         <SheetContent side="left" className="p-0 lg:hidden w-80">
-          <SheetHeader className="sr-only">
-            <SheetTitle>Hauptnavigation</SheetTitle>
-            <SheetDescription>
+          <SheetHeader>
+            <SheetTitle className="sr-only">Hauptnavigation</SheetTitle>
+            <SheetDescription className="sr-only">
               Navigiere durch die Hauptbereiche der Anwendung.
             </SheetDescription>
           </SheetHeader>
@@ -907,7 +898,6 @@ export default function Dashboard() {
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onLogout={handleLogout}
           onNavigate={setAppView}
-          currentView={view}
         />
         <main className="p-4 md:p-6 lg:p-8">
           {renderView()}
