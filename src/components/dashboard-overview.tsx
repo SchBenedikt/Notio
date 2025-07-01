@@ -64,7 +64,7 @@ export function DashboardOverview({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Stats Card */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
                 <CardHeader>
                     <CardTitle>Deine Leistungsübersicht</CardTitle>
                 </CardHeader>
@@ -88,23 +88,23 @@ export function DashboardOverview({
             </Card>
 
             {/* Quick Actions Card */}
-            <Card className="flex flex-col">
+            <Card className="flex flex-col items-center justify-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
                 <CardHeader>
-                    <CardTitle>Aktionen</CardTitle>
-                    <CardDescription>Direkt loslegen.</CardDescription>
+                    <CardTitle>Bereit loszulegen?</CardTitle>
+                    <CardDescription>Füge Fächer hinzu, um deine Noten zu verfolgen, oder erstelle Lernsets zum Üben.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-center space-y-3">
-                    <Button onClick={onAddSubject} size="lg" className="w-full justify-start">
+                <CardContent className="w-full flex flex-col gap-2">
+                    <Button onClick={onAddSubject} size="lg" className="w-full">
                         <Plus className="mr-3" /> Neues Fach anlegen
                     </Button>
-                     <Button onClick={() => onNavigate('studysets')} size="lg" variant="secondary" className="w-full justify-start">
+                    <Button onClick={() => onNavigate('studysets')} variant="secondary" className="w-full">
                         <BrainCircuit className="mr-3" /> Zu den Lernsets
                     </Button>
                 </CardContent>
             </Card>
             
             {/* Upcoming and AI */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
                 <CardHeader>
                     <CardTitle>Anstehende Termine</CardTitle>
                     <CardDescription>Deine nächsten geplanten Prüfungen und Aufgaben.</CardDescription>
@@ -141,7 +141,7 @@ export function DashboardOverview({
                 </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-primary/90 to-primary text-primary-foreground flex flex-col">
+            <Card className="bg-gradient-to-br from-primary/90 to-primary text-primary-foreground flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
                 <CardHeader>
                     <CardTitle>KI-Tutor & Lern-Coach</CardTitle>
                     <CardDescription className="text-primary-foreground/80">Erhalte Lerntipps, stelle Fragen oder übe mit deinen Lernsets.</CardDescription>

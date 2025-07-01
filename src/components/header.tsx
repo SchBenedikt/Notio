@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, LogOut, User, Settings as SettingsIcon, LayoutDashboard, BrainCircuit, Calculator, MessageCircle, Users, Award, BookCopy } from "lucide-react";
+import { Menu, LogOut, User, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { AppView } from "@/lib/types";
 import { Logo } from "./logo";
-import { cn } from "@/lib/utils";
 
 type AppHeaderProps = {
   selectedGradeLevel: number;
@@ -29,23 +28,12 @@ type AppHeaderProps = {
   currentView: AppView;
 };
 
-const navItems = [
-  { view: 'dashboard' as AppView, label: 'Dashboard', icon: LayoutDashboard },
-  { view: 'subjects' as AppView, label: 'Fächer', icon: BookCopy },
-  { view: 'studysets' as AppView, label: 'Lernsets', icon: BrainCircuit },
-  { view: 'calculator' as AppView, label: 'Rechner', icon: Calculator },
-  { view: 'tutor' as AppView, label: 'KI-Tutor', icon: MessageCircle },
-  { view: 'community' as AppView, label: 'Community', icon: Users },
-  { view: 'awards' as AppView, label: 'Awards', icon: Award },
-]
-
 export function AppHeader({ 
   selectedGradeLevel, 
   onGradeLevelChange, 
   onOpenMobileSidebar,
   onLogout,
   onNavigate,
-  currentView
 }: AppHeaderProps) {
   const gradeLevels = Array.from({ length: 8 }, (_, i) => i + 5); // 5 to 12
 
@@ -66,21 +54,6 @@ export function AppHeader({
             <Logo />
           </button>
         </div>
-
-        <nav className="hidden lg:flex items-center gap-1 rounded-full bg-muted p-1">
-            {navItems.map((item) => (
-                <Button 
-                    key={item.view}
-                    variant={currentView === item.view ? "secondary" : "ghost"} 
-                    size="sm"
-                    className="rounded-full"
-                    onClick={() => onNavigate(item.view)}
-                >
-                     <item.icon className={cn("h-4 w-4", currentView === item.view ? "text-primary" : "text-muted-foreground")} />
-                     <span className="ml-2">{item.label}</span>
-                </Button>
-            ))}
-        </nav>
         
         <div className="flex items-center gap-2">
           <Select
