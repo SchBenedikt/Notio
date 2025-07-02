@@ -126,8 +126,8 @@ export function DashboardOverview({
             <StatCard title="Noten" value={totalGradesCount} icon={CheckCircle} />
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-4 justify-end">
-          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onNavigate('subjects')}>
+        <CardFooter className="flex justify-end border-t pt-4">
+          <Button variant="ghost" size="sm" onClick={() => onNavigate('subjects')}>
             Alle Fächer im Detail ansehen <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardFooter>
@@ -226,12 +226,12 @@ export function DashboardOverview({
             </div>
           )}
         </CardContent>
-        <CardFooter className="mt-auto border-t pt-4 flex items-center justify-between gap-2">
+        <CardFooter className="flex items-center justify-between border-t pt-4">
             <Button size="sm" onClick={onAddHomework}>
                 <Plus className="mr-2 h-4 w-4" />
                 Hinzufügen
             </Button>
-            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onNavigate('timetable')}>
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('timetable')}>
                 Alle anzeigen <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
         </CardFooter>
