@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AppView, Grade, Subject } from "@/lib/types";
-import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, GripVertical } from "lucide-react";
+import { AppView, Grade, Subject, Homework } from "@/lib/types";
+import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, GripVertical, Notebook } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Responsive, WidthProvider } from 'react-grid-layout';
@@ -27,26 +27,30 @@ export const defaultLayouts: Layouts = {
     lg: [
         { i: 'performance', x: 0, y: 0, w: 2, h: 2, minW: 2, minH: 2 },
         { i: 'actions',     x: 2, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'upcoming',    x: 0, y: 2, w: 2, h: 2, minW: 2, minH: 2 },
+        { i: 'upcoming',    x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'homework',    x: 1, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 2, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
     ],
     md: [
         { i: 'performance', x: 0, y: 0, w: 2, h: 2, minW: 2, minH: 2 },
         { i: 'actions',     x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 1, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'tutor',       x: 0, y: 4, w: 2, h: 2, minW: 2, minH: 2 },
+        { i: 'homework',    x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tutor',       x: 1, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
     ],
     sm: [
         { i: 'performance', x: 0, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'actions',     x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'tutor',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'homework',    x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tutor',       x: 0, y: 8, w: 1, h: 2, minW: 1, minH: 2 },
     ],
     xs: [
         { i: 'performance', x: 0, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'actions',     x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'tutor',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'homework',    x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tutor',       x: 0, y: 8, w: 1, h: 2, minW: 1, minH: 2 },
     ],
 };
 
@@ -58,6 +62,7 @@ type DashboardOverviewProps = {
   totalSubjectsCount: number;
   totalGradesCount: number;
   plannedGrades: Grade[];
+  homework: Homework[];
   subjects: Subject[];
   onNavigate: (view: AppView) => void;
   onAddSubject: () => void;
@@ -74,6 +79,7 @@ export function DashboardOverview({
     totalSubjectsCount,
     totalGradesCount,
     plannedGrades,
+    homework,
     subjects,
     onNavigate,
     onAddSubject,
@@ -83,6 +89,9 @@ export function DashboardOverview({
 }: DashboardOverviewProps) {
   
   const subjectsMap = new Map(subjects.map(s => [s.id, s.name]));
+  const upcomingHomework = homework
+    .filter(hw => !hw.isDone)
+    .sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
   return (
     <div className="container mx-auto space-y-6">
@@ -152,8 +161,8 @@ export function DashboardOverview({
                  <Card className="h-full w-full flex flex-col">
                     <CardHeader className="drag-handle flex flex-row items-start justify-between">
                         <div>
-                          <CardTitle>Anstehende Termine</CardTitle>
-                          <CardDescription>Deine nächsten geplanten Prüfungen und Aufgaben.</CardDescription>
+                          <CardTitle>Anstehende Prüfungen</CardTitle>
+                          <CardDescription>Deine nächsten geplanten Klausuren und Tests.</CardDescription>
                         </div>
                         <GripVertical className="text-muted-foreground" />
                     </CardHeader>
@@ -176,14 +185,53 @@ export function DashboardOverview({
                         ) : (
                             <div className="text-center py-10 h-full flex flex-col items-center justify-center">
                                 <Calendar className="h-10 w-10 mx-auto text-muted-foreground" />
-                                <p className="mt-4 font-semibold">Keine Termine geplant</p>
-                                <p className="text-sm text-muted-foreground">Füge eine Note ohne Wert hinzu, um einen Termin zu planen.</p>
+                                <p className="mt-4 font-semibold">Keine Prüfungen geplant</p>
+                                <p className="text-sm text-muted-foreground">Füge eine Note ohne Wert hinzu, um eine Prüfung zu planen.</p>
                                 {subjects.length > 0 && (
                                     <Button variant="secondary" className="mt-4" onClick={() => onAddGrade(subjects[0].id)}>
                                         <Plus className="mr-2 h-4 w-4" />
                                         Termin planen
                                     </Button>
                                 )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div key="homework">
+                 <Card className="h-full w-full flex flex-col">
+                    <CardHeader className="drag-handle flex flex-row items-start justify-between">
+                        <div>
+                          <CardTitle>Nächste Hausaufgaben</CardTitle>
+                          <CardDescription>Deine dringendsten Aufgaben.</CardDescription>
+                        </div>
+                        <GripVertical className="text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                        {upcomingHomework.length > 0 ? (
+                            <div className="space-y-3">
+                                {upcomingHomework.slice(0, 4).map(hw => (
+                                    <div key={hw.id} className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="font-semibold truncate">{hw.task}</p>
+                                            <p className="text-sm text-muted-foreground">{subjectsMap.get(hw.subjectId) || 'Unbekanntes Fach'}</p>
+                                        </div>
+                                        <div className="text-right pl-2">
+                                            <p className="font-semibold">{format(new Date(hw.dueDate), "dd. MMM", { locale: de })}</p>
+                                            <p className="text-sm text-muted-foreground">{format(new Date(hw.dueDate), "eeee", { locale: de })}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 h-full flex flex-col items-center justify-center">
+                                <Notebook className="h-10 w-10 mx-auto text-muted-foreground" />
+                                <p className="mt-4 font-semibold">Keine Hausaufgaben</p>
+                                <p className="text-sm text-muted-foreground">Du hast alle Aufgaben erledigt. Super!</p>
+                                <Button variant="secondary" className="mt-4" onClick={() => onNavigate('timetable')}>
+                                    Zur Hausaufgaben-Seite
+                                </Button>
                             </div>
                         )}
                     </CardContent>

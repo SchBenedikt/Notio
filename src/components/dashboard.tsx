@@ -909,6 +909,7 @@ export default function Dashboard() {
             totalSubjectsCount={totalSubjectsCount}
             totalGradesCount={totalGradesCount}
             plannedGrades={plannedGrades}
+            homework={homework}
             subjects={subjectsForGradeLevel}
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
