@@ -39,34 +39,46 @@ type AddHomeworkDialogProps = {
   onOpenChange: (isOpen: boolean) => void;
   onSubmit: (values: { task: string; dueDate: Date; subjectId: string }) => Promise<void>;
   entry: TimetableEntry & { subjectName?: string };
+  timetable: TimetableEntry[];
 };
 
-const getNthLessonDate = (n: number, lessonDay: number): Date => {
+const getNthLessonDate = (subjectId: string, timetable: TimetableEntry[], n: number): Date => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayIndex = (today.getDay() + 6) % 7; // Monday: 0, ..., Sunday: 6
 
-    // My system uses Mon=0...Fri=4, JS getDay() uses Sun=0...Sat=6
-    const lessonDayJs = lessonDay + 1; // Convert Mon=0..Fri=4 to Mon=1..Fri=5
-    const todayJs = today.getDay();    // Sun=0, Mon=1, Tue=2, ... Sat=6
+    const lessonDaysForSubject = new Set(
+        timetable.filter(e => e.subjectId === subjectId).map(e => e.day)
+    );
 
-    let dayDifference = lessonDayJs - todayJs;
-
-    // If the lesson day in the current week has already passed, or it is today,
-    // we move to the lesson day in the next week.
-    if (dayDifference <= 0) {
-        dayDifference += 7;
+    if (lessonDaysForSubject.size === 0) {
+        const fallback = new Date(today);
+        fallback.setDate(today.getDate() + 7 * n); // Fallback to n weeks later
+        return fallback;
     }
 
-    // For the "second next lesson", add another 7 days
-    const daysToAdd = dayDifference + (n - 1) * 7;
+    let lessonsFoundCount = 0;
+    for (let i = 1; i <= 21; i++) { // Search up to 3 weeks ahead
+        const futureDayIndex = (todayIndex + i) % 7;
+        
+        if (lessonDaysForSubject.has(futureDayIndex)) {
+            lessonsFoundCount++;
+            if (lessonsFoundCount === n) {
+                const dueDate = new Date(today);
+                dueDate.setDate(today.getDate() + i);
+                return dueDate;
+            }
+        }
+    }
 
-    const dueDate = new Date(today);
-    dueDate.setDate(today.getDate() + daysToAdd);
-    return dueDate;
+    // Fallback if not found within 3 weeks
+    const fallback = new Date(today);
+    fallback.setDate(today.getDate() + 7 * n);
+    return fallback;
 };
 
 
-export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: AddHomeworkDialogProps) {
+export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry, timetable }: AddHomeworkDialogProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -87,10 +99,10 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
         dueDateOption: "next",
         customDate: undefined,
       });
-      setNextLessonDate(getNthLessonDate(1, entry.day));
-      setSecondNextLessonDate(getNthLessonDate(2, entry.day));
+      setNextLessonDate(getNthLessonDate(entry.subjectId, timetable, 1));
+      setSecondNextLessonDate(getNthLessonDate(entry.subjectId, timetable, 2));
     }
-  }, [isOpen, form, entry.day]);
+  }, [isOpen, form, entry.subjectId, timetable]);
 
   const { isSubmitting } = form.formState;
 

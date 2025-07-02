@@ -285,6 +285,7 @@ export function TimetablePage({
             onOpenChange={(isOpen) => !isOpen && setDialogState({ type: null, data: {} })}
             onSubmit={onSaveHomework}
             entry={dialogState.data.entry}
+            timetable={timetable}
         />
       )}
     </div>
