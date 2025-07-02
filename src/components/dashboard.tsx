@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot } from "firebase/firestore";
+import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -60,6 +60,7 @@ export default function Dashboard() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
+  const [userFiles, setUserFiles] = useState<FileSystemItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allSchools, setAllSchools] = useState<School[]>([]);
   
@@ -110,6 +111,7 @@ export default function Dashboard() {
       setSubjects([]);
       setGrades([]);
       setStudySets([]);
+      setUserFiles([]);
       setProfile(null);
       setUserName(null);
       return;
@@ -180,6 +182,16 @@ export default function Dashboard() {
       }
     });
     unsubscribers.push(profileUnsub);
+    
+    // --- User Files listener ---
+    const filesQuery = query(collection(db, 'users', user.uid, 'files'), orderBy('createdAt', 'desc'));
+    const filesUnsub = onSnapshot(filesQuery, (snapshot) => {
+        const filesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as FileSystemItem[];
+        setUserFiles(filesData);
+    }, (error) => {
+        console.error("Error fetching files:", error);
+    });
+    unsubscribers.push(filesUnsub);
 
     // --- All schools (one-time fetch) ---
     const fetchSchools = async () => {
@@ -516,6 +528,95 @@ export default function Dashboard() {
     }
   };
 
+  const handleCreateFolder = async (folderName: string, parentId: string | null) => {
+    if (!user || !folderName.trim()) return;
+    try {
+        await addDoc(collection(db, 'users', user.uid, 'files'), {
+            name: folderName.trim(),
+            parentId: parentId,
+            type: 'folder',
+            createdAt: serverTimestamp(),
+        });
+        toast({ title: "Ordner erstellt" });
+    } catch (error) {
+        console.error("Error creating folder:", error);
+        toast({ title: "Fehler beim Erstellen des Ordners", variant: "destructive" });
+    }
+  };
+
+  const handleUploadFiles = async (files: FileList, parentId: string | null) => {
+    if (!user || files.length === 0) return;
+    
+    const uploadPromises = Array.from(files).map(file => {
+        return new Promise<void>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    await addDoc(collection(db, 'users', user.uid, 'files'), {
+                        name: file.name,
+                        parentId: parentId,
+                        type: 'file',
+                        dataUrl: e.target?.result as string,
+                        size: file.size,
+                        fileType: file.type,
+                        createdAt: serverTimestamp(),
+                    });
+                    resolve();
+                } catch(error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    });
+
+    try {
+        await Promise.all(uploadPromises);
+        toast({ title: `${files.length} Datei(en) erfolgreich hochgeladen.` });
+    } catch (error) {
+        console.error("Error uploading files:", error);
+        toast({ title: "Fehler beim Hochladen der Dateien", variant: "destructive" });
+    }
+  };
+
+  const getDescendantIds = (folderId: string, allItems: FileSystemItem[]): string[] => {
+    const children = allItems.filter(item => item.parentId === folderId);
+    let descendantIds: string[] = children.map(child => child.id);
+    children.forEach(child => {
+        if (child.type === 'folder') {
+            descendantIds = [...descendantIds, ...getDescendantIds(child.id, allItems)];
+        }
+    });
+    return descendantIds;
+  };
+
+  const handleDeleteFileSystemItem = async (itemId: string) => {
+    if (!user) return;
+    const itemToDelete = userFiles.find(f => f.id === itemId);
+    if (!itemToDelete) return;
+
+    const batch = writeBatch(db);
+    const itemRef = doc(db, 'users', user.uid, 'files', itemId);
+    batch.delete(itemRef);
+
+    if (itemToDelete.type === 'folder') {
+        const descendantIds = getDescendantIds(itemId, userFiles);
+        descendantIds.forEach(id => {
+            const descendantRef = doc(db, 'users', user.uid, 'files', id);
+            batch.delete(descendantRef);
+        });
+    }
+
+    try {
+        await batch.commit();
+        toast({ title: "Erfolgreich gelöscht", variant: "destructive" });
+    } catch (error) {
+        console.error("Error deleting item:", error);
+        toast({ title: "Fehler beim Löschen", variant: "destructive" });
+    }
+  };
+
 
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
@@ -803,9 +904,10 @@ export default function Dashboard() {
       case 'files':
         return (
           <FileManagementPage
-            subjects={subjectsForGradeLevel}
-            grades={grades}
-            onShowGradeInfo={handleOpenGradeInfoDialog}
+            files={userFiles}
+            onCreateFolder={handleCreateFolder}
+            onUploadFiles={handleUploadFiles}
+            onDeleteItem={handleDeleteFileSystemItem}
           />
         );
       case 'awards':

@@ -140,4 +140,16 @@ export interface School {
   address?: string;
 }
 
+export interface FileSystemItem {
+  id: string;
+  name: string;
+  parentId: string | null;
+  type: 'folder' | 'file';
+  createdAt: Timestamp;
+  // file-specific
+  dataUrl?: string;
+  size?: number; // in bytes
+  fileType?: string; // MIME type
+}
+
 export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit';

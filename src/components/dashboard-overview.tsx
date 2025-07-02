@@ -98,6 +98,7 @@ export function DashboardOverview({
             rowHeight={170}
             draggableHandle=".drag-handle"
             onLayoutChange={onLayoutChange}
+            resizeHandles={['se']}
         >
             <div key="performance">
                 <Card className="h-full w-full flex flex-col">
