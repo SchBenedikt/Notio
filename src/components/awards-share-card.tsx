@@ -40,7 +40,7 @@ export const AwardsShareCard = React.forwardRef<HTMLDivElement, AwardsShareCardP
                  </div>
 
                  <div className="text-center text-xs text-muted-foreground border-t pt-2">
-                    Generated with Gradido
+                    Generated with Noten-Meister
                  </div>
             </div>
         )

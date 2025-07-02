@@ -11,7 +11,7 @@ const fontInter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Gradido",
+  title: "Noten-Meister",
   description: "Dein intelligenter Begleiter für bessere Noten und Lernerfolg.",
 };
 
