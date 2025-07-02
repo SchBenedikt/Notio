@@ -70,10 +70,6 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
       const todayWeekday = (today.getDay() + 6) % 7; // Adjust to 0=Mon
 
       let daysUntilNextLesson = (lessonDay - todayWeekday + 7) % 7;
-      // If the lesson is later today, it's 0. We want the *next* occurrence.
-      if (daysUntilNextLesson === 0) {
-          daysUntilNextLesson = 7;
-      }
 
       const nextLessonDate = new Date(today);
       if (option === 'next') {
