@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -141,11 +142,11 @@ export function DashboardOverview({
           </div>
           <GripVertical className="text-muted-foreground" />
         </CardHeader>
-        <CardContent className="flex-1 w-full flex flex-col items-center justify-center gap-2">
-          <Button onClick={onAddSubject} size="lg" className="w-full">
+        <CardContent className="flex-1 grid gap-2 content-center">
+          <Button onClick={onAddSubject} size="lg">
             <Plus className="mr-3" /> Neues Fach anlegen
           </Button>
-          <Button onClick={() => onNavigate('studysets')} variant="secondary" className="w-full">
+          <Button onClick={() => onNavigate('studysets')} variant="secondary" size="lg">
             <BrainCircuit className="mr-3" /> Zu den Lernsets
           </Button>
         </CardContent>
@@ -225,16 +226,14 @@ export function DashboardOverview({
             </div>
           )}
         </CardContent>
-        <CardFooter className="mt-auto border-t pt-4">
-          <div className="w-full space-y-2">
-            <Button size="sm" className="w-full" onClick={onAddHomework}>
-              <Plus className="mr-2 h-4 w-4" />
-              Hausaufgabe hinzufügen
+        <CardFooter className="mt-auto border-t pt-4 flex items-center justify-between gap-2">
+            <Button size="sm" onClick={onAddHomework}>
+                <Plus className="mr-2 h-4 w-4" />
+                Hinzufügen
             </Button>
-            <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground" onClick={() => onNavigate('timetable')}>
-              Alle Hausaufgaben anzeigen <ArrowRight className="ml-2 h-4 w-4" />
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onNavigate('timetable')}>
+                Alle anzeigen <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-          </div>
         </CardFooter>
       </Card>
     ),
