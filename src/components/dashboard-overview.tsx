@@ -14,13 +14,13 @@ import { de } from "date-fns/locale";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
-    <div className="flex items-center gap-4 rounded-lg bg-background p-4">
-        <div className="p-3 bg-muted rounded-lg">
-            <Icon className="h-5 w-5 text-muted-foreground" />
+    <div className="flex items-center gap-3 rounded-lg bg-background p-3">
+        <div className="p-2 bg-muted rounded-lg">
+            <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-xs font-medium text-muted-foreground">{title}</p>
+            <p className="text-xl font-bold">{value}</p>
         </div>
     </div>
 );
@@ -114,12 +114,12 @@ export function DashboardOverview({
           <div><CardTitle>Deine Leistungsübersicht</CardTitle></div>
           <GripVertical className="text-muted-foreground" />
         </CardHeader>
-        <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 bg-primary/5 rounded-xl flex flex-col justify-center items-center text-center">
+        <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="p-4 sm:p-6 bg-primary/5 rounded-xl flex flex-col justify-center items-center text-center">
             <p className="text-sm font-medium text-primary">Gesamtschnitt</p>
-            <p className="text-6xl font-extrabold text-primary tracking-tight">{overallAverage}</p>
+            <p className="text-5xl sm:text-6xl font-extrabold text-primary tracking-tight">{overallAverage}</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <StatCard title="Hauptfächer" value={mainSubjectsAverage} icon={TrendingUp} />
             <StatCard title="Nebenfächer" value={minorSubjectsAverage} icon={TrendingUp} />
             <StatCard title="Fächer" value={totalSubjectsCount} icon={BookCopy} />
@@ -138,10 +138,10 @@ export function DashboardOverview({
           <GripVertical className="text-muted-foreground" />
         </CardHeader>
         <CardContent className="flex-1 grid gap-2 content-center">
-          <Button onClick={onAddSubject} size="lg">
+          <Button onClick={onAddSubject} size="default">
             <Plus className="mr-3" /> Neues Fach anlegen
           </Button>
-          <Button onClick={() => onNavigate('studysets')} variant="secondary" size="lg">
+          <Button onClick={() => onNavigate('studysets')} variant="secondary" size="default">
             <BrainCircuit className="mr-3" /> Zu den Lernsets
           </Button>
         </CardContent>
@@ -160,7 +160,7 @@ export function DashboardOverview({
           {plannedGrades.length > 0 ? (
             <div className="space-y-3">
               {plannedGrades.slice(0, 4).map(grade => (
-                <div key={grade.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div key={grade.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
                   <div>
                     <p className="font-semibold">{grade.name || grade.type}</p>
                     <p className="text-sm text-muted-foreground">{subjectsMap.get(grade.subjectId) || 'Unbekanntes Fach'}</p>
@@ -201,7 +201,7 @@ export function DashboardOverview({
           {upcomingHomework.length > 0 ? (
             <div className="space-y-3">
               {upcomingHomework.slice(0, 4).map(hw => (
-                <div key={hw.id} className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
+                <div key={hw.id} className="flex items-start justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex-1 overflow-hidden">
                     <p className="font-semibold truncate">{hw.task}</p>
                     <p className="text-sm text-muted-foreground">{subjectsMap.get(hw.subjectId) || 'Unbekanntes Fach'}</p>
@@ -278,3 +278,5 @@ export function DashboardOverview({
     </div>
   );
 }
+
+    
