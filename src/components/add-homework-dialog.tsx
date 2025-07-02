@@ -70,11 +70,17 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
       const todayWeekday = (today.getDay() + 6) % 7; // Adjust to 0=Mon
 
       let daysUntilNextLesson = (lessonDay - todayWeekday + 7) % 7;
+      
+      // If the lesson is today, the "next" lesson is in 7 days
+      if (daysUntilNextLesson === 0) {
+          daysUntilNextLesson = 7;
+      }
 
       const nextLessonDate = new Date(today);
       if (option === 'next') {
           nextLessonDate.setDate(today.getDate() + daysUntilNextLesson);
       } else if (option === 'second') {
+          // "second next lesson" is one week after the "next lesson"
           nextLessonDate.setDate(today.getDate() + daysUntilNextLesson + 7);
       } else if (customDate) {
           return customDate;
