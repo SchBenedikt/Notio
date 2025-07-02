@@ -40,6 +40,7 @@ import { TimetablePage } from "./timetable-page";
 import { AddHomeworkDialog } from "./add-homework-dialog";
 import { SchoolCalendarPage } from "./school-calendar-page";
 import { AddSchoolEventDialog } from "./AddSchoolEventDialog";
+import { DashboardSettingsDialog } from "./dashboard-settings-dialog";
 
 
 const DashboardSkeleton = () => (
@@ -57,6 +58,15 @@ const DashboardSkeleton = () => (
     </div>
   </div>
 );
+
+const defaultWidgets = {
+    performance: true,
+    actions: true,
+    upcoming: true,
+    homework: true,
+    calendar: true,
+    tutor: true,
+};
 
 export default function Dashboard() {
   const { user, isFirebaseEnabled } = useAuth();
@@ -82,10 +92,12 @@ export default function Dashboard() {
   const [userSchoolId, setUserSchoolId] = useState('');
   const [userName, setUserName] = useState<string | null>(null);
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
+  const [dashboardWidgets, setDashboardWidgets] = useState<Record<string, boolean>>(defaultWidgets);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAddHomeworkOpen, setIsAddHomeworkOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isDashboardSettingsOpen, setDashboardSettingsOpen] = useState(false);
   const [view, setView] = useState<AppView>('dashboard');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [viewingStudySetId, setViewingStudySetId] = useState<string | null>(null);
@@ -101,17 +113,17 @@ export default function Dashboard() {
 
   const { toast } = useToast();
 
-  const updateSetting = useCallback(async (key: string, value: any) => {
+  const saveSetting = useCallback(debounce((key: string, value: any) => {
     if (!user || !isFirebaseEnabled) return;
     const settingsDocRef = doc(db, 'users', user.uid, 'settings', 'main');
     try {
       const sanitizedValue = JSON.parse(JSON.stringify({ [key]: value }));
-      await setDoc(settingsDocRef, sanitizedValue, { merge: true });
+      setDoc(settingsDocRef, sanitizedValue, { merge: true });
     } catch (error) {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
     }
-  }, [user, isFirebaseEnabled, toast]);
+  }, 1000), [user, isFirebaseEnabled, toast]);
 
   // Effect for user-level data (profile, settings) and one-time fetches (schools)
   useEffect(() => {
@@ -145,6 +157,7 @@ export default function Dashboard() {
         setIsDarkMode(settingsData.isDarkMode || false);
         setUserRole(settingsData.role || 'student');
         setUserSchoolId(settingsData.schoolId || '');
+        setDashboardWidgets({ ...defaultWidgets, ...(settingsData.dashboardWidgets || {}) });
         const savedLayouts = settingsData.dashboardLayouts;
         if (savedLayouts && Object.keys(savedLayouts).length > 0) {
             const mergedLayouts: Layouts = {};
@@ -171,6 +184,7 @@ export default function Dashboard() {
           role: 'student',
           schoolId: '',
           dashboardLayouts: defaultLayouts,
+          dashboardWidgets: defaultWidgets,
         };
         setDoc(settingsRef, defaultSettings);
       }
@@ -960,14 +974,15 @@ export default function Dashboard() {
       return docRef.id;
   }
   
-  const saveLayouts = useCallback(debounce((newLayouts: Layouts) => {
-    updateSetting('dashboardLayouts', newLayouts);
-  }, 1000), [updateSetting]);
-
   const handleLayoutChange = (currentLayout: ReactGridLayout.Layout[], allLayouts: Layouts) => {
       setLayouts(allLayouts);
-      saveLayouts(allLayouts);
+      saveSetting('dashboardLayouts', allLayouts);
   };
+  
+  const handleWidgetsChange = (newWidgets: Record<string, boolean>) => {
+    setDashboardWidgets(newWidgets);
+    saveSetting('dashboardWidgets', newWidgets);
+  }
 
   const sidebarProps = {
     currentView: view,
@@ -991,6 +1006,7 @@ export default function Dashboard() {
             totalGradesCount={totalGradesCount}
             plannedGrades={plannedGrades}
             homework={homework}
+            schoolEvents={schoolEvents}
             subjects={subjectsForGradeLevel}
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
@@ -998,6 +1014,8 @@ export default function Dashboard() {
             onAddHomework={() => setIsAddHomeworkOpen(true)}
             layouts={layouts}
             onLayoutChange={handleLayoutChange}
+            visibleWidgets={dashboardWidgets}
+            onOpenSettings={() => setDashboardSettingsOpen(true)}
           />
         );
       case 'subjects':
@@ -1122,18 +1140,18 @@ export default function Dashboard() {
                   profile={profile}
                   onUserNameChange={(name) => {
                     setUserName(name);
-                    updateSetting('name', name);
+                    saveSetting('name', name);
                   }}
                   onToggleFollow={onToggleFollow}
                   userRole={userRole}
                   onUserRoleChange={(role) => {
                       setUserRole(role);
-                      updateSetting('role', role);
+                      saveSetting('role', role);
                   }}
                   userSchoolId={userSchoolId}
                   onUserSchoolIdChange={(schoolId) => {
                       setUserSchoolId(schoolId);
-                      updateSetting('schoolId', schoolId);
+                      saveSetting('schoolId', schoolId);
                   }}
                   allSchools={allSchools}
                   onAddSchool={handleAddSchool}
@@ -1161,27 +1179,27 @@ export default function Dashboard() {
             mainSubjectWeight={mainSubjectWeight}
             onMainSubjectWeightChange={(weight) => {
                 setMainSubjectWeight(weight);
-                updateSetting('mainSubjectWeight', weight);
+                saveSetting('mainSubjectWeight', weight);
             }}
             minorSubjectWeight={minorSubjectWeight}
             onMinorSubjectWeightChange={(weight) => {
                 setMinorSubjectWeight(weight);
-                updateSetting('minorSubjectWeight', weight);
+                saveSetting('minorSubjectWeight', weight);
             }}
             maxPeriods={maxPeriods}
             onMaxPeriodsChange={(periods) => {
                 setMaxPeriods(periods);
-                updateSetting('maxPeriods', periods);
+                saveSetting('maxPeriods', periods);
             }}
             theme={theme}
             onThemeChange={(newTheme) => {
                 setTheme(newTheme);
-                updateSetting('theme', newTheme);
+                saveSetting('theme', newTheme);
             }}
             isDarkMode={isDarkMode}
             onIsDarkModeChange={(isDark) => {
                 setIsDarkMode(isDark);
-                updateSetting('isDarkMode', isDark);
+                saveSetting('isDarkMode', isDark);
             }}
         />;
       default:
@@ -1212,7 +1230,7 @@ export default function Dashboard() {
         <AppHeader 
           selectedGradeLevel={selectedGradeLevel}
           onGradeLevelChange={(level) => {
-            updateSetting('selectedGradeLevel', level);
+            saveSetting('selectedGradeLevel', level);
           }}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onLogout={handleLogout}
@@ -1283,6 +1301,12 @@ export default function Dashboard() {
         onSubmit={handleSaveSchoolEvent}
         eventToEdit={schoolEventDialogState.eventToEdit}
         selectedDate={schoolEventDialogState.selectedDate}
+    />
+    <DashboardSettingsDialog
+        isOpen={isDashboardSettingsOpen}
+        onOpenChange={setDashboardSettingsOpen}
+        widgets={dashboardWidgets}
+        onWidgetChange={handleWidgetsChange}
     />
     </div>
   );

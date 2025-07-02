@@ -26,7 +26,7 @@ type SchoolCalendarPageProps = {
   onDeleteEvent: (eventId: string) => void;
 };
 
-const eventTypeColors: Record<SchoolEventType, string> = {
+export const eventTypeColors: Record<SchoolEventType, string> = {
   Prüfung: "bg-red-500",
   Hausaufgabe: "bg-blue-500",
   Ferien: "bg-green-500",
