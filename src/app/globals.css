@@ -343,4 +343,32 @@ body {
   .drag-handle:active {
       cursor: grabbing;
   }
+
+  /* Custom Calendar Styles */
+  .day-with-event {
+    position: relative;
+  }
+  .day-with-event::after {
+    content: '';
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: hsl(var(--primary));
+  }
+  
+  .day-with-range-event {
+    background-color: hsl(var(--accent));
+  }
+  .rdp-day_selected.day-with-range-event,
+  .rdp-day_selected.day-with-range-event:hover {
+      background-color: hsl(var(--primary)) !important;
+      color: hsl(var(--primary-foreground)) !important;
+  }
+   .rdp-day_today.day-with-range-event {
+      color: hsl(var(--accent-foreground));
+   }
 }

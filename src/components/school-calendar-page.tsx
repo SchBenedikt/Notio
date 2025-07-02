@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SchoolEvent, SchoolEventType } from "@/lib/types";
-import { Plus, CalendarDays, Users, GraduationCap, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { format, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { Plus, CalendarDays, MoreVertical, Pencil, Trash2, PartyPopper, Umbrella, Notebook, ClipboardCheck, Info } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { AddSchoolEventDialog } from './AddSchoolEventDialog';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -33,6 +32,14 @@ const eventTypeColors: Record<SchoolEventType, string> = {
   Ferien: "bg-green-500",
   Veranstaltung: "bg-purple-500",
   Sonstiges: "bg-gray-500",
+};
+
+const eventTypeIcons: Record<SchoolEventType, React.ElementType> = {
+  Prüfung: ClipboardCheck,
+  Hausaufgabe: Notebook,
+  Ferien: Umbrella,
+  Veranstaltung: PartyPopper,
+  Sonstiges: Info,
 };
 
 export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGradeLevel, onAddEvent, onEditEvent, onDeleteEvent }: SchoolCalendarPageProps) {
@@ -137,36 +144,44 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGrade
             <ScrollArea className="h-[300px]">
               {selectedDayEvents.length > 0 ? (
                 <ul className="space-y-3">
-                  {selectedDayEvents.map(event => (
-                    <li key={event.id} className="p-3 rounded-md bg-muted/50 border-l-4 group" style={{ borderColor: eventTypeColors[event.type] }}>
-                       <div className="flex justify-between items-start">
-                         <p className="font-semibold">{event.title}</p>
-                         {user?.uid === event.authorId ? (
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => onEditEvent(event)}><Pencil className="mr-2 h-4 w-4" /> Bearbeiten</DropdownMenuItem>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Löschen</DropdownMenuItem></AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader><AlertDialogTitle>Termin löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => onDeleteEvent(event.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </DropdownMenuContent>
-                             </DropdownMenu>
-                         ) : <div className='w-7 h-7 shrink-0' /> }
-                       </div>
-                       <p className="text-sm text-muted-foreground">{event.description}</p>
-                       <div className="flex justify-between items-center mt-2">
-                           <Badge variant="outline" className={cn("text-xs", event.type === "Prüfung" && "border-red-500/50 text-red-600")}>{event.type}</Badge>
-                           <p className="text-xs text-muted-foreground">von {event.authorName}</p>
-                       </div>
-                    </li>
-                  ))}
+                  {selectedDayEvents.map(event => {
+                    const Icon = eventTypeIcons[event.type];
+                    return (
+                        <li key={event.id} className="flex items-start gap-3 group">
+                            <div className={cn("mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white", eventTypeColors[event.type])}>
+                                <Icon className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                    <p className="font-semibold">{event.title}</p>
+                                    {user?.uid === event.authorId ? (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => onEditEvent(event)}><Pencil className="mr-2 h-4 w-4" /> Bearbeiten</DropdownMenuItem>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Löschen</DropdownMenuItem></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Termin löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => onDeleteEvent(event.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    ) : <div className='w-7 h-7 shrink-0' /> }
+                                </div>
+                                {event.description && <p className="text-sm text-muted-foreground">{event.description}</p>}
+                                <div className="flex justify-between items-center mt-1">
+                                    <Badge variant="outline" className="text-xs">{event.type}</Badge>
+                                    <p className="text-xs text-muted-foreground">von {event.authorName}</p>
+                                </div>
+                            </div>
+                        </li>
+                    )
+                  })}
                 </ul>
               ) : (
                 <p className="text-sm text-muted-foreground text-center pt-10">Keine Termine an diesem Tag.</p>
