@@ -37,6 +37,7 @@ import { Skeleton } from "./ui/skeleton";
 import type { Layouts } from "react-grid-layout";
 import { debounce } from "lodash-es";
 import { TimetablePage } from "./timetable-page";
+import { AddHomeworkDialog } from "./add-homework-dialog";
 
 
 const DashboardSkeleton = () => (
@@ -80,6 +81,7 @@ export default function Dashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
+  const [isAddHomeworkOpen, setIsAddHomeworkOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [view, setView] = useState<AppView>('dashboard');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
@@ -914,6 +916,7 @@ export default function Dashboard() {
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
             onAddGrade={handleOpenAddGradeDialog}
+            onAddHomework={() => setIsAddHomeworkOpen(true)}
             layouts={layouts}
             onLayoutChange={handleLayoutChange}
           />
@@ -1176,6 +1179,13 @@ export default function Dashboard() {
             handleCloseGradeInfoDialog();
             handleDeleteGrade(gradeId);
         }}
+      />
+      <AddHomeworkDialog
+        isOpen={isAddHomeworkOpen}
+        onOpenChange={setIsAddHomeworkOpen}
+        onSubmit={handleSaveHomework}
+        subjects={subjectsForGradeLevel}
+        timetable={timetable}
       />
     </div>
   );

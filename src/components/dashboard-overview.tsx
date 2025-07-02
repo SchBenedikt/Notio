@@ -67,6 +67,7 @@ type DashboardOverviewProps = {
   onNavigate: (view: AppView) => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
+  onAddHomework: () => void;
   layouts: Layouts;
   onLayoutChange: (currentLayout: ReactGridLayout.Layout[], allLayouts: Layouts) => void;
 };
@@ -84,6 +85,7 @@ export function DashboardOverview({
     onNavigate,
     onAddSubject,
     onAddGrade,
+    onAddHomework,
     layouts,
     onLayoutChange
 }: DashboardOverviewProps) {
@@ -229,12 +231,20 @@ export function DashboardOverview({
                                 <Notebook className="h-10 w-10 mx-auto text-muted-foreground" />
                                 <p className="mt-4 font-semibold">Keine Hausaufgaben</p>
                                 <p className="text-sm text-muted-foreground">Du hast alle Aufgaben erledigt. Super!</p>
-                                <Button variant="secondary" className="mt-4" onClick={() => onNavigate('timetable')}>
-                                    Zur Hausaufgaben-Seite
-                                </Button>
                             </div>
                         )}
                     </CardContent>
+                    <CardFooter className="mt-auto border-t pt-4">
+                        <div className="w-full space-y-2">
+                            <Button size="sm" className="w-full" onClick={onAddHomework}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Hausaufgabe hinzufügen
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground" onClick={() => onNavigate('timetable')}>
+                                Alle Hausaufgaben anzeigen <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardFooter>
                 </Card>
             </div>
            
