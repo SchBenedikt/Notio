@@ -7,6 +7,8 @@ import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkl
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { CalendarWidget } from "./calendar-widget";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
