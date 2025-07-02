@@ -153,4 +153,22 @@ export interface FileSystemItem {
   fileType?: string; // MIME type
 }
 
-export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit';
+export interface TimetableEntry {
+  id: string;
+  day: number; // 0 for Monday, 4 for Friday
+  period: number;
+  subjectId: string;
+  room?: string;
+}
+
+export interface Homework {
+  id: string;
+  subjectId: string;
+  task: string;
+  dueDate: string; // ISO String
+  isDone: boolean;
+  createdAt: Timestamp;
+}
+
+
+export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'timetable';

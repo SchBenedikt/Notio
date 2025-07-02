@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Homework } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -36,6 +36,7 @@ import { DashboardOverview, defaultLayouts } from "./dashboard-overview";
 import { Skeleton } from "./ui/skeleton";
 import type { Layouts } from "react-grid-layout";
 import { debounce } from "lodash-es";
+import { TimetablePage } from "./timetable-page";
 
 
 const DashboardSkeleton = () => (
@@ -61,6 +62,8 @@ export default function Dashboard() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [userFiles, setUserFiles] = useState<FileSystemItem[]>([]);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [homework, setHomework] = useState<Homework[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allSchools, setAllSchools] = useState<School[]>([]);
   
@@ -112,6 +115,8 @@ export default function Dashboard() {
       setGrades([]);
       setStudySets([]);
       setUserFiles([]);
+      setTimetable([]);
+      setHomework([]);
       setProfile(null);
       setUserName(null);
       return;
@@ -192,6 +197,26 @@ export default function Dashboard() {
         console.error("Error fetching files:", error);
     });
     unsubscribers.push(filesUnsub);
+    
+    // --- Timetable listener ---
+    const timetableQuery = query(collection(db, 'users', user.uid, 'timetable'));
+    const timetableUnsub = onSnapshot(timetableQuery, (snapshot) => {
+        const timetableData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TimetableEntry[];
+        setTimetable(timetableData);
+    }, (error) => {
+        console.error("Error fetching timetable:", error);
+    });
+    unsubscribers.push(timetableUnsub);
+
+    // --- Homework listener ---
+    const homeworkQuery = query(collection(db, 'users', user.uid, 'homework'), orderBy('createdAt', 'desc'));
+    const homeworkUnsub = onSnapshot(homeworkQuery, (snapshot) => {
+        const homeworkData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Homework[];
+        setHomework(homeworkData);
+    }, (error) => {
+        console.error("Error fetching homework:", error);
+    });
+    unsubscribers.push(homeworkUnsub);
 
     // --- All schools (one-time fetch) ---
     const fetchSchools = async () => {
@@ -617,6 +642,67 @@ export default function Dashboard() {
     }
   };
 
+  const handleSaveTimetableEntry = async (day: number, period: number, values: { subjectId: string; room?: string }, entryId?: string) => {
+    if (!user) return;
+    const data = { day, period, ...values };
+    const sanitizedData = JSON.parse(JSON.stringify(data));
+    try {
+        if (entryId) {
+            await setDoc(doc(db, 'users', user.uid, 'timetable', entryId), sanitizedData, { merge: true });
+        } else {
+            await addDoc(collection(db, 'users', user.uid, 'timetable'), sanitizedData);
+        }
+        toast({ title: "Stundenplan gespeichert" });
+    } catch(error) {
+        console.error("Error saving timetable entry:", error);
+        toast({ title: "Fehler beim Speichern der Stunde", variant: "destructive" });
+    }
+  };
+  
+  const handleDeleteTimetableEntry = async (entryId: string) => {
+    if (!user) return;
+    try {
+        await deleteDoc(doc(db, 'users', user.uid, 'timetable', entryId));
+        toast({ title: "Stunde gelöscht", variant: "destructive" });
+    } catch(error) {
+        console.error("Error deleting timetable entry:", error);
+        toast({ title: "Fehler beim Löschen der Stunde", variant: "destructive" });
+    }
+  }
+
+  const handleSaveHomework = async (values: { task: string; dueDate: Date; subjectId: string }) => {
+    if (!user) return;
+    const data = { ...values, dueDate: values.dueDate.toISOString(), isDone: false, createdAt: serverTimestamp() };
+    const sanitizedData = JSON.parse(JSON.stringify(data));
+    try {
+        await addDoc(collection(db, 'users', user.uid, 'homework'), sanitizedData);
+        toast({ title: "Hausaufgabe gespeichert" });
+    } catch(error) {
+        console.error("Error saving homework:", error);
+        toast({ title: "Fehler beim Speichern der Hausaufgabe", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteHomework = async (homeworkId: string) => {
+      if (!user) return;
+      try {
+          await deleteDoc(doc(db, 'users', user.uid, 'homework', homeworkId));
+          toast({ title: "Hausaufgabe gelöscht", variant: "destructive" });
+      } catch(error) {
+          console.error("Error deleting homework:", error);
+          toast({ title: "Fehler beim Löschen der Hausaufgabe", variant: "destructive" });
+      }
+  };
+  
+  const handleToggleHomework = async (homeworkId: string, isDone: boolean) => {
+      if (!user) return;
+      try {
+          await setDoc(doc(db, 'users', user.uid, 'homework', homeworkId), { isDone }, { merge: true });
+      } catch(error) {
+          console.error("Error toggling homework:", error);
+          toast({ title: "Fehler beim Aktualisieren der Hausaufgabe", variant: "destructive" });
+      }
+  };
 
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
@@ -844,6 +930,19 @@ export default function Dashboard() {
             onViewStudySet={handleViewStudySet}
             onEditStudySet={handleNavigateToEditStudySet}
             onDeleteStudySet={handleDeleteStudySet}
+          />
+        );
+      case 'timetable':
+        return (
+          <TimetablePage
+            timetable={timetable}
+            subjects={subjectsForGradeLevel}
+            homework={homework}
+            onSaveEntry={handleSaveTimetableEntry}
+            onDeleteEntry={handleDeleteTimetableEntry}
+            onSaveHomework={handleSaveHomework}
+            onDeleteHomework={handleDeleteHomework}
+            onToggleHomework={handleToggleHomework}
           />
         );
       case 'studysets':
