@@ -206,7 +206,7 @@ export function FileManagementPage({ files, subjects, grades, onCreateFolder, on
                                 </TableCell>
                                 <TableCell className="hidden sm:table-cell">{item.type === 'folder' ? 'Ordner' : 'Datei'}</TableCell>
                                 <TableCell className="hidden md:table-cell">{item.type === 'file' && item.size ? formatBytes(item.size) : '-'}</TableCell>
-                                <TableCell className="hidden md:table-cell">{formatDistanceToNow(item.createdAt.toDate(), { addSuffix: true, locale: de })}</TableCell>
+                                <TableCell className="hidden md:table-cell">{item.createdAt ? formatDistanceToNow(item.createdAt.toDate(), { addSuffix: true, locale: de }) : 'wird erstellt...'}</TableCell>
                                 <TableCell className="text-right">
                                      <DropdownMenu>
                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
