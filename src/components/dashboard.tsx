@@ -203,7 +203,7 @@ export default function Dashboard() {
           uid: user.uid,
           name: user.displayName || 'Neuer Nutzer',
           email: user.email,
-          bio: `Hallo! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`,
+          bio: `Hallo! Ich benutze Notio, um meinen Schulerfolg zu organisieren.`,
           followers: [],
           following: []
         };

@@ -11,7 +11,7 @@ const fontInter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Noten-Meister",
+  title: "Notio",
   description: "Dein intelligenter Begleiter für bessere Noten und Lernerfolg.",
 };
 

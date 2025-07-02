@@ -10,7 +10,7 @@ const features = [
   {
     icon: NotebookText,
     title: "Noten im Griff",
-    description: "Erfasse mühelos alle Noten. Noten-Meister berechnet deine Durchschnitte automatisch und zeigt dir, wo du stehst.",
+    description: "Erfasse mühelos alle Noten. Notio berechnet deine Durchschnitte automatisch und zeigt dir, wo du stehst.",
   },
   {
     icon: BrainCircuit,
@@ -33,7 +33,7 @@ export function LandingPage() {
         <div className="container mx-auto h-20 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <Logo />
-            <h1 className="text-xl font-bold">Noten-Meister</h1>
+            <h1 className="text-xl font-bold">Notio</h1>
           </Link>
           <nav>
             <Button asChild>
@@ -51,7 +51,7 @@ export function LandingPage() {
             Dein Weg zu besseren Noten.
           </h1>
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-10 animate-fade-in-down" style={{ animationDelay: '0.2s' }}>
-            Noten-Meister ist dein KI-Coach, deine Community und dein Motivator – alles in einer App. Organisiere dein Studium, erreiche deine Ziele.
+            Notio ist dein KI-Coach, deine Community und dein Motivator – alles in einer App. Organisiere dein Studium, erreiche deine Ziele.
           </p>
           <div className="flex justify-center items-center gap-4 animate-fade-in-down" style={{ animationDelay: '0.4s' }}>
             <Button size="lg" asChild>
@@ -97,7 +97,7 @@ export function LandingPage() {
           </p>
           <Button size="lg" asChild className="animate-fade-in-down" style={{ animationDelay: '0.4s' }}>
             <Link href="/login">
-              Jetzt kostenlos bei Noten-Meister anmelden <ArrowRight className="ml-2 h-5 w-5" />
+              Jetzt kostenlos bei Notio anmelden <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
         </section>
@@ -106,7 +106,7 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="bg-muted/50 border-t">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Noten-Meister. Alle Rechte vorbehalten.
+          © {new Date().getFullYear()} Notio. Alle Rechte vorbehalten.
         </div>
       </footer>
     </div>

@@ -280,7 +280,7 @@ export function ProfilePage({
         </div>
         <h1 className="text-3xl font-bold">Dein Profil</h1>
         <p className="text-muted-foreground mt-2">
-          Verwalte deine öffentlichen Profildaten und Sicherheitseinstellungen.
+          Verwalte deine persönlichen Daten und Sicherheitseinstellungen.
         </p>
       </div>
 
