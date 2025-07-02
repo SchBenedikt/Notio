@@ -45,20 +45,21 @@ const getNthLessonDate = (n: number, lessonDay: number): Date => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const todayDayOfWeek = (today.getDay() + 6) % 7; // Make Monday 0
-    
-    let daysToAdd = (lessonDay - todayDayOfWeek + 7) % 7;
-    
-    // If the lesson is on the same day of the week as today, the 'next' one is in 7 days.
-    if (daysToAdd === 0) {
-        daysToAdd = 7;
+    // My system uses Mon=0...Fri=4, JS getDay() uses Sun=0...Sat=6
+    const lessonDayJs = lessonDay + 1; // Convert Mon=0..Fri=4 to Mon=1..Fri=5
+    const todayJs = today.getDay();    // Sun=0, Mon=1, Tue=2, ... Sat=6
+
+    let dayDifference = lessonDayJs - todayJs;
+
+    // If the lesson day in the current week has already passed, or it is today,
+    // we move to the lesson day in the next week.
+    if (dayDifference <= 0) {
+        dayDifference += 7;
     }
 
-    // Add extra weeks if n > 1
-    if (n > 1) {
-       daysToAdd += (n - 1) * 7;
-    }
-    
+    // For the "second next lesson", add another 7 days
+    const daysToAdd = dayDifference + (n - 1) * 7;
+
     const dueDate = new Date(today);
     dueDate.setDate(today.getDate() + daysToAdd);
     return dueDate;
