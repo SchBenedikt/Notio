@@ -6,16 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { FileSystemItem } from "@/lib/types";
-import { Folder, File as FileIcon, Upload, Plus, MoreHorizontal, Trash2, Download, Home, ChevronRight, Loader2 } from "lucide-react";
+import type { FileSystemItem, Subject, Grade } from "@/lib/types";
+import { Folder, File as FileIcon, Upload, Plus, MoreHorizontal, Trash2, Download, Home, ChevronRight, Loader2, Lock } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Timestamp } from 'firebase/firestore';
 
 type FileManagementPageProps = {
   files: FileSystemItem[];
+  subjects: Subject[];
+  grades: Grade[];
   onCreateFolder: (folderName: string, parentId: string | null) => Promise<void>;
   onUploadFiles: (files: FileList, parentId: string | null) => Promise<void>;
   onDeleteItem: (itemId: string) => Promise<void>;
@@ -30,7 +33,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-export function FileManagementPage({ files, onCreateFolder, onUploadFiles, onDeleteItem }: FileManagementPageProps) {
+export function FileManagementPage({ files, subjects, grades, onCreateFolder, onUploadFiles, onDeleteItem }: FileManagementPageProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isCreateFolderOpen, setCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -38,11 +41,66 @@ export function FileManagementPage({ files, onCreateFolder, onUploadFiles, onDel
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const allDisplayItems = useMemo(() => {
+    const virtualItems: FileSystemItem[] = [];
+    const subjectsWithAttachments = new Set<string>();
+
+    grades.forEach(grade => {
+        if (grade.attachments && grade.attachments.length > 0) {
+            subjectsWithAttachments.add(grade.subjectId);
+        }
+    });
+
+    if (subjectsWithAttachments.size > 0) {
+        virtualItems.push({
+            id: 'readonly-attachments-root',
+            name: 'Noten-Anhänge',
+            parentId: null,
+            type: 'folder',
+            createdAt: Timestamp.fromMillis(0),
+            isReadOnly: true,
+        });
+
+        subjects.forEach(subject => {
+            if (subjectsWithAttachments.has(subject.id)) {
+                virtualItems.push({
+                    id: `readonly-subject-${subject.id}`,
+                    name: subject.name,
+                    parentId: 'readonly-attachments-root',
+                    type: 'folder',
+                    createdAt: Timestamp.fromMillis(0),
+                    isReadOnly: true,
+                });
+            }
+        });
+
+        grades.forEach(grade => {
+            if (grade.attachments && grade.attachments.length > 0) {
+                grade.attachments.forEach((att, index) => {
+                    virtualItems.push({
+                        id: `readonly-attachment-${grade.id}-${index}`,
+                        name: att.name,
+                        parentId: `readonly-subject-${grade.subjectId}`,
+                        type: 'file',
+                        dataUrl: att.dataUrl,
+                        size: 0,
+                        fileType: 'unknown',
+                        createdAt: new Timestamp(new Date(grade.date).getTime() / 1000, 0),
+                        isReadOnly: true,
+                    });
+                });
+            }
+        });
+    }
+    
+    return [...files, ...virtualItems];
+  }, [files, subjects, grades]);
+
   const breadcrumbs = useMemo(() => {
-    const path = [];
+    const path: FileSystemItem[] = [];
     let currentId: string | null = currentFolderId;
     while (currentId) {
-        const folder = files.find(f => f.id === currentId && f.type === 'folder');
+        const folder = allDisplayItems.find(f => f.id === currentId && f.type === 'folder');
         if (folder) {
             path.unshift(folder);
             currentId = folder.parentId;
@@ -51,18 +109,26 @@ export function FileManagementPage({ files, onCreateFolder, onUploadFiles, onDel
         }
     }
     return path;
-  }, [currentFolderId, files]);
+  }, [currentFolderId, allDisplayItems]);
   
   const itemsInCurrentFolder = useMemo(() => {
-    return files
+    return allDisplayItems
         .filter(item => item.parentId === currentFolderId)
         .sort((a,b) => {
+            if (a.isReadOnly && !b.isReadOnly) return 1;
+            if (!a.isReadOnly && b.isReadOnly) return -1;
             if (a.type === 'folder' && b.type === 'file') return -1;
             if (a.type === 'file' && b.type === 'folder') return 1;
             return a.name.localeCompare(b.name);
         });
-  }, [files, currentFolderId]);
+  }, [allDisplayItems, currentFolderId]);
   
+  const isReadOnlyFolder = useMemo(() => {
+    if (!currentFolderId) return false;
+    const current = allDisplayItems.find(i => i.id === currentFolderId);
+    return !!current?.isReadOnly;
+  }, [currentFolderId, allDisplayItems]);
+
   const handleCreateFolderClick = async () => {
     if (!newFolderName.trim()) {
         toast({ title: "Ordnername darf nicht leer sein", variant: "destructive" });
@@ -94,10 +160,10 @@ export function FileManagementPage({ files, onCreateFolder, onUploadFiles, onDel
           </p>
         </div>
         <div className='flex items-center gap-2'>
-            <Button onClick={() => setCreateFolderOpen(true)} variant="outline">
+            <Button onClick={() => setCreateFolderOpen(true)} variant="outline" disabled={isReadOnlyFolder}>
                 <Plus className="mr-2 h-4 w-4" /> Neuer Ordner
             </Button>
-            <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+            <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading || isReadOnlyFolder}>
                 {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                 Hochladen
             </Button>
@@ -133,6 +199,7 @@ export function FileManagementPage({ files, onCreateFolder, onUploadFiles, onDel
                             <TableRow key={item.id} onDoubleClick={() => item.type === 'folder' && setCurrentFolderId(item.id)} className={cn(item.type === 'folder' && 'cursor-pointer')}>
                                 <TableCell className="font-medium">
                                     <button onClick={() => item.type === 'folder' && setCurrentFolderId(item.id)} className="flex items-center gap-2 w-full text-left">
+                                        {item.isReadOnly && <Lock className="h-4 w-4 text-amber-500 shrink-0" />}
                                         {item.type === 'folder' ? <Folder className="h-4 w-4 text-yellow-500" /> : <FileIcon className="h-4 w-4 text-muted-foreground" />}
                                         <span className='truncate'>{item.name}</span>
                                     </button>
@@ -145,18 +212,20 @@ export function FileManagementPage({ files, onCreateFolder, onUploadFiles, onDel
                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             {item.type === 'file' && <DropdownMenuItem asChild><a href={item.dataUrl} download={item.name}><Download className="mr-2 h-4 w-4" />Herunterladen</a></DropdownMenuItem>}
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Löschen</DropdownMenuItem>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Wirklich löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden. Wenn du einen Ordner löschst, wird sein gesamter Inhalt ebenfalls entfernt.</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => onDeleteItem(item.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            {!item.isReadOnly && (
+                                              <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Löschen</DropdownMenuItem>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                      <AlertDialogHeader><AlertDialogTitle>Wirklich löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden. Wenn du einen Ordner löschst, wird sein gesamter Inhalt ebenfalls entfernt.</AlertDialogDescription></AlertDialogHeader>
+                                                      <AlertDialogFooter>
+                                                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                                          <AlertDialogAction onClick={() => onDeleteItem(item.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                                                      </AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                              </AlertDialog>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>

@@ -146,6 +146,7 @@ export interface FileSystemItem {
   parentId: string | null;
   type: 'folder' | 'file';
   createdAt: Timestamp;
+  isReadOnly?: boolean;
   // file-specific
   dataUrl?: string;
   size?: number; // in bytes

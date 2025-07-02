@@ -905,6 +905,8 @@ export default function Dashboard() {
         return (
           <FileManagementPage
             files={userFiles}
+            subjects={subjectsForGradeLevel}
+            grades={grades}
             onCreateFolder={handleCreateFolder}
             onUploadFiles={handleUploadFiles}
             onDeleteItem={handleDeleteFileSystemItem}
