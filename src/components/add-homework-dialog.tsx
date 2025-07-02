@@ -15,6 +15,7 @@ import { de } from "date-fns/locale";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { Label } from "./ui/label";
 import type { TimetableEntry } from "@/lib/types";
 
 const formSchema = z.object({
@@ -48,7 +49,7 @@ const getNthLessonDate = (n: number, lessonDay: number): Date => {
     
     let daysToAdd = (lessonDay - todayDayOfWeek + 7) % 7;
     
-    // If the lesson is today, the 'next' (1st) one is in 7 days.
+    // If the lesson is on the same day of the week as today, the 'next' one is in 7 days.
     if (daysToAdd === 0) {
         daysToAdd = 7;
     }
