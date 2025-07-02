@@ -175,11 +175,6 @@ export function TimetablePage({
     setDialogState({ type: 'edit-entry', data: { day, period, entryToEdit: entry } });
   };
   
-  const handleOpenHomeworkDialog = (entry: TimetableEntry) => {
-    const subject = subjectsMap.get(entry.subjectId);
-    setDialogState({ type: 'add-homework', data: { entry: {...entry, subjectName: subject?.name} } });
-  }
-
   return (
     <div className="space-y-6">
        <div className="space-y-1">
@@ -238,7 +233,18 @@ export function TimetablePage({
         </TabsContent>
         <TabsContent value="homework" className="mt-4">
             <Card>
-                 <CardHeader><CardTitle>Hausaufgabenübersicht</CardTitle><CardDescription>Alle deine anstehenden und erledigten Aufgaben.</CardDescription></CardHeader>
+                 <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>Hausaufgabenübersicht</CardTitle>
+                            <CardDescription>Alle deine anstehenden und erledigten Aufgaben.</CardDescription>
+                        </div>
+                        <Button onClick={() => setDialogState({ type: 'add-homework', data: {} })}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Neue Hausaufgabe
+                        </Button>
+                    </div>
+                 </CardHeader>
                  <CardContent className="space-y-6">
                     {Object.values(homeworkGroups).every(g => g.length === 0) && homework.filter(h => h.isDone).length === 0 ? (
                         <p className="text-center text-muted-foreground py-10">Keine Hausaufgaben vorhanden.</p>
@@ -274,7 +280,7 @@ export function TimetablePage({
             isOpen={true}
             onOpenChange={(isOpen) => !isOpen && setDialogState({ type: null, data: {} })}
             onSubmit={onSaveHomework}
-            entry={dialogState.data.entry}
+            subjects={subjects}
             timetable={timetable}
         />
       )}
