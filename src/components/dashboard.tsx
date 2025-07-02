@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem } from "@/lib/types";
