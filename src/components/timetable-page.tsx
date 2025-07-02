@@ -13,6 +13,30 @@ import { EditTimetableEntryDialog } from './edit-timetable-entry-dialog';
 import { AddHomeworkDialog } from './add-homework-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+const subjectColors = [
+  { background: 'bg-red-50 dark:bg-red-900/30', border: 'border-red-200 dark:border-red-700/50', text: 'text-red-800 dark:text-red-200' },
+  { background: 'bg-green-50 dark:bg-green-900/30', border: 'border-green-200 dark:border-green-700/50', text: 'text-green-800 dark:text-green-200' },
+  { background: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-blue-200 dark:border-blue-700/50', text: 'text-blue-800 dark:text-blue-200' },
+  { background: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-yellow-200 dark:border-yellow-700/50', text: 'text-yellow-800 dark:text-yellow-200' },
+  { background: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-purple-200 dark:border-purple-700/50', text: 'text-purple-800 dark:text-purple-200' },
+  { background: 'bg-pink-50 dark:bg-pink-900/30', border: 'border-pink-200 dark:border-pink-700/50', text: 'text-pink-800 dark:text-pink-200' },
+  { background: 'bg-indigo-50 dark:bg-indigo-900/30', border: 'border-indigo-200 dark:border-indigo-700/50', text: 'text-indigo-800 dark:text-indigo-200' },
+  { background: 'bg-teal-50 dark:bg-teal-900/30', border: 'border-teal-200 dark:border-teal-700/50', text: 'text-teal-800 dark:text-teal-200' },
+  { background: 'bg-orange-50 dark:bg-orange-900/30', border: 'border-orange-200 dark:border-orange-700/50', text: 'text-orange-800 dark:text-orange-200' },
+  { background: 'bg-cyan-50 dark:bg-cyan-900/30', border: 'border-cyan-200 dark:border-cyan-700/50', text: 'text-cyan-800 dark:text-cyan-200' },
+];
+
+const getSubjectColor = (subjectId: string) => {
+  let hash = 0;
+  for (let i = 0; i < subjectId.length; i++) {
+    const char = subjectId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  const index = Math.abs(hash % subjectColors.length);
+  return subjectColors[index];
+};
+
 
 type HomeworkListProps = {
     title: string;
@@ -191,7 +215,7 @@ export function TimetablePage({
         </TabsList>
         <TabsContent value="timetable" className="mt-4">
             <Card>
-                <CardContent className="p-2 overflow-x-auto">
+                <CardContent className="p-2 overflow-x-auto bg-card">
                     <div className="grid grid-cols-[auto_repeat(5,minmax(140px,1fr))] gap-1 min-w-[800px]">
                         <div />
                         {days.map(day => (
@@ -204,23 +228,37 @@ export function TimetablePage({
                                 {days.map((_, dayIndex) => {
                                     const entry = timetableMap.get(`${dayIndex}-${period}`);
                                     const subject = entry ? subjectsMap.get(entry.subjectId) : null;
+                                    const subjectColor = entry && subject ? getSubjectColor(subject.id) : null;
 
                                     return (
-                                        <div key={`${dayIndex}-${period}`} className="border rounded-md p-2 min-h-[100px] bg-muted/30 flex flex-col">
+                                        <div
+                                            key={`${dayIndex}-${period}`}
+                                            className={cn(
+                                            "border rounded-md min-h-[100px] flex flex-col group/cell",
+                                            subjectColor
+                                                ? `${subjectColor.background} ${subjectColor.border}`
+                                                : "bg-muted/20"
+                                            )}
+                                        >
                                             {entry && subject ? (
-                                                <div 
-                                                    className="flex-1 cursor-pointer hover:bg-muted/50 -m-2 p-2 rounded-md"
-                                                    onClick={() => handleOpenEditDialog(dayIndex, period, entry)}
-                                                >
-                                                    <p className="font-bold text-sm">{subject.name}</p>
-                                                    {entry.room && <p className="text-xs text-muted-foreground">{entry.room}</p>}
-                                                </div>
+                                            <div
+                                                className="flex-1 cursor-pointer -m-2 p-2 rounded-md flex flex-col"
+                                                onClick={() => handleOpenEditDialog(dayIndex, period, entry)}
+                                            >
+                                                <p className={cn("font-bold text-sm flex-1", subjectColor?.text)}>{subject.name}</p>
+                                                {entry.room && <p className="text-xs text-muted-foreground mt-auto pt-1">{entry.room}</p>}
+                                            </div>
                                             ) : (
-                                                <div className="flex items-center justify-center h-full">
-                                                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(dayIndex, period)}>
-                                                        <Plus className="h-5 w-5 text-muted-foreground" />
-                                                    </Button>
-                                                </div>
+                                            <div className="flex items-center justify-center h-full">
+                                                <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleOpenEditDialog(dayIndex, period)}
+                                                className="opacity-0 group-hover/cell:opacity-100 transition-opacity"
+                                                >
+                                                <Plus className="h-5 w-5 text-muted-foreground" />
+                                                </Button>
+                                            </div>
                                             )}
                                         </div>
                                     )
