@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SchoolEvent, SchoolEventType } from "@/lib/types";
-import { Plus, CalendarDays, Users, GraduationCap } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { Plus, CalendarDays, Users, GraduationCap, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { format, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { AddSchoolEventDialog } from './AddSchoolEventDialog';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 
 
 type SchoolCalendarPageProps = {
@@ -19,7 +22,9 @@ type SchoolCalendarPageProps = {
   schoolName: string | null;
   events: SchoolEvent[];
   selectedGradeLevel: number;
-  onAddEvent: (eventData: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>) => Promise<void>;
+  onAddEvent: (selectedDate: Date) => void;
+  onEditEvent: (event: SchoolEvent) => void;
+  onDeleteEvent: (eventId: string) => void;
 };
 
 const eventTypeColors: Record<SchoolEventType, string> = {
@@ -30,9 +35,9 @@ const eventTypeColors: Record<SchoolEventType, string> = {
   Sonstiges: "bg-gray-500",
 };
 
-export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGradeLevel, onAddEvent }: SchoolCalendarPageProps) {
+export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGradeLevel, onAddEvent, onEditEvent, onDeleteEvent }: SchoolCalendarPageProps) {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isAddEventOpen, setAddEventOpen] = useState(false);
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
@@ -46,22 +51,31 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGrade
     });
   }, [events, selectedGradeLevel]);
 
-  const eventDates = useMemo(() => {
-    return filteredEvents.map(event => new Date(event.date));
+  const eventModifiers = useMemo(() => {
+    const holidays = [];
+    const singleDays = [];
+    for (const event of filteredEvents) {
+        if (event.type === 'Ferien' && event.endDate) {
+            holidays.push({ from: new Date(event.date), to: new Date(event.endDate) });
+        } else {
+            singleDays.push(new Date(event.date));
+        }
+    }
+    return { holidays, singleDays };
   }, [filteredEvents]);
 
   const selectedDayEvents = useMemo(() => {
     return filteredEvents
-      .filter(event => isSameDay(new Date(event.date), selectedDate))
+      .filter(event => {
+          const eventStart = startOfDay(new Date(event.date));
+          const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : endOfDay(eventStart);
+          return isWithinInterval(selectedDate, { start: eventStart, end: eventEnd });
+      })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredEvents, selectedDate]);
   
   const handleDayClick = (day: Date) => {
     setSelectedDate(day);
-  };
-  
-  const handleAddEventSubmit = async (values: any) => {
-    await onAddEvent(values);
   };
 
   if (!schoolId || !schoolName) {
@@ -88,7 +102,7 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGrade
             Geteilte Termine für alle an deiner Schule.
           </p>
         </div>
-        <Button onClick={() => setAddEventOpen(true)}>
+        <Button onClick={() => onAddEvent(selectedDate)}>
             <Plus className="mr-2 h-4 w-4" />
             Neuer Termin
         </Button>
@@ -103,18 +117,13 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGrade
               onSelect={(day) => day && handleDayClick(day)}
               className="w-full"
               locale={de}
-              modifiers={{ events: eventDates }}
-              modifiersClassNames={{ events: 'day-with-event' }}
-              components={{
-                DayContent: (props) => {
-                   const dayEvents = filteredEvents.filter(event => isSameDay(new Date(event.date), props.date));
-                   return (
-                     <div className="relative h-full w-full flex items-center justify-center">
-                       <span>{format(props.date, 'd')}</span>
-                       {dayEvents.length > 0 && <div className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />}
-                     </div>
-                   );
-                }
+              modifiers={{ 
+                holidays: eventModifiers.holidays,
+                events: eventModifiers.singleDays,
+              }}
+              modifiersClassNames={{ 
+                holidays: 'day-with-range-event', 
+                events: 'day-with-event' 
               }}
             />
           </CardContent>
@@ -129,15 +138,27 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGrade
               {selectedDayEvents.length > 0 ? (
                 <ul className="space-y-3">
                   {selectedDayEvents.map(event => (
-                    <li key={event.id} className="p-3 rounded-md bg-muted/50 border-l-4" style={{ borderColor: eventTypeColors[event.type] }}>
+                    <li key={event.id} className="p-3 rounded-md bg-muted/50 border-l-4 group" style={{ borderColor: eventTypeColors[event.type] }}>
                        <div className="flex justify-between items-start">
                          <p className="font-semibold">{event.title}</p>
-                         <Badge variant="secondary" className="text-xs">
-                           {event.target === 'school' ? 
-                           <Users className="h-3 w-3 mr-1.5" /> : 
-                           <GraduationCap className="h-3 w-3 mr-1.5" />}
-                           {event.target === 'school' ? 'Schule' : `Kl. ${event.gradeLevel}`}
-                         </Badge>
+                         {user?.uid === event.authorId ? (
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => onEditEvent(event)}><Pencil className="mr-2 h-4 w-4" /> Bearbeiten</DropdownMenuItem>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Löschen</DropdownMenuItem></AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader><AlertDialogTitle>Termin löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => onDeleteEvent(event.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </DropdownMenuContent>
+                             </DropdownMenu>
+                         ) : <div className='w-7 h-7 shrink-0' /> }
                        </div>
                        <p className="text-sm text-muted-foreground">{event.description}</p>
                        <div className="flex justify-between items-center mt-2">
@@ -155,12 +176,6 @@ export function SchoolCalendarPage({ schoolId, schoolName, events, selectedGrade
         </Card>
       </div>
     </div>
-    <AddSchoolEventDialog 
-        isOpen={isAddEventOpen}
-        onOpenChange={setAddEventOpen}
-        onSubmit={handleAddEventSubmit}
-        selectedDate={selectedDate}
-    />
     </>
   );
 }

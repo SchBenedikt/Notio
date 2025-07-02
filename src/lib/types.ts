@@ -149,7 +149,8 @@ export interface SchoolEvent {
   authorName: string;
   title: string;
   description?: string;
-  date: string; // ISO String
+  date: string; // ISO String for start date
+  endDate?: string; // Optional ISO String for end date
   type: SchoolEventType;
   target: 'school' | 'gradeLevel';
   gradeLevel?: number; // Only if target is 'gradeLevel'

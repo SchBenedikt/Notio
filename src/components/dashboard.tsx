@@ -39,6 +39,7 @@ import { debounce } from "lodash-es";
 import { TimetablePage } from "./timetable-page";
 import { AddHomeworkDialog } from "./add-homework-dialog";
 import { SchoolCalendarPage } from "./school-calendar-page";
+import { AddSchoolEventDialog } from "./AddSchoolEventDialog";
 
 
 const DashboardSkeleton = () => (
@@ -94,6 +95,7 @@ export default function Dashboard() {
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
   const [editSubjectState, setEditSubjectState] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
   const [gradeInfoDialogState, setGradeInfoDialogState] = useState<{isOpen: boolean, grade: Grade | null, subject: Subject | null}>({isOpen: false, grade: null, subject: null});
+  const [schoolEventDialogState, setSchoolEventDialogState] = useState<{isOpen: boolean, eventToEdit?: SchoolEvent | null, selectedDate?: Date}>({isOpen: false});
   
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -733,31 +735,61 @@ export default function Dashboard() {
       }
   };
   
-  const handleAddSchoolEvent = async (values: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>) => {
+  const handleSaveSchoolEvent = async (values: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>, eventId?: string) => {
     if (!user || !userSchoolId) {
         toast({ title: "Aktion nicht möglich", description: "Du musst einer Schule zugeordnet sein.", variant: 'destructive' });
         return;
     }
     
-    const eventData = {
-      ...values,
-      schoolId: userSchoolId,
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonym',
-      createdAt: serverTimestamp(),
-      date: values.date.toISOString(),
-      ...(values.target === 'gradeLevel' && { gradeLevel: selectedGradeLevel }),
-    };
+    if (eventId) {
+        // Update existing event
+        const eventRef = doc(db, 'schools', userSchoolId, 'events', eventId);
+        const eventToUpdate = schoolEvents.find(e => e.id === eventId);
+        if (eventToUpdate?.authorId !== user.uid) {
+            toast({ title: "Keine Berechtigung", description: "Du kannst nur deine eigenen Termine bearbeiten.", variant: 'destructive' });
+            return;
+        }
+        await updateDoc(eventRef, JSON.parse(JSON.stringify(values)));
+        toast({ title: "Ereignis aktualisiert" });
 
-    try {
-        const sanitizedData = JSON.parse(JSON.stringify(eventData));
-        await addDoc(collection(db, 'schools', userSchoolId, 'events'), sanitizedData);
-        toast({ title: "Ereignis erstellt", description: "Das Ereignis wurde dem Schulkalender hinzugefügt." });
-    } catch (error) {
-        console.error("Error adding school event:", error);
-        toast({ title: "Fehler", description: "Das Ereignis konnte nicht erstellt werden.", variant: 'destructive' });
+    } else {
+        // Create new event
+        const eventData = {
+          ...values,
+          schoolId: userSchoolId,
+          authorId: user.uid,
+          authorName: user.displayName || 'Anonym',
+          createdAt: serverTimestamp(),
+          ...(values.target === 'gradeLevel' && { gradeLevel: selectedGradeLevel }),
+        };
+
+        try {
+            const sanitizedData = JSON.parse(JSON.stringify(eventData));
+            await addDoc(collection(db, 'schools', userSchoolId, 'events'), sanitizedData);
+            toast({ title: "Ereignis erstellt", description: "Das Ereignis wurde dem Schulkalender hinzugefügt." });
+        } catch (error) {
+            console.error("Error adding school event:", error);
+            toast({ title: "Fehler", description: "Das Ereignis konnte nicht erstellt werden.", variant: 'destructive' });
+        }
     }
-};
+  };
+
+  const handleDeleteSchoolEvent = async (eventId: string) => {
+    if (!user || !userSchoolId) return;
+    const eventRef = doc(db, 'schools', userSchoolId, 'events', eventId);
+    const eventToDelete = schoolEvents.find(e => e.id === eventId);
+     if (eventToDelete?.authorId !== user.uid) {
+        toast({ title: "Keine Berechtigung", description: "Du kannst nur deine eigenen Termine löschen.", variant: 'destructive' });
+        return;
+    }
+    try {
+        await deleteDoc(eventRef);
+        toast({ title: "Ereignis gelöscht", variant: 'destructive' });
+    } catch(error) {
+        console.error("Error deleting school event:", error);
+        toast({ title: "Fehler", description: "Das Ereignis konnte nicht gelöscht werden.", variant: 'destructive' });
+    }
+  };
 
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
@@ -1011,7 +1043,9 @@ export default function Dashboard() {
             schoolName={school?.name || null}
             events={schoolEvents}
             selectedGradeLevel={selectedGradeLevel}
-            onAddEvent={handleAddSchoolEvent}
+            onAddEvent={(selectedDate) => setSchoolEventDialogState({isOpen: true, selectedDate: selectedDate})}
+            onEditEvent={(event) => setSchoolEventDialogState({isOpen: true, eventToEdit: event})}
+            onDeleteEvent={handleDeleteSchoolEvent}
         />;
       case 'studysets':
         return <StudySetsPage 
@@ -1243,6 +1277,13 @@ export default function Dashboard() {
         subjects={subjectsForGradeLevel}
         timetable={timetable}
       />
+       <AddSchoolEventDialog 
+        isOpen={schoolEventDialogState.isOpen}
+        onOpenChange={(isOpen) => setSchoolEventDialogState({ isOpen })}
+        onSubmit={handleSaveSchoolEvent}
+        eventToEdit={schoolEventDialogState.eventToEdit}
+        selectedDate={schoolEventDialogState.selectedDate}
+    />
     </div>
   );
 }

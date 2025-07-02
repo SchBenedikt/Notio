@@ -25,21 +25,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "./ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import type { SchoolEventType } from "@/lib/types";
+import type { SchoolEvent, SchoolEventType } from "@/lib/types";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import type { DateRange } from "react-day-picker";
 
 const eventTypes: SchoolEventType[] = ["Prüfung", "Hausaufgabe", "Ferien", "Veranstaltung", "Sonstiges"];
 
 const formSchema = z.object({
   title: z.string().min(2, "Titel muss mindestens 2 Zeichen lang sein.").max(50),
-  date: z.date({
-    required_error: "Ein Datum ist erforderlich.",
-  }),
+  date: z.date().optional(),
+  dateRange: z.custom<DateRange>().optional(),
   type: z.enum(eventTypes, {
     required_error: "Du musst einen Ereignistyp auswählen.",
   }),
@@ -47,44 +47,82 @@ const formSchema = z.object({
     required_error: "Bitte wähle eine Zielgruppe aus."
   }),
   description: z.string().max(200, "Beschreibung darf nicht länger als 200 Zeichen sein.").optional(),
+}).refine((data) => {
+    if (data.type === 'Ferien') {
+        return !!data.dateRange?.from;
+    }
+    return !!data.date;
+}, {
+    message: "Ein Datum ist erforderlich.",
+    path: ["date"],
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 type AddSchoolEventDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmit: (values: z.infer<typeof formSchema>) => Promise<void>;
+  onSubmit: (values: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>, eventId?: string) => Promise<void>;
+  eventToEdit?: SchoolEvent | null;
   selectedDate?: Date;
 };
 
-export function AddSchoolEventDialog({ isOpen, onOpenChange, onSubmit, selectedDate }: AddSchoolEventDialogProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
+export function AddSchoolEventDialog({ isOpen, onOpenChange, onSubmit, eventToEdit, selectedDate }: AddSchoolEventDialogProps) {
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
   });
 
+  const eventType = form.watch("type");
+
   useEffect(() => {
     if (isOpen) {
-      form.reset({
-        title: "",
-        description: "",
-        type: "Prüfung",
-        date: selectedDate || new Date(),
-        target: 'school',
-      });
+        if (eventToEdit) {
+            form.reset({
+                title: eventToEdit.title,
+                description: eventToEdit.description || "",
+                type: eventToEdit.type,
+                target: eventToEdit.target,
+                ...(eventToEdit.type === 'Ferien'
+                    ? { dateRange: { from: new Date(eventToEdit.date), to: eventToEdit.endDate ? new Date(eventToEdit.endDate) : undefined } }
+                    : { date: new Date(eventToEdit.date) }
+                ),
+            });
+        } else {
+            form.reset({
+                title: "",
+                description: "",
+                type: "Prüfung",
+                date: selectedDate || new Date(),
+                dateRange: { from: selectedDate || new Date(), to: addDays(selectedDate || new Date(), 7) },
+                target: 'school',
+            });
+        }
     }
-  }, [isOpen, selectedDate, form]);
+  }, [isOpen, eventToEdit, selectedDate, form]);
 
   const { isSubmitting } = form.formState;
 
-  const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onSubmit(values);
+  const handleFormSubmit = async (values: FormValues) => {
+    const submissionData = {
+        title: values.title,
+        description: values.description,
+        type: values.type,
+        target: values.target,
+        date: (values.type === 'Ferien' ? values.dateRange!.from! : values.date!).toISOString(),
+        endDate: values.type === 'Ferien' ? (values.dateRange!.to?.toISOString() || values.dateRange!.from!.toISOString()) : undefined,
+    } as Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>;
+    
+    await onSubmit(submissionData, eventToEdit?.id);
     onOpenChange(false);
   };
+  
+  const dialogTitle = eventToEdit ? 'Schulereignis bearbeiten' : 'Neues Schulereignis erstellen';
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Neues Schulereignis erstellen</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>Füge einen neuen Termin für deine Schule hinzu. Wähle aus, wer ihn sehen kann.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -100,32 +138,78 @@ export function AddSchoolEventDialog({ isOpen, onOpenChange, onSubmit, selectedD
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Datum</FormLabel>
-                    <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, "PPP", { locale: de }) : <span>Wähle ein Datum</span>}
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {eventType === 'Ferien' ? (
+                 <FormField
+                  control={form.control}
+                  name="dateRange"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Zeitraum</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value?.from ? (
+                                field.value.to ? (
+                                  <>
+                                    {format(field.value.from, "LLL dd, y")} -{" "}
+                                    {format(field.value.to, "LLL dd, y")}
+                                  </>
+                                ) : (
+                                  format(field.value.from, "LLL dd, y")
+                                )
+                              ) : (
+                                <span>Wähle einen Zeitraum</span>
+                              )}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="range"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                            locale={de}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            ) : (
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Datum</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value ? format(field.value, "PPP", { locale: de }) : <span>Wähle ein Datum</span>}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={de} />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
             <FormField
                 control={form.control}
                 name="type"
