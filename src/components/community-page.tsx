@@ -176,7 +176,7 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
   };
 
   const toggleComments = (postId: string) => {
-    setVisibleComments(prev => prev === postId ? null : postId);
+    setVisibleComments(prev => prev === postId ? null : prev);
   };
 
   const removeSelectedAttachment = (indexToRemove: number) => {
