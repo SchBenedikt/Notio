@@ -126,8 +126,8 @@ export function DashboardOverview({
             <StatCard title="Noten" value={totalGradesCount} icon={CheckCircle} />
           </div>
         </CardContent>
-        <CardFooter>
-          <Button variant="ghost" className="text-muted-foreground" onClick={() => onNavigate('subjects')}>
+        <CardFooter className="border-t pt-4 justify-end">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onNavigate('subjects')}>
             Alle Fächer im Detail ansehen <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardFooter>
