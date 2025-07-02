@@ -37,8 +37,32 @@ type AddHomeworkDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSubmit: (values: { task: string; dueDate: Date; subjectId: string }) => Promise<void>;
-  entry: TimetableEntry;
+  entry: TimetableEntry & { subjectName?: string };
 };
+
+const getNthLessonDate = (n: number, lessonDay: number): Date => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayDayOfWeek = (today.getDay() + 6) % 7; // Make Monday 0
+    
+    let daysToAdd = (lessonDay - todayDayOfWeek + 7) % 7;
+    
+    // If the lesson is today, the 'next' (1st) one is in 7 days.
+    if (daysToAdd === 0) {
+        daysToAdd = 7;
+    }
+
+    // Add extra weeks if n > 1
+    if (n > 1) {
+       daysToAdd += (n - 1) * 7;
+    }
+    
+    const dueDate = new Date(today);
+    dueDate.setDate(today.getDate() + daysToAdd);
+    return dueDate;
+};
+
 
 export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: AddHomeworkDialogProps) {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -49,6 +73,9 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
     }
   });
 
+  const [nextLessonDate, setNextLessonDate] = useState(new Date());
+  const [secondNextLessonDate, setSecondNextLessonDate] = useState(new Date());
+
   const dueDateOption = form.watch("dueDateOption");
 
   useEffect(() => {
@@ -58,38 +85,26 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
         dueDateOption: "next",
         customDate: undefined,
       });
+      setNextLessonDate(getNthLessonDate(1, entry.day));
+      setSecondNextLessonDate(getNthLessonDate(2, entry.day));
     }
-  }, [isOpen, form]);
+  }, [isOpen, form, entry.day]);
 
   const { isSubmitting } = form.formState;
-  
-  const calculateDueDate = (option: 'next' | 'second' | 'custom', customDate?: Date): Date => {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const lessonDay = entry.day; // 0=Mon, 1=Tue etc.
-      const todayWeekday = (today.getDay() + 6) % 7; // Adjust to 0=Mon
-
-      let daysUntilNextLesson = (lessonDay - todayWeekday + 7) % 7;
-      
-      // If the lesson is today, the "next" lesson is in 7 days
-      if (daysUntilNextLesson === 0) {
-          daysUntilNextLesson = 7;
-      }
-
-      const nextLessonDate = new Date(today);
-      if (option === 'next') {
-          nextLessonDate.setDate(today.getDate() + daysUntilNextLesson);
-      } else if (option === 'second') {
-          // "second next lesson" is one week after the "next lesson"
-          nextLessonDate.setDate(today.getDate() + daysUntilNextLesson + 7);
-      } else if (customDate) {
-          return customDate;
-      }
-      return nextLessonDate;
-  }
 
   const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
-    const dueDate = calculateDueDate(values.dueDateOption, values.customDate);
+    let dueDate: Date;
+    switch(values.dueDateOption) {
+        case 'next':
+            dueDate = nextLessonDate;
+            break;
+        case 'second':
+            dueDate = secondNextLessonDate;
+            break;
+        case 'custom':
+            dueDate = values.customDate!;
+            break;
+    }
     await onSubmit({ task: values.task, dueDate, subjectId: entry.subjectId });
     onOpenChange(false);
   };
@@ -99,7 +114,7 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Neue Hausaufgabe</DialogTitle>
-          <DialogDescription>Füge eine neue Hausaufgabe für diese Stunde hinzu.</DialogDescription>
+          <DialogDescription>Füge eine neue Hausaufgabe für {entry.subjectName || 'diese Stunde'} hinzu.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
@@ -123,17 +138,23 @@ export function AddHomeworkDialog({ isOpen, onOpenChange, onSubmit, entry }: Add
                   <FormLabel>Fällig</FormLabel>
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="next" /></FormControl>
-                        <FormLabel className="font-normal">Nächste Stunde</FormLabel>
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border has-[:checked]:bg-muted">
+                        <FormControl><RadioGroupItem value="next" id="due-next" /></FormControl>
+                        <Label htmlFor="due-next" className="font-normal w-full cursor-pointer">
+                            Nächste Stunde
+                            <span className="text-muted-foreground block text-xs">({format(nextLessonDate, "eeee, dd.MM.yyyy", { locale: de })})</span>
+                        </Label>
                       </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="second" /></FormControl>
-                        <FormLabel className="font-normal">In der 2. nächsten Stunde</FormLabel>
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border has-[:checked]:bg-muted">
+                        <FormControl><RadioGroupItem value="second" id="due-second" /></FormControl>
+                        <Label htmlFor="due-second" className="font-normal w-full cursor-pointer">
+                            In der 2. nächsten Stunde
+                             <span className="text-muted-foreground block text-xs">({format(secondNextLessonDate, "eeee, dd.MM.yyyy", { locale: de })})</span>
+                        </Label>
                       </FormItem>
-                       <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="custom" /></FormControl>
-                        <FormLabel className="font-normal">Datum wählen</FormLabel>
+                       <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border has-[:checked]:bg-muted">
+                        <FormControl><RadioGroupItem value="custom" id="due-custom"/></FormControl>
+                        <Label htmlFor="due-custom" className="font-normal w-full cursor-pointer">Datum wählen</Label>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>

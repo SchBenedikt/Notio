@@ -176,7 +176,8 @@ export function TimetablePage({
   };
   
   const handleOpenHomeworkDialog = (entry: TimetableEntry) => {
-    setDialogState({ type: 'add-homework', data: { entry } });
+    const subject = subjectsMap.get(entry.subjectId);
+    setDialogState({ type: 'add-homework', data: { entry: {...entry, subjectName: subject?.name} } });
   }
 
   return (
