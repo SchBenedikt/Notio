@@ -2,10 +2,10 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, serverTimestamp, arrayUnion, arrayRemove, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Post, Profile, StudySet, School } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -90,174 +90,175 @@ export default function Dashboard() {
 
   const { toast } = useToast();
 
-  const settingsDocRef = useMemo(() => user ? doc(db, 'users', user.uid, 'settings', 'main') : null, [user]);
-
   const updateSetting = useCallback(async (key: string, value: any) => {
-    if (!user || !isFirebaseEnabled || !settingsDocRef) return;
+    if (!user || !isFirebaseEnabled) return;
+    const settingsDocRef = doc(db, 'users', user.uid, 'settings', 'main');
     try {
-      await setDoc(settingsDocRef, { [key]: value }, { merge: true });
+      const sanitizedValue = JSON.parse(JSON.stringify({ [key]: value }));
+      await setDoc(settingsDocRef, sanitizedValue, { merge: true });
     } catch (error) {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
     }
-  }, [user, settingsDocRef, toast, isFirebaseEnabled]);
+  }, [user, isFirebaseEnabled, toast]);
 
-
+  // Effect for user-level data (profile, settings) and one-time fetches (schools)
   useEffect(() => {
-    if (isFirebaseEnabled && user) {
-        setDataLoading(true);
-
-        const fetchData = async () => {
-          try {
-             // Parallelize non-dependent fetches
-            const profilePromise = getDoc(doc(db, 'profiles', user.uid));
-            const schoolsPromise = getDocs(query(collection(db, 'schools')));
-            const settingsPromise = settingsDocRef ? getDoc(settingsDocRef) : Promise.resolve(null);
-            
-            const [
-              profileSnap,
-              schoolsSnap,
-              settingsSnap,
-            ] = await Promise.all([
-              profilePromise,
-              schoolsPromise,
-              settingsPromise
-            ]);
-
-            let gradeLevelFromSettings = 10;
-            // Process Settings
-            if(settingsSnap && settingsSnap.exists()) {
-              const settingsData = settingsSnap.data();
-              gradeLevelFromSettings = settingsData.selectedGradeLevel || 10;
-              setSelectedGradeLevel(gradeLevelFromSettings);
-              setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
-              setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
-              setTheme(settingsData.theme || 'blue');
-              setIsDarkMode(settingsData.isDarkMode || false);
-              setUserRole(settingsData.role || 'student');
-              setUserSchoolId(settingsData.schoolId || '');
-              const savedLayouts = settingsData.dashboardLayouts;
-              if (savedLayouts) {
-                  // Merge with default to ensure all widgets are present if new ones are added
-                  const mergedLayouts: Layouts = {};
-                  for (const breakpoint in defaultLayouts) {
-                      mergedLayouts[breakpoint] = defaultLayouts[breakpoint as keyof typeof defaultLayouts].map(defaultItem => {
-                          const savedItem = savedLayouts[breakpoint]?.find((item: { i: string; }) => item.i === defaultItem.i);
-                          return savedItem || defaultItem;
-                      });
-                  }
-                  setLayouts(mergedLayouts);
-              } else {
-                  setLayouts(defaultLayouts);
-              }
-            } else if (settingsDocRef) {
-               const defaultSettings = {
-                selectedGradeLevel: 10,
-                mainSubjectWeight: 2,
-                minorSubjectWeight: 1,
-                theme: 'blue',
-                isDarkMode: false,
-                role: 'student',
-                schoolId: '',
-                dashboardLayouts: defaultLayouts,
-              };
-              await setDoc(settingsDocRef, defaultSettings);
-              setSelectedGradeLevel(defaultSettings.selectedGradeLevel);
-              setMainSubjectWeight(defaultSettings.mainSubjectWeight);
-              setMinorSubjectWeight(defaultSettings.minorSubjectWeight);
-              setTheme(defaultSettings.theme);
-              setIsDarkMode(defaultSettings.isDarkMode);
-              setUserRole(defaultSettings.role as 'student' | 'teacher');
-              setUserSchoolId(defaultSettings.schoolId);
-              setLayouts(defaultSettings.dashboardLayouts);
-            }
-
-            const subjectsPromise = getDocs(query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', gradeLevelFromSettings)));
-            const studySetsPromise = getDocs(query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', gradeLevelFromSettings)));
-
-            const [
-              subjectsSnap,
-              studySetsSnap,
-            ] = await Promise.all([
-              subjectsPromise,
-              studySetsPromise
-            ]);
-
-
-            // Process Profile
-            if (profileSnap.exists()) {
-                const profileData = profileSnap.data() as Profile;
-                setProfile(profileData);
-                setUserName(profileData.name);
-            } else {
-                 const newProfileData = {
-                    uid: user.uid,
-                    name: user.displayName || 'Neuer Nutzer',
-                    email: user.email,
-                    bio: `Hallo! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`,
-                    followers: [],
-                    following: []
-                 };
-                 await setDoc(doc(db, 'profiles', user.uid), newProfileData);
-                 setProfile(newProfileData as Profile);
-                 setUserName(newProfileData.name);
-            }
-            
-            // Process All Schools
-            const schoolsData = schoolsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
-            setAllSchools(schoolsData.sort((a, b) => a.name.localeCompare(b.name)));
-            
-            // Process Subjects
-            const subjectsData = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
-            setSubjects(subjectsData);
-            
-            // Fetch and process Grades (dependent on subjects)
-            if (subjectsData.length > 0) {
-              const subjectIds = subjectsData.map(s => s.id);
-              const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
-              const gradesSnap = await getDocs(gradesQuery);
-              const gradesData = gradesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Grade[];
-              setGrades(gradesData);
-            } else {
-              setGrades([]);
-            }
-
-            // Process Study Sets
-            const studySetsData = studySetsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as StudySet[];
-            setStudySets(studySetsData);
-
-          } catch (error) {
-            console.error("Error fetching data:", error);
-            toast({ title: "Fehler beim Laden der Daten", variant: "destructive" });
-          } finally {
-            setDataLoading(false);
-          }
-        };
-        
-        fetchData();
-
-        // Subscribe to profile changes
-        const unsubProfile = onSnapshot(doc(db, 'profiles', user.uid), (doc) => {
-            if (doc.exists()) {
-                setProfile(doc.data() as Profile);
-                setUserName(doc.data().name);
-            }
-        });
-        
-        return () => {
-          unsubProfile();
-        };
-
-    } else {
-        // Demo mode: not logged in or firebase disabled
-        setDataLoading(true);
-        setSubjects([]);
-        setGrades([]);
-        setStudySets([]);
-        setAllSchools([]);
-        setDataLoading(false);
+    if (!isFirebaseEnabled || !user) {
+      setDataLoading(false);
+      // Reset state for demo mode or logged out user
+      setSubjects([]);
+      setGrades([]);
+      setStudySets([]);
+      setProfile(null);
+      setUserName(null);
+      return;
     }
-  }, [user, selectedGradeLevel, settingsDocRef, toast, isFirebaseEnabled]);
+
+    const unsubscribers: (() => void)[] = [];
+
+    // --- Settings listener ---
+    const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
+    const settingsUnsub = onSnapshot(settingsRef, (settingsSnap) => {
+      if (settingsSnap.exists()) {
+        const settingsData = settingsSnap.data();
+        setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
+        setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
+        setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
+        setTheme(settingsData.theme || 'blue');
+        setIsDarkMode(settingsData.isDarkMode || false);
+        setUserRole(settingsData.role || 'student');
+        setUserSchoolId(settingsData.schoolId || '');
+        const savedLayouts = settingsData.dashboardLayouts;
+        if (savedLayouts && Object.keys(savedLayouts).length > 0) {
+            const mergedLayouts: Layouts = {};
+            for (const breakpoint in defaultLayouts) {
+                if(Object.prototype.hasOwnProperty.call(defaultLayouts, breakpoint)) {
+                     mergedLayouts[breakpoint as keyof typeof defaultLayouts] = defaultLayouts[breakpoint as keyof typeof defaultLayouts].map(defaultItem => {
+                        const savedItem = savedLayouts[breakpoint]?.find((item: { i: string; }) => item.i === defaultItem.i);
+                        return savedItem || defaultItem;
+                    });
+                }
+            }
+            setLayouts(mergedLayouts);
+        } else {
+            setLayouts(defaultLayouts);
+        }
+      } else {
+        const defaultSettings = {
+          selectedGradeLevel: 10,
+          mainSubjectWeight: 2,
+          minorSubjectWeight: 1,
+          theme: 'blue',
+          isDarkMode: false,
+          role: 'student',
+          schoolId: '',
+          dashboardLayouts: defaultLayouts,
+        };
+        setDoc(settingsRef, defaultSettings);
+      }
+    });
+    unsubscribers.push(settingsUnsub);
+
+    // --- Profile listener ---
+    const profileRef = doc(db, 'profiles', user.uid);
+    const profileUnsub = onSnapshot(profileRef, (profileSnap) => {
+      if (profileSnap.exists()) {
+        const profileData = profileSnap.data() as Profile;
+        setProfile(profileData);
+        setUserName(profileData.name);
+      } else {
+        const newProfileData = {
+          uid: user.uid,
+          name: user.displayName || 'Neuer Nutzer',
+          email: user.email,
+          bio: `Hallo! Ich benutze Gradido, um meinen Schulerfolg zu organisieren.`,
+          followers: [],
+          following: []
+        };
+        setDoc(profileRef, newProfileData);
+      }
+    });
+    unsubscribers.push(profileUnsub);
+
+    // --- All schools (one-time fetch) ---
+    const fetchSchools = async () => {
+        const schoolsQuery = query(collection(db, 'schools'));
+        const schoolsSnap = await getDocs(schoolsQuery);
+        const schoolsData = schoolsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as School[];
+        setAllSchools(schoolsData.sort((a, b) => a.name.localeCompare(b.name)));
+    };
+    fetchSchools();
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [isFirebaseEnabled, user]);
+
+  // Effect for grade-level dependent data (subjects, study sets)
+  useEffect(() => {
+    if (!isFirebaseEnabled || !user) return;
+    
+    setDataLoading(true);
+    const unsubscribers: (() => void)[] = [];
+
+    // --- Subjects listener ---
+    const subjectsQuery = query(collection(db, 'users', user.uid, 'subjects'), where('gradeLevel', '==', selectedGradeLevel));
+    const subjectsUnsub = onSnapshot(subjectsQuery, (snapshot) => {
+      const subjectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Subject[];
+      setSubjects(subjectsData);
+    }, (error) => {
+      console.error("Error fetching subjects:", error);
+      toast({ title: "Fehler beim Laden der Fächer", variant: "destructive" });
+    });
+    unsubscribers.push(subjectsUnsub);
+
+    // --- Study Sets listener ---
+    const studySetsQuery = query(collection(db, 'users', user.uid, 'studySets'), where('gradeLevel', '==', selectedGradeLevel));
+    const studySetsUnsub = onSnapshot(studySetsQuery, (snapshot) => {
+        const studySetsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as StudySet[];
+        setStudySets(studySetsData);
+    }, (error) => {
+        console.error("Error fetching study sets:", error);
+    });
+    unsubscribers.push(studySetsUnsub);
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+      setSubjects([]);
+      setStudySets([]);
+    };
+  }, [isFirebaseEnabled, user, selectedGradeLevel, toast]);
+
+  // Effect for grades, dependent on subjects
+  useEffect(() => {
+    if (!isFirebaseEnabled || !user) return;
+
+    if (subjects.length === 0) {
+      setGrades([]);
+      setDataLoading(false);
+      return;
+    }
+    
+    const subjectIds = subjects.map(s => s.id);
+    // Firestore 'in' query limit is 30. We'll assume a user has less than 30 subjects per grade level.
+    const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
+    
+    const gradesUnsub = onSnapshot(gradesQuery, (snapshot) => {
+        const gradesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Grade[];
+        setGrades(gradesData);
+        setDataLoading(false);
+    }, (error) => {
+        console.error("Error fetching grades:", error);
+        toast({ title: "Fehler beim Laden der Noten", variant: "destructive" });
+        setDataLoading(false);
+    });
+
+    return () => {
+        gradesUnsub();
+        setGrades([]);
+    };
+  }, [isFirebaseEnabled, user, subjects, toast]);
 
 
   useEffect(() => {
@@ -312,14 +313,6 @@ export default function Dashboard() {
     return calculateCategoryAverage(minorSubjects, grades);
   }, [minorSubjects, grades]);
   
-  const writtenGradesCount = useMemo(() => {
-    return grades.filter(g => g.type === 'Schulaufgabe' && g.value != null).length;
-  }, [grades]);
-
-  const oralGradesCount = useMemo(() => {
-     return grades.filter(g => g.type === 'mündliche Note' && g.value != null).length;
-  }, [grades]);
-
   const totalSubjectsCount = useMemo(() => {
     return subjectsForGradeLevel.length;
   }, [subjectsForGradeLevel]);
@@ -350,24 +343,24 @@ export default function Dashboard() {
       gradeLevel: selectedGradeLevel,
       name: values.name,
       category: values.category,
-      ...(values.targetGrade && { targetGrade: values.targetGrade }),
-      ...(values.category === 'Hauptfach' && { writtenWeight: 2, oralWeight: 1 }),
+      targetGrade: values.targetGrade || null,
+      writtenWeight: values.category === 'Hauptfach' ? 2 : null,
+      oralWeight: values.category === 'Hauptfach' ? 1 : null,
     };
 
     if (!isFirebaseEnabled || !user) {
-      const newSubject: Subject = { id: `local-${Date.now()}`, ...newSubjectData };
+      const newSubject: Subject = { id: `local-${Date.now()}`, ...newSubjectData } as Subject;
       setSubjects(s => [...s, newSubject]);
       toast({ title: "Fach hinzugefügt (Demo)", description: "Im Demo-Modus werden Daten nicht gespeichert." });
       return;
     }
     
     try {
-        const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), newSubjectData);
-        const newSubject: Subject = { id: docRef.id, ...newSubjectData } as Subject;
-        setSubjects([...subjects, newSubject]);
+        const sanitizedData = JSON.parse(JSON.stringify(newSubjectData));
+        await addDoc(collection(db, 'users', user.uid, 'subjects'), sanitizedData);
         toast({
             title: "Fach hinzugefügt",
-            description: `Das Fach "${newSubject.name}" wurde erfolgreich erstellt.`,
+            description: `Das Fach "${values.name}" wurde erfolgreich erstellt.`,
         });
     } catch (error) {
         console.error("Error adding subject: ", error);
@@ -387,11 +380,6 @@ export default function Dashboard() {
     try {
         const sanitizedValues = JSON.parse(JSON.stringify(updatedValues));
         await setDoc(subjectDocRef, sanitizedValues, { merge: true });
-        setSubjects(currentSubjects => 
-            currentSubjects.map(s => 
-                s.id === subjectId ? { ...s, ...updatedValues } : s
-            )
-        );
         toast({
           title: "Fach aktualisiert",
           description: `Die Einstellungen für das Fach wurden gespeichert.`,
@@ -426,8 +414,6 @@ export default function Dashboard() {
       
       await batch.commit();
 
-      setSubjects(subjects.filter((s) => s.id !== subjectId));
-      setGrades(grades.filter((g) => g.subjectId !== subjectId));
       toast({
         title: "Fach gelöscht",
         description: `${subjectName} und alle zugehörigen Noten wurden gelöscht.`,
@@ -464,16 +450,9 @@ export default function Dashboard() {
       if (gradeId) {
         const gradeDocRef = doc(db, 'users', user.uid, 'grades', gradeId);
         await setDoc(gradeDocRef, sanitizedGradeData, { merge: true });
-        setGrades(currentGrades =>
-          currentGrades.map(g =>
-            g.id === gradeId ? { ...g, id: g.id, ...gradeData } as Grade : g
-          )
-        );
         toast({ title: "Note aktualisiert", description: "Die Änderungen an der Note wurden gespeichert." });
       } else {
-        const docRef = await addDoc(collection(db, 'users', user.uid, 'grades'), sanitizedGradeData);
-        const newGrade: Grade = { id: docRef.id, ...gradeData } as Grade;
-        setGrades([...grades, newGrade]);
+        await addDoc(collection(db, 'users', user.uid, 'grades'), sanitizedGradeData);
         toast({ title: "Note hinzugefügt", description: `Eine neue Note wurde erfolgreich gespeichert.` });
       }
     } catch (error) {
@@ -492,7 +471,6 @@ export default function Dashboard() {
 
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'grades', gradeId));
-      setGrades(grades.filter((g) => g.id !== gradeId));
       toast({
         title: "Note gelöscht",
         description: `Die ausgewählte Note wurde entfernt.`,
@@ -515,11 +493,9 @@ export default function Dashboard() {
         if (setId) {
             const setRef = doc(db, 'users', user.uid, 'studySets', setId);
             await setDoc(setRef, sanitizedData, { merge: true });
-            setStudySets(currentSets => currentSets.map(s => s.id === setId ? { ...s, ...data } as StudySet : s));
             toast({ title: "Lernset aktualisiert" });
         } else {
-            const setRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), sanitizedData);
-            setStudySets(currentSets => [...currentSets, { id: setRef.id, ...data } as StudySet]);
+            await addDoc(collection(db, 'users', user.uid, 'studySets'), sanitizedData);
             toast({ title: "Lernset erstellt" });
         }
     } catch (error) {
@@ -533,7 +509,6 @@ export default function Dashboard() {
     if (!user || !isFirebaseEnabled) return;
     try {
         await deleteDoc(doc(db, 'users', user.uid, 'studySets', setId));
-        setStudySets(currentSets => currentSets.filter(s => s.id !== setId));
         toast({ title: "Lernset gelöscht", variant: "destructive" });
     } catch (error) {
         console.error("Error deleting study set:", error);
@@ -712,8 +687,7 @@ export default function Dashboard() {
   }
   
   const saveLayouts = useCallback(debounce((newLayouts: Layouts) => {
-    const sanitizedLayouts = JSON.parse(JSON.stringify(newLayouts));
-    updateSetting('dashboardLayouts', sanitizedLayouts);
+    updateSetting('dashboardLayouts', newLayouts);
   }, 1000), [updateSetting]);
 
   const handleLayoutChange = (currentLayout: ReactGridLayout.Layout[], allLayouts: Layouts) => {
@@ -843,6 +817,7 @@ export default function Dashboard() {
                   profile={profile}
                   onUserNameChange={(name) => {
                     setUserName(name);
+                    updateSetting('name', name);
                   }}
                   onToggleFollow={onToggleFollow}
                   userRole={userRole}
@@ -927,7 +902,6 @@ export default function Dashboard() {
         <AppHeader 
           selectedGradeLevel={selectedGradeLevel}
           onGradeLevelChange={(level) => {
-            setSelectedGradeLevel(level);
             updateSetting('selectedGradeLevel', level);
           }}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
