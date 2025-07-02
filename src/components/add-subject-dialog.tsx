@@ -38,7 +38,7 @@ const formSchema = z.object({
 type AddSubjectFormProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmit: (values: AddSubjectData) => void;
+  onSubmit: (values: AddSubjectData) => Promise<void>;
 };
 
 export function AddSubjectDialog({ isOpen, onOpenChange, onSubmit }: AddSubjectFormProps) {
@@ -51,8 +51,8 @@ export function AddSubjectDialog({ isOpen, onOpenChange, onSubmit }: AddSubjectF
     },
   });
 
-  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
+  const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
+    await onSubmit(values);
     form.reset();
     onOpenChange(false);
   };

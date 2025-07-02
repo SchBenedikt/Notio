@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Weight, Palette } from 'lucide-react';
+import { Settings, Weight, Palette, CalendarClock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 
@@ -13,6 +13,8 @@ type SettingsPageProps = {
   onMainSubjectWeightChange: (weight: number) => void;
   minorSubjectWeight: number;
   onMinorSubjectWeightChange: (weight: number) => void;
+  maxPeriods: number;
+  onMaxPeriodsChange: (periods: number) => void;
   theme: string;
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
@@ -35,6 +37,8 @@ export function SettingsPage({
     onMainSubjectWeightChange,
     minorSubjectWeight,
     onMinorSubjectWeightChange,
+    maxPeriods,
+    onMaxPeriodsChange,
     theme,
     onThemeChange,
     isDarkMode,
@@ -44,6 +48,13 @@ export function SettingsPage({
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
         const num = Number(value);
         if (!isNaN(num) && num >= 0) {
+            setter(num);
+        }
+    };
+    
+    const handlePeriodsChange = (setter: (periods: number) => void, value: string) => {
+        const num = parseInt(value, 10);
+        if (!isNaN(num) && num > 0 && num <= 12) {
             setter(num);
         }
     };
@@ -91,6 +102,30 @@ export function SettingsPage({
                             step="0.5"
                             value={minorSubjectWeight}
                             onChange={(e) => handleWeightChange(onMinorSubjectWeightChange, e.target.value)}
+                            className="w-24"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5 text-muted-foreground" />Stundenplan</CardTitle>
+                    <CardDescription>
+                        Passe die Einstellungen für deinen Stundenplan an.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-3 border rounded-md">
+                        <Label htmlFor="max-periods" className="font-medium">Maximale Stunden pro Tag</Label>
+                        <Input
+                            id="max-periods"
+                            type="number"
+                            min="1"
+                            max="12"
+                            step="1"
+                            value={maxPeriods}
+                            onChange={(e) => handlePeriodsChange(onMaxPeriodsChange, e.target.value)}
                             className="w-24"
                         />
                     </div>

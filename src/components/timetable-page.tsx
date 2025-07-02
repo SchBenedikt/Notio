@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from './ui/checkbox';
-import type { TimetableEntry, Subject, Homework } from "@/lib/types";
+import type { TimetableEntry, Subject, Homework, AddSubjectData } from "@/lib/types";
 import { Plus, Notebook, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -16,30 +16,35 @@ type TimetablePageProps = {
   timetable: TimetableEntry[];
   subjects: Subject[];
   homework: Homework[];
+  maxPeriods: number;
   onSaveEntry: (day: number, period: number, values: { subjectId: string; room?: string }, entryId?: string) => Promise<void>;
   onDeleteEntry: (entryId: string) => Promise<void>;
   onSaveHomework: (values: { task: string; dueDate: Date; subjectId: string }) => Promise<void>;
   onDeleteHomework: (homeworkId: string) => Promise<void>;
   onToggleHomework: (homeworkId: string, isDone: boolean) => Promise<void>;
+  onAddSubject: (values: AddSubjectData) => Promise<string>;
 };
 
 const days = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
-const periods = Array.from({ length: 10 }, (_, i) => i + 1);
 
 export function TimetablePage({ 
     timetable, 
     subjects, 
     homework,
+    maxPeriods,
     onSaveEntry,
     onDeleteEntry,
     onSaveHomework,
     onDeleteHomework,
-    onToggleHomework
+    onToggleHomework,
+    onAddSubject
 }: TimetablePageProps) {
   const [dialogState, setDialogState] = useState<{
     type: 'edit-entry' | 'add-homework' | null;
     data: any;
   }>({ type: null, data: {} });
+  
+  const periods = useMemo(() => Array.from({ length: maxPeriods }, (_, i) => i + 1), [maxPeriods]);
   
   const subjectsMap = useMemo(() => new Map(subjects.map(s => [s.id, s])), [subjects]);
   const timetableMap = useMemo(() => {
@@ -80,8 +85,8 @@ export function TimetablePage({
           </p>
         </div>
       <Card>
-        <CardContent className="p-2">
-            <div className="grid grid-cols-[auto_repeat(5,1fr)] gap-1">
+        <CardContent className="p-2 overflow-x-auto">
+            <div className="grid grid-cols-[auto_repeat(5,minmax(140px,1fr))] gap-1 min-w-[800px]">
                 <div />
                 {days.map(day => (
                     <div key={day} className="text-center font-semibold p-2 text-sm">{day}</div>
@@ -156,14 +161,17 @@ export function TimetablePage({
         </CardContent>
       </Card>
       
-      <EditTimetableEntryDialog
-        isOpen={dialogState.type === 'edit-entry'}
-        onOpenChange={(isOpen) => !isOpen && setDialogState({ type: null, data: {} })}
-        onSubmit={(values) => onSaveEntry(dialogState.data.day, dialogState.data.period, values, dialogState.data.entryToEdit?.id)}
-        onDelete={() => onDeleteEntry(dialogState.data.entryToEdit.id)}
-        entryToEdit={dialogState.data.entryToEdit}
-        subjects={subjects}
-      />
+      {dialogState.type === 'edit-entry' && (
+        <EditTimetableEntryDialog
+            isOpen={true}
+            onOpenChange={(isOpen) => !isOpen && setDialogState({ type: null, data: {} })}
+            onSubmit={(values) => onSaveEntry(dialogState.data.day, dialogState.data.period, values, dialogState.data.entryToEdit?.id)}
+            onDelete={() => onDeleteEntry(dialogState.data.entryToEdit.id)}
+            onAddSubject={onAddSubject}
+            entryToEdit={dialogState.data.entryToEdit}
+            subjects={subjects}
+        />
+      )}
       
       {dialogState.type === 'add-homework' && (
         <AddHomeworkDialog

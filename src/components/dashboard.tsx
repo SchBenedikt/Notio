@@ -71,6 +71,7 @@ export default function Dashboard() {
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
   const [mainSubjectWeight, setMainSubjectWeight] = useState<number>(2);
   const [minorSubjectWeight, setMinorSubjectWeight] = useState<number>(1);
+  const [maxPeriods, setMaxPeriods] = useState<number>(10);
   const [theme, setTheme] = useState<string>("blue");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
@@ -132,6 +133,7 @@ export default function Dashboard() {
         setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
         setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
         setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
+        setMaxPeriods(settingsData.maxPeriods || 10);
         setTheme(settingsData.theme || 'blue');
         setIsDarkMode(settingsData.isDarkMode || false);
         setUserRole(settingsData.role || 'student');
@@ -156,6 +158,7 @@ export default function Dashboard() {
           selectedGradeLevel: 10,
           mainSubjectWeight: 2,
           minorSubjectWeight: 1,
+          maxPeriods: 10,
           theme: 'blue',
           isDarkMode: false,
           role: 'student',
@@ -375,7 +378,7 @@ export default function Dashboard() {
     });
   }, [subjectsForGradeLevel, grades, overallAverage]);
 
-  const handleAddSubject = async (values: AddSubjectData) => {
+  const handleAddSubject = async (values: AddSubjectData): Promise<string> => {
     const newSubjectData = {
       gradeLevel: selectedGradeLevel,
       name: values.name,
@@ -386,22 +389,25 @@ export default function Dashboard() {
     };
 
     if (!isFirebaseEnabled || !user) {
-      const newSubject: Subject = { id: `local-${Date.now()}`, ...newSubjectData } as Subject;
+      const newId = `local-${Date.now()}`;
+      const newSubject: Subject = { id: newId, ...newSubjectData } as Subject;
       setSubjects(s => [...s, newSubject]);
       toast({ title: "Fach hinzugefügt (Demo)", description: "Im Demo-Modus werden Daten nicht gespeichert." });
-      return;
+      return newId;
     }
     
     try {
         const sanitizedData = JSON.parse(JSON.stringify(newSubjectData));
-        await addDoc(collection(db, 'users', user.uid, 'subjects'), sanitizedData);
+        const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), sanitizedData);
         toast({
             title: "Fach hinzugefügt",
             description: `Das Fach "${values.name}" wurde erfolgreich erstellt.`,
         });
+        return docRef.id;
     } catch (error) {
         console.error("Error adding subject: ", error);
         toast({ title: "Fehler beim Hinzufügen des Fachs", variant: "destructive"});
+        throw error;
     }
   };
 
@@ -938,11 +944,13 @@ export default function Dashboard() {
             timetable={timetable}
             subjects={subjectsForGradeLevel}
             homework={homework}
+            maxPeriods={maxPeriods}
             onSaveEntry={handleSaveTimetableEntry}
             onDeleteEntry={handleDeleteTimetableEntry}
             onSaveHomework={handleSaveHomework}
             onDeleteHomework={handleDeleteHomework}
             onToggleHomework={handleToggleHomework}
+            onAddSubject={handleAddSubject}
           />
         );
       case 'studysets':
@@ -1065,6 +1073,11 @@ export default function Dashboard() {
             onMinorSubjectWeightChange={(weight) => {
                 setMinorSubjectWeight(weight);
                 updateSetting('minorSubjectWeight', weight);
+            }}
+            maxPeriods={maxPeriods}
+            onMaxPeriodsChange={(periods) => {
+                setMaxPeriods(periods);
+                updateSetting('maxPeriods', periods);
             }}
             theme={theme}
             onThemeChange={(newTheme) => {
