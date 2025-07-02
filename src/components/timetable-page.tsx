@@ -213,22 +213,12 @@ export function TimetablePage({
                                     return (
                                         <div key={`${dayIndex}-${period}`} className="border rounded-md p-2 min-h-[100px] bg-muted/30 flex flex-col">
                                             {entry && subject ? (
-                                                <div className="flex-1 flex flex-col">
                                                 <div 
-                                                        className="flex-1 cursor-pointer hover:bg-muted/50 -m-2 p-2 rounded-md"
-                                                        onClick={() => handleOpenEditDialog(dayIndex, period, entry)}
-                                                    >
+                                                    className="flex-1 cursor-pointer hover:bg-muted/50 -m-2 p-2 rounded-md"
+                                                    onClick={() => handleOpenEditDialog(dayIndex, period, entry)}
+                                                >
                                                     <p className="font-bold text-sm">{subject.name}</p>
                                                     {entry.room && <p className="text-xs text-muted-foreground">{entry.room}</p>}
-                                                </div>
-                                                <Button 
-                                                        variant="ghost" 
-                                                        size="sm" 
-                                                        className="w-full mt-auto"
-                                                        onClick={() => handleOpenHomeworkDialog(entry)}
-                                                    >
-                                                        <Notebook className="mr-2 h-4 w-4"/> Hausaufgabe
-                                                    </Button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center justify-center h-full">
