@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Homework } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Homework, SchoolEvent } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -38,6 +38,7 @@ import type { Layouts } from "react-grid-layout";
 import { debounce } from "lodash-es";
 import { TimetablePage } from "./timetable-page";
 import { AddHomeworkDialog } from "./add-homework-dialog";
+import { SchoolCalendarPage } from "./school-calendar-page";
 
 
 const DashboardSkeleton = () => (
@@ -67,6 +68,7 @@ export default function Dashboard() {
   const [homework, setHomework] = useState<Homework[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allSchools, setAllSchools] = useState<School[]>([]);
+  const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
   
   // Settings state
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
@@ -122,6 +124,7 @@ export default function Dashboard() {
       setHomework([]);
       setProfile(null);
       setUserName(null);
+      setSchoolEvents([]);
       return;
     }
 
@@ -236,6 +239,24 @@ export default function Dashboard() {
       unsubscribers.forEach(unsub => unsub());
     };
   }, [isFirebaseEnabled, user]);
+
+  // Effect for school-specific data (events)
+  useEffect(() => {
+    if (!isFirebaseEnabled || !user || !userSchoolId) {
+      setSchoolEvents([]);
+      return;
+    }
+    const eventsQuery = query(collection(db, 'schools', userSchoolId, 'events'), orderBy('date', 'desc'));
+    const eventsUnsub = onSnapshot(eventsQuery, (snapshot) => {
+        const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SchoolEvent[];
+        setSchoolEvents(eventsData);
+    }, (error) => {
+        console.error("Error fetching school events:", error);
+        toast({ title: "Fehler beim Laden der Schul-Termine", variant: "destructive" });
+    });
+
+    return () => eventsUnsub();
+  }, [isFirebaseEnabled, user, userSchoolId, toast]);
 
   // Effect for grade-level dependent data (subjects, study sets)
   useEffect(() => {
@@ -711,6 +732,32 @@ export default function Dashboard() {
           toast({ title: "Fehler beim Aktualisieren der Hausaufgabe", variant: "destructive" });
       }
   };
+  
+  const handleAddSchoolEvent = async (values: Omit<SchoolEvent, 'id' | 'schoolId' | 'authorId' | 'authorName' | 'createdAt' | 'gradeLevel'>) => {
+    if (!user || !userSchoolId) {
+        toast({ title: "Aktion nicht möglich", description: "Du musst einer Schule zugeordnet sein.", variant: 'destructive' });
+        return;
+    }
+    
+    const eventData = {
+      ...values,
+      schoolId: userSchoolId,
+      authorId: user.uid,
+      authorName: user.displayName || 'Anonym',
+      createdAt: serverTimestamp(),
+      date: values.date.toISOString(),
+      ...(values.target === 'gradeLevel' && { gradeLevel: selectedGradeLevel }),
+    };
+
+    try {
+        const sanitizedData = JSON.parse(JSON.stringify(eventData));
+        await addDoc(collection(db, 'schools', userSchoolId, 'events'), sanitizedData);
+        toast({ title: "Ereignis erstellt", description: "Das Ereignis wurde dem Schulkalender hinzugefügt." });
+    } catch (error) {
+        console.error("Error adding school event:", error);
+        toast({ title: "Fehler", description: "Das Ereignis konnte nicht erstellt werden.", variant: 'destructive' });
+    }
+};
 
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
@@ -897,7 +944,7 @@ export default function Dashboard() {
   };
   
   const renderView = () => {
-    if (dataLoading && !['community', 'user-profile'].includes(view)) {
+    if (dataLoading && !['community', 'user-profile', 'school-calendar'].includes(view)) {
       return <DashboardSkeleton />;
     }
     switch (view) {
@@ -957,6 +1004,15 @@ export default function Dashboard() {
             onAddSubject={handleAddSubject}
           />
         );
+      case 'school-calendar':
+        const school = allSchools.find(s => s.id === userSchoolId);
+        return <SchoolCalendarPage 
+            schoolId={userSchoolId}
+            schoolName={school?.name || null}
+            events={schoolEvents}
+            selectedGradeLevel={selectedGradeLevel}
+            onAddEvent={handleAddSchoolEvent}
+        />;
       case 'studysets':
         return <StudySetsPage 
             studySets={studySets} 

@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from "@/components/ui/separator";
 import { AppView } from '@/lib/types';
-import { Award, BookCopy, MessageCircle, LayoutDashboard, Calculator, Database, Files, BrainCircuit, User, Users, Settings, CalendarClock } from 'lucide-react';
+import { Award, BookCopy, MessageCircle, LayoutDashboard, Calculator, Database, Files, BrainCircuit, User, Users, Settings, CalendarClock, CalendarDays } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 type SidebarContentProps = {
@@ -62,6 +62,13 @@ export function SidebarContent({
                             onClick={() => handleViewChange('timetable')}>
                             <CalendarClock className="mr-2 h-4 w-4" />
                             Stundenplan
+                        </Button>
+                        <Button 
+                            variant={currentView === 'school-calendar' ? "secondary" : "ghost"} 
+                            className="justify-start w-full"
+                            onClick={() => handleViewChange('school-calendar')}>
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Schulkalender
                         </Button>
                         <Button 
                             variant={currentView === 'studysets' ? "secondary" : "ghost"} 
