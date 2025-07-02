@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -59,13 +60,15 @@ export function TutorChat({ subjects, allGrades, studySets }: TutorChatProps) {
     try {
       const subjectsForTutor = subjects.map(subject => {
         const subjectGrades = allGrades.filter(g => g.subjectId === subject.id);
+        const enteredGrades = subjectGrades.filter(g => g.value != null);
         const subjectAverage = calculateFinalGrade(subjectGrades, subject);
+        
         return {
             name: subject.name,
             category: subject.category,
             average: subjectAverage,
             targetGrade: subject.targetGrade,
-            grades: subjectGrades.map(g => ({
+            grades: enteredGrades.map(g => ({
                 name: g.name,
                 value: g.value,
                 type: g.type,
@@ -73,9 +76,11 @@ export function TutorChat({ subjects, allGrades, studySets }: TutorChatProps) {
             }))
         };
       });
+      
+      const sanitizedSubjectsForTutor = JSON.parse(JSON.stringify(subjectsForTutor));
 
       const response = await getTutorResponse({
-        subjects: subjectsForTutor,
+        subjects: sanitizedSubjectsForTutor,
         studySets: selectedStudySets.map(s => ({
             title: s.title,
             description: s.description,
