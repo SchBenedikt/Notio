@@ -113,7 +113,7 @@ export function SidebarContent({
                                     className="justify-start w-full"
                                     onClick={() => handleViewChange('tutor')}>
                                     <MessageCircle className="mr-2 h-4 w-4" />
-                                    KI-Tutor & Coach
+                                    Assistant
                                 </Button>
                                 <Button 
                                     variant={currentView === 'calculator' ? "secondary" : "ghost"} 
