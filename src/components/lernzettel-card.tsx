@@ -27,7 +27,7 @@ export function LernzettelCard({ lernzettel, subjectName, onSelect, onEdit, onDe
                     <div className="flex-1">
                         <CardTitle className="text-lg">{lernzettel.title}</CardTitle>
                         <CardDescription className="line-clamp-2 text-xs">
-                          Bearbeitet: {formatDistanceToNow(lernzettel.updatedAt.toDate(), { addSuffix: true, locale: de })}
+                          Bearbeitet: {lernzettel.updatedAt?.toDate ? formatDistanceToNow(lernzettel.updatedAt.toDate(), { addSuffix: true, locale: de }) : 'Gerade erstellt'}
                         </CardDescription>
                     </div>
                     <DropdownMenu>
