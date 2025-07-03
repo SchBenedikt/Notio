@@ -29,12 +29,16 @@ const prompt = ai.definePrompt({
   name: 'summarizeNotePrompt',
   input: {schema: SummarizeNoteInputSchema},
   output: {schema: SummarizeNoteOutputSchema},
-  prompt: `Du bist ein Experte für das Zusammenfassen von Lerninhalten.
-Deine Aufgabe ist es, aus dem folgenden Lernzettel eine prägnante Zusammenfassung zu erstellen.
-Formatiere die Zusammenfassung als Markdown-Liste mit den wichtigsten Kernaussagen, Fakten und Konzepten.
-Verwende Stichpunkte, um die Informationen übersichtlich zu gliedern. Die Zusammenfassung sollte auf Deutsch sein.
+  prompt: `Du bist ein Experte für das Zusammenfassen von Lerninhalten für Schüler.
+Deine Aufgabe ist es, aus dem folgenden Lernzettel eine prägnante Zusammenfassung zu erstellen, die ausschließlich aus Stichpunkten besteht.
 
-Hier ist der Lernzettel:
+**Anweisungen:**
+1.  Analysiere den Inhalt und extrahiere die wichtigsten Kernaussagen, Fakten und Konzepte.
+2.  Formatiere deine gesamte Antwort als eine einzige Markdown-Liste. Verwende für jeden Punkt einen Stichpunkt (z.B. mit "- " oder "* ").
+3.  Formuliere die Stichpunkte kurz und prägnant. Lange Fließtext-Absätze sind nicht erlaubt.
+4.  Die Zusammenfassung muss auf Deutsch sein.
+
+Hier ist der Lernzettel, der zusammengefasst werden soll:
 ---
 Titel: {{noteTitle}}
 
@@ -42,7 +46,7 @@ Inhalt:
 {{noteContent}}
 ---
 
-Erstelle die Zusammenfassung und gib das Ergebnis im vorgegebenen JSON-Format zurück.`,
+Erstelle jetzt die Zusammenfassung in Form einer Stichpunktliste und gib das Ergebnis im vorgegebenen JSON-Format zurück.`,
 });
 
 const summarizeNoteFlow = ai.defineFlow(
