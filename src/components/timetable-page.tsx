@@ -4,8 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from './ui/checkbox';
-import type { TimetableEntry, Subject, Task, AddSubjectData, TaskType } from "@/lib/types";
-import { Plus, X, CalendarClock, ListChecks, BookOpen } from 'lucide-react';
+import type { TimetableEntry, Subject, Task, AddSubjectData, TaskType, Lernzettel } from "@/lib/types";
+import { Plus, X, CalendarClock, ListChecks, BookOpen, NotebookText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isBefore, startOfToday } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -38,11 +38,17 @@ const getSubjectColor = (subjectId: string) => {
   return subjectColors[index];
 };
 
+type PlannerItem = (Task & {itemType: 'task'}) | (Lernzettel & {itemType: 'lernzettel'})
 
-const TaskIcon = ({ type }: { type: TaskType }) => {
-    switch(type) {
-        case 'homework': return <ListChecks className="h-5 w-5 text-blue-500" />;
-        case 'todo': return <ListChecks className="h-5 w-5 text-purple-500" />;
+const ItemIcon = ({ item }: { item: PlannerItem }) => {
+    switch(item.itemType) {
+        case 'lernzettel': return <NotebookText className="h-5 w-5 text-green-500" />;
+        case 'task':
+            switch(item.type) {
+                case 'homework': return <ListChecks className="h-5 w-5 text-blue-500" />;
+                case 'todo': return <ListChecks className="h-5 w-5 text-purple-500" />;
+                default: return null;
+            }
         default: return null;
     }
 }
@@ -51,6 +57,7 @@ type PlannerPageProps = {
   timetable: TimetableEntry[];
   subjects: Subject[];
   tasks: Task[];
+  lernzettel: Lernzettel[];
   maxPeriods: number;
   onSaveEntry: (day: number, period: number, values: { subjectId: string; room?: string }, entryId?: string) => Promise<void>;
   onDeleteEntry: (entryId: string) => Promise<void>;
@@ -58,6 +65,9 @@ type PlannerPageProps = {
   onDeleteTask: (taskId: string) => Promise<void>;
   onToggleTask: (taskId: string, isDone: boolean) => Promise<void>;
   onAddSubject: (values: AddSubjectData) => Promise<string>;
+  onToggleLernzettelDone: (lernzettelId: string, isDone: boolean) => Promise<void>;
+  onDeleteLernzettelDueDate: (lernzettelId: string) => Promise<void>;
+  onViewLernzettel: (id: string) => void;
 };
 
 const days = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
@@ -66,13 +76,17 @@ export function PlannerPage({
     timetable, 
     subjects, 
     tasks,
+    lernzettel,
     maxPeriods,
     onSaveEntry,
     onDeleteEntry,
     onSaveTask,
     onDeleteTask,
     onToggleTask,
-    onAddSubject
+    onAddSubject,
+    onToggleLernzettelDone,
+    onDeleteLernzettelDueDate,
+    onViewLernzettel
 }: PlannerPageProps) {
   const [dialogState, setDialogState] = useState<{
     type: 'edit-entry' | 'add-task' | null;
@@ -87,19 +101,33 @@ export function PlannerPage({
     timetable.forEach(entry => map.set(`${entry.day}-${entry.period}`, entry));
     return map;
   }, [timetable]);
+  
+  const plannerItemsBySubject = useMemo(() => {
+    const plannerItems: PlannerItem[] = [
+        ...tasks.map(t => ({...t, itemType: 'task' as const})),
+        ...lernzettel.filter(l => l.dueDate).map(l => ({...l, itemType: 'lernzettel' as const}))
+    ];
 
-  const tasksBySubject = useMemo(() => {
-      const grouped: { [subjectId: string]: Task[] } = {};
-      subjects.forEach(s => grouped[s.id] = []);
-      tasks.forEach(task => {
-          if (grouped[task.subjectId]) {
-              grouped[task.subjectId].push(task);
-          }
-      });
-      return Object.entries(grouped)
-        .filter(([_, subjectTasks]) => subjectTasks.length > 0)
-        .sort(([idA], [idB]) => subjectsMap.get(idA)!.name.localeCompare(subjectsMap.get(idB)!.name));
-  }, [tasks, subjects, subjectsMap]);
+    const grouped: { [subjectId: string]: PlannerItem[] } = {};
+    subjects.forEach(s => grouped[s.id] = []);
+
+    plannerItems.forEach(item => {
+        if(item.subjectId && grouped[item.subjectId]) {
+            grouped[item.subjectId].push(item);
+        } else if (item.subjectId === undefined || item.subjectId === null) {
+             if (!grouped['unassigned']) grouped['unassigned'] = [];
+             grouped['unassigned'].push(item);
+        }
+    });
+
+    return Object.entries(grouped)
+        .filter(([, subjectItems]) => subjectItems.length > 0)
+        .sort(([idA], [idB]) => {
+            if (idA === 'unassigned') return 1;
+            if (idB === 'unassigned') return -1;
+            return subjectsMap.get(idA)!.name.localeCompare(subjectsMap.get(idB)!.name)
+        });
+  }, [tasks, lernzettel, subjects, subjectsMap]);
 
   const handleOpenEditDialog = (day: number, period: number, entry?: TimetableEntry) => {
     setDialogState({ type: 'edit-entry', data: { day, period, entryToEdit: entry } });
@@ -110,14 +138,14 @@ export function PlannerPage({
        <div className="space-y-1">
           <h1 className="text-3xl font-bold">Planer</h1>
           <p className="text-muted-foreground">
-            Verwalte deine Unterrichtsstunden, Hausaufgaben, To-dos und Notizen.
+            Verwalte deine Unterrichtsstunden, Hausaufgaben und Lernziele.
           </p>
         </div>
 
       <Tabs defaultValue="timetable" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="timetable"><CalendarClock className="mr-2 h-4 w-4" />Stundenplan</TabsTrigger>
-            <TabsTrigger value="tasks"><ListChecks className="mr-2 h-4 w-4" />Aufgaben ({tasks.filter(h => !h.isDone).length})</TabsTrigger>
+            <TabsTrigger value="tasks"><ListChecks className="mr-2 h-4 w-4" />Aufgaben</TabsTrigger>
         </TabsList>
         <TabsContent value="timetable" className="mt-4">
             <Card>
@@ -181,7 +209,7 @@ export function PlannerPage({
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle>Aufgabenübersicht</CardTitle>
-                            <CardDescription>Deine Hausaufgaben, To-dos und Notizen nach Fächern sortiert.</CardDescription>
+                            <CardDescription>Deine Hausaufgaben, To-dos und Lernziele nach Fächern sortiert.</CardDescription>
                         </div>
                         <Button onClick={() => setDialogState({ type: 'add-task', data: {} })}>
                             <Plus className="mr-2 h-4 w-4" />
@@ -190,52 +218,68 @@ export function PlannerPage({
                     </div>
                  </CardHeader>
                  <CardContent className="space-y-6">
-                     {tasks.length === 0 ? (
+                     {plannerItemsBySubject.length === 0 ? (
                         <p className="text-center text-muted-foreground py-10">Keine Aufgaben vorhanden.</p>
                      ) : (
                         <Accordion type="multiple" className="w-full space-y-2">
-                            {tasksBySubject.map(([subjectId, subjectTasks]) => {
-                                const subject = subjectsMap.get(subjectId);
+                            {plannerItemsBySubject.map(([subjectId, subjectItems]) => {
+                                const subject = subjectId === 'unassigned' ? { name: 'Ohne Fach' } : subjectsMap.get(subjectId);
                                 if (!subject) return null;
 
-                                const openTasks = subjectTasks.filter(t => !t.isDone);
-                                const doneTasks = subjectTasks.filter(t => t.isDone);
+                                const openItems = subjectItems.filter(t => !t.isDone);
+                                const doneItems = subjectItems.filter(t => t.isDone);
                                 
                                 return (
                                     <AccordionItem key={subjectId} value={subjectId} className="border bg-card rounded-lg shadow-sm">
                                         <AccordionTrigger className="px-4 py-3 text-lg font-medium hover:no-underline">
                                             <span>{subject.name}</span>
-                                            <span className="text-sm text-muted-foreground font-normal ml-auto mr-2">Offen: {openTasks.length}</span>
+                                            <span className="text-sm text-muted-foreground font-normal ml-auto mr-2">Offen: {openItems.length}</span>
                                         </AccordionTrigger>
                                         <AccordionContent className="px-4 pb-4">
-                                            {openTasks.length > 0 && (
+                                            {openItems.length > 0 && (
                                                 <ul className="space-y-2">
-                                                    {openTasks.sort((a,b) => (a.dueDate && b.dueDate) ? new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime() : 0).map(task => (
-                                                        <li key={task.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50 group">
-                                                            <Checkbox id={`task-${task.id}`} checked={task.isDone} onCheckedChange={(checked) => onToggleTask(task.id, !!checked)} className="mt-1" />
+                                                    {openItems.sort((a,b) => (a.dueDate && b.dueDate) ? new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime() : 0).map(item => (
+                                                        <li key={item.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50 group">
+                                                            <Checkbox 
+                                                                id={`item-${item.id}`} 
+                                                                checked={item.isDone} 
+                                                                onCheckedChange={(checked) => item.itemType === 'task' ? onToggleTask(item.id, !!checked) : onToggleLernzettelDone(item.id, !!checked)} 
+                                                                className="mt-1" 
+                                                            />
                                                             <div className="flex-1">
-                                                                <label htmlFor={`task-${task.id}`} className={cn("font-medium", task.isDone && "line-through text-muted-foreground")}>{task.content}</label>
+                                                                <label htmlFor={`item-${item.id}`} className={cn("font-medium", item.isDone && "line-through text-muted-foreground")}>
+                                                                    {item.itemType === 'task' ? item.content : item.title}
+                                                                </label>
                                                                 <div className="text-sm text-muted-foreground flex items-center gap-4">
-                                                                    <div className="flex items-center gap-1.5"><TaskIcon type={task.type} /><span>{task.type === 'homework' ? 'Hausaufgabe' : 'To-Do'}</span></div>
-                                                                    {task.dueDate && <span className={cn(isBefore(new Date(task.dueDate), startOfToday()) && 'text-red-500')}>Fällig: {format(new Date(task.dueDate), "dd.MM.yyyy", { locale: de })}</span>}
+                                                                    <div className="flex items-center gap-1.5"><ItemIcon item={item} /><span>{item.itemType === 'task' ? (item.type === 'homework' ? 'Hausaufgabe' : 'To-Do') : 'Lernzettel'}</span></div>
+                                                                    {item.dueDate && <span className={cn(isBefore(new Date(item.dueDate), startOfToday()) && 'text-red-500')}>Fällig: {format(new Date(item.dueDate), "dd.MM.yyyy", { locale: de })}</span>}
                                                                 </div>
                                                             </div>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => onDeleteTask(task.id)}><X className="h-4 w-4" /></Button>
+                                                            {item.itemType === 'lernzettel' && <Button variant="ghost" size="sm" onClick={() => onViewLernzettel(item.id)}>Ansehen</Button>}
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" 
+                                                                onClick={() => item.itemType === 'task' ? onDeleteTask(item.id) : onDeleteLernzettelDueDate(item.id)}>
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
                                                         </li>
                                                     ))}
                                                 </ul>
                                             )}
-                                             {doneTasks.length > 0 && (
+                                             {doneItems.length > 0 && (
                                                 <div>
-                                                    <h4 className="text-sm font-semibold text-muted-foreground my-2">{openTasks.length > 0 && 'Erledigt'}</h4>
+                                                    <h4 className="text-sm font-semibold text-muted-foreground my-2">{openItems.length > 0 && 'Erledigt'}</h4>
                                                     <ul className="space-y-2 opacity-60">
-                                                        {doneTasks.map(task => (
-                                                            <li key={task.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50 group">
-                                                                <Checkbox id={`task-${task.id}`} checked={task.isDone} onCheckedChange={(checked) => onToggleTask(task.id, !!checked)} className="mt-1" />
+                                                        {doneItems.map(item => (
+                                                            <li key={item.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50 group">
+                                                                <Checkbox id={`item-${item.id}`} checked={item.isDone} onCheckedChange={(checked) => item.itemType === 'task' ? onToggleTask(item.id, !!checked) : onToggleLernzettelDone(item.id, !!checked)} className="mt-1" />
                                                                 <div className="flex-1">
-                                                                    <label htmlFor={`task-${task.id}`} className="font-medium line-through text-muted-foreground">{task.content}</label>
+                                                                    <label htmlFor={`item-${item.id}`} className="font-medium line-through text-muted-foreground">
+                                                                        {item.itemType === 'task' ? item.content : item.title}
+                                                                    </label>
                                                                 </div>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => onDeleteTask(task.id)}><X className="h-4 w-4" /></Button>
+                                                                 <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => item.itemType === 'task' ? onDeleteTask(item.id) : onDeleteLernzettelDueDate(item.id)}><X className="h-4 w-4" /></Button>
                                                             </li>
                                                         ))}
                                                     </ul>

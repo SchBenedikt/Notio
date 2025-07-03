@@ -118,6 +118,8 @@ export interface Lernzettel {
   gradeLevel: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  dueDate?: string; // ISO String
+  isDone?: boolean;
 }
 
 export interface QuizQuestion {

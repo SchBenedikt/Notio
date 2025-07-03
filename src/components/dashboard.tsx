@@ -623,21 +623,26 @@ export default function Dashboard() {
     }
   };
   
-  const handleSaveLernzettel = async (values: Omit<Lernzettel, 'id' | 'gradeLevel' | 'createdAt' | 'updatedAt'>, lernzettelId?: string) => {
+  const handleSaveLernzettel = async (values: Omit<Lernzettel, 'id' | 'gradeLevel' | 'createdAt' | 'updatedAt' | 'isDone'> & {dueDate?: Date}, lernzettelId?: string) => {
     if (!user || !isFirebaseEnabled) {
         toast({ title: "Funktion nicht verfügbar", description: "Lernzettel sind im Demo-Modus nicht verfügbar.", variant: "destructive" });
         return;
     }
     
     try {
+        const data = {
+            ...values,
+            dueDate: values.dueDate?.toISOString() || null,
+            isDone: values.dueDate ? (values.isDone ?? false) : null,
+        }
+
         if (lernzettelId) {
             const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
-            const data = { ...values, updatedAt: serverTimestamp() };
-            await updateDoc(lernzettelRef, data);
+            await updateDoc(lernzettelRef, {...data, updatedAt: serverTimestamp() });
             toast({ title: "Lernzettel aktualisiert" });
         } else {
-            const data = { ...values, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
-            await addDoc(collection(db, 'users', user.uid, 'lernzettel'), data);
+            const finalData = { ...data, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+            await addDoc(collection(db, 'users', user.uid, 'lernzettel'), finalData);
             toast({ title: "Lernzettel erstellt" });
         }
     } catch (error) {
@@ -657,6 +662,28 @@ export default function Dashboard() {
         toast({ title: "Fehler beim Löschen des Lernzettels", variant: "destructive" });
     }
   };
+
+  const handleToggleLernzettelDone = async (lernzettelId: string, isDone: boolean) => {
+    if (!user || !isFirebaseEnabled) return;
+    try {
+        const ref = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
+        await updateDoc(ref, { isDone });
+    } catch (error) {
+        toast({title: 'Fehler', variant: 'destructive'})
+    }
+  };
+  
+  const handleDeleteLernzettelDueDate = async (lernzettelId: string) => {
+     if (!user || !isFirebaseEnabled) return;
+    try {
+        const ref = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
+        await updateDoc(ref, { dueDate: null, isDone: null });
+        toast({ title: 'Vom Planer entfernt' });
+    } catch (error) {
+        toast({title: 'Fehler', variant: 'destructive'})
+    }
+  }
+
 
   const handleCreateFolder = async (folderName: string, parentId: string | null) => {
     if (!user || !folderName.trim()) return;
@@ -1126,6 +1153,7 @@ export default function Dashboard() {
             timetable={timetable}
             subjects={subjectsForGradeLevel}
             tasks={tasks}
+            lernzettel={lernzettel}
             maxPeriods={maxPeriods}
             onSaveEntry={handleSaveTimetableEntry}
             onDeleteEntry={handleDeleteTimetableEntry}
@@ -1133,6 +1161,9 @@ export default function Dashboard() {
             onDeleteTask={handleDeleteTask}
             onToggleTask={handleToggleTask}
             onAddSubject={handleAddSubject}
+            onToggleLernzettelDone={handleToggleLernzettelDone}
+            onDeleteLernzettelDueDate={handleDeleteLernzettelDueDate}
+            onViewLernzettel={handleViewLernzettel}
           />
         );
       case 'school-calendar':
@@ -1158,6 +1189,7 @@ export default function Dashboard() {
       case 'lernzettel-create':
         return <CreateEditLernzettelPage 
             subjects={subjectsForGradeLevel}
+            timetable={timetable}
             onBack={() => setView('lernzettel')}
             onSave={handleSaveLernzettel}
         />;
@@ -1165,6 +1197,7 @@ export default function Dashboard() {
         return <CreateEditLernzettelPage 
             lernzettelToEdit={editingLernzettel}
             subjects={subjectsForGradeLevel}
+            timetable={timetable}
             onBack={() => setView('lernzettel')}
             onSave={handleSaveLernzettel}
         />;
