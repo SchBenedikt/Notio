@@ -185,14 +185,16 @@ export interface TimetableEntry {
   room?: string;
 }
 
-export interface Homework {
+export type TaskType = 'homework' | 'todo' | 'note';
+export interface Task {
   id: string;
   subjectId: string;
-  task: string;
-  dueDate: string; // ISO String
+  type: TaskType;
+  content: string;
+  dueDate?: string; // ISO String
   isDone: boolean;
   createdAt: Timestamp;
 }
 
 
-export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'timetable' | 'school-calendar';
+export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'planner' | 'school-calendar';

@@ -35,7 +35,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "timetable" | "school-calendar") => void;
+  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "planner" | "school-calendar") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -82,9 +82,9 @@ export function CommandPalette({
                     <BookCopy className="mr-2 h-4 w-4" />
                     <span>Fächerübersicht</span>
                 </CommandItem>
-                 <CommandItem onSelect={() => runCommand(() => onNavigate("timetable"))}>
+                 <CommandItem onSelect={() => runCommand(() => onNavigate("planner"))}>
                     <CalendarClock className="mr-2 h-4 w-4" />
-                    <span>Stundenplan</span>
+                    <span>Planer</span>
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("school-calendar"))}>
                     <CalendarDays className="mr-2 h-4 w-4" />

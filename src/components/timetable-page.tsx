@@ -4,14 +4,15 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from './ui/checkbox';
-import type { TimetableEntry, Subject, Homework, AddSubjectData } from "@/lib/types";
-import { Plus, Notebook, X } from 'lucide-react';
+import type { TimetableEntry, Subject, Task, AddSubjectData, TaskType } from "@/lib/types";
+import { Plus, X, CalendarClock, ListChecks, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isToday, isTomorrow, isBefore, startOfToday, isSameWeek } from 'date-fns';
+import { format, isBefore, startOfToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { EditTimetableEntryDialog } from './edit-timetable-entry-dialog';
-import { AddHomeworkDialog } from './add-homework-dialog';
+import { AddTaskDialog } from './add-homework-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 const subjectColors = [
   { background: 'bg-red-50 dark:bg-red-900/30', border: 'border-red-200 dark:border-red-700/50', text: 'text-red-800 dark:text-red-200' },
@@ -38,149 +39,44 @@ const getSubjectColor = (subjectId: string) => {
 };
 
 
-type HomeworkListProps = {
-    title: string;
-    homework: Homework[];
-    subjectsMap: Map<string, Subject>;
-    onToggle: (id: string, done: boolean) => void;
-    onDelete: (id: string) => void;
-};
-
-const HomeworkList = ({ title, homework, subjectsMap, onToggle, onDelete }: HomeworkListProps) => {
-    if (homework.length === 0) return null;
-    return (
-        <div>
-            <h3 className="font-semibold text-lg mb-2">{title}</h3>
-            <ul className="space-y-2">
-                {homework.map(hw => {
-                    const subject = subjectsMap.get(hw.subjectId);
-                    return (
-                        <li key={hw.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 group">
-                            <Checkbox
-                                id={`hw-list-${hw.id}`}
-                                checked={hw.isDone}
-                                onCheckedChange={(checked) => onToggle(hw.id, !!checked)}
-                                className="mt-1"
-                            />
-                            <div className="flex-1">
-                                <label htmlFor={`hw-list-${hw.id}`} className={cn("font-medium", hw.isDone && "line-through text-muted-foreground")}>{hw.task}</label>
-                                <div className="text-sm text-muted-foreground flex items-center gap-4">
-                                    <span>{subject?.name || 'Unbekanntes Fach'}</span>
-                                    <span>Fällig: {format(new Date(hw.dueDate), "eeee, dd.MM.", { locale: de })}</span>
-                                </div>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => onDelete(hw.id)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </li>
-                    )
-                })}
-            </ul>
-        </div>
-    )
+const TaskIcon = ({ type }: { type: TaskType }) => {
+    switch(type) {
+        case 'homework': return <ListChecks className="h-5 w-5 text-blue-500" />;
+        case 'todo': return <ListChecks className="h-5 w-5 text-purple-500" />;
+        case 'note': return <BookOpen className="h-5 w-5 text-yellow-600" />;
+        default: return null;
+    }
 }
 
-const CompletedHomeworkList = ({ homework, subjectsMap, onToggle, onDelete }: {
-    homework: Homework[],
-    subjectsMap: Map<string, Subject>,
-    onToggle: (id: string, done: boolean) => void,
-    onDelete: (id: string) => void
-}) => {
-    const completed = homework.filter(hw => hw.isDone);
-    if(completed.length === 0) return null;
-
-     return (
-        <div>
-            <h3 className="font-semibold text-lg mb-2 mt-6">Erledigte Aufgaben</h3>
-            <ul className="space-y-2">
-                {completed.map(hw => {
-                    const subject = subjectsMap.get(hw.subjectId);
-                    return (
-                        <li key={hw.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 group opacity-70">
-                            <Checkbox
-                                id={`hw-list-${hw.id}`}
-                                checked={hw.isDone}
-                                onCheckedChange={(checked) => onToggle(hw.id, !!checked)}
-                                className="mt-1"
-                            />
-                            <div className="flex-1">
-                                <label htmlFor={`hw-list-${hw.id}`} className={cn("font-medium", hw.isDone && "line-through text-muted-foreground")}>{hw.task}</label>
-                                <div className="text-sm text-muted-foreground flex items-center gap-4">
-                                    <span>{subject?.name || 'Unbekanntes Fach'}</span>
-                                </div>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => onDelete(hw.id)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </li>
-                    )
-                })}
-            </ul>
-        </div>
-    )
-}
-
-
-type TimetablePageProps = {
+type PlannerPageProps = {
   timetable: TimetableEntry[];
   subjects: Subject[];
-  homework: Homework[];
+  tasks: Task[];
   maxPeriods: number;
   onSaveEntry: (day: number, period: number, values: { subjectId: string; room?: string }, entryId?: string) => Promise<void>;
   onDeleteEntry: (entryId: string) => Promise<void>;
-  onSaveHomework: (values: { task: string; dueDate: Date; subjectId: string }) => Promise<void>;
-  onDeleteHomework: (homeworkId: string) => Promise<void>;
-  onToggleHomework: (homeworkId: string, isDone: boolean) => Promise<void>;
+  onSaveTask: (values: { content: string; dueDate?: Date; subjectId: string, type: TaskType }) => Promise<void>;
+  onDeleteTask: (taskId: string) => Promise<void>;
+  onToggleTask: (taskId: string, isDone: boolean) => Promise<void>;
   onAddSubject: (values: AddSubjectData) => Promise<string>;
 };
 
 const days = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 
-const groupHomework = (homework: Homework[]) => {
-    const now = startOfToday();
-    const groups: { [key: string]: Homework[] } = {
-        overdue: [],
-        today: [],
-        tomorrow: [],
-        thisWeek: [],
-        later: [],
-    };
-
-    const sortedHomework = [...homework]
-      .filter(hw => !hw.isDone)
-      .sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
-    for (const hw of sortedHomework) {
-        const dueDate = new Date(hw.dueDate);
-        if (isBefore(dueDate, now)) {
-            groups.overdue.push(hw);
-        } else if (isToday(dueDate)) {
-            groups.today.push(hw);
-        } else if (isTomorrow(dueDate)) {
-            groups.tomorrow.push(hw);
-        } else if (isSameWeek(dueDate, now, { weekStartsOn: 1 })) {
-            groups.thisWeek.push(hw);
-        } else {
-            groups.later.push(hw);
-        }
-    }
-    return groups;
-};
-
-export function TimetablePage({ 
+export function PlannerPage({ 
     timetable, 
     subjects, 
-    homework,
+    tasks,
     maxPeriods,
     onSaveEntry,
     onDeleteEntry,
-    onSaveHomework,
-    onDeleteHomework,
-    onToggleHomework,
+    onSaveTask,
+    onDeleteTask,
+    onToggleTask,
     onAddSubject
-}: TimetablePageProps) {
+}: PlannerPageProps) {
   const [dialogState, setDialogState] = useState<{
-    type: 'edit-entry' | 'add-homework' | null;
+    type: 'edit-entry' | 'add-task' | null;
     data: any;
   }>({ type: null, data: {} });
   
@@ -193,7 +89,18 @@ export function TimetablePage({
     return map;
   }, [timetable]);
 
-  const homeworkGroups = useMemo(() => groupHomework(homework), [homework]);
+  const tasksBySubject = useMemo(() => {
+      const grouped: { [subjectId: string]: Task[] } = {};
+      subjects.forEach(s => grouped[s.id] = []);
+      tasks.forEach(task => {
+          if (grouped[task.subjectId]) {
+              grouped[task.subjectId].push(task);
+          }
+      });
+      return Object.entries(grouped)
+        .filter(([_, subjectTasks]) => subjectTasks.length > 0)
+        .sort(([idA], [idB]) => subjectsMap.get(idA)!.name.localeCompare(subjectsMap.get(idB)!.name));
+  }, [tasks, subjects, subjectsMap]);
 
   const handleOpenEditDialog = (day: number, period: number, entry?: TimetableEntry) => {
     setDialogState({ type: 'edit-entry', data: { day, period, entryToEdit: entry } });
@@ -202,16 +109,16 @@ export function TimetablePage({
   return (
     <div className="space-y-6">
        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Stundenplan & Hausaufgaben</h1>
+          <h1 className="text-3xl font-bold">Planer</h1>
           <p className="text-muted-foreground">
-            Verwalte deine Unterrichtsstunden und Hausaufgaben für die Woche.
+            Verwalte deine Unterrichtsstunden, Hausaufgaben, To-dos und Notizen.
           </p>
         </div>
 
       <Tabs defaultValue="timetable" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="timetable">Stundenplan</TabsTrigger>
-            <TabsTrigger value="homework">Hausaufgaben ({homework.filter(h => !h.isDone).length})</TabsTrigger>
+            <TabsTrigger value="timetable"><CalendarClock className="mr-2 h-4 w-4" />Stundenplan</TabsTrigger>
+            <TabsTrigger value="tasks"><ListChecks className="mr-2 h-4 w-4" />Aufgaben ({tasks.filter(h => !h.isDone).length})</TabsTrigger>
         </TabsList>
         <TabsContent value="timetable" className="mt-4">
             <Card>
@@ -242,7 +149,7 @@ export function TimetablePage({
                                         >
                                             {entry && subject ? (
                                             <div
-                                                className="flex-1 cursor-pointer -m-2 p-2 rounded-md flex flex-col"
+                                                className="flex-1 cursor-pointer p-2 rounded-md flex flex-col"
                                                 onClick={() => handleOpenEditDialog(dayIndex, period, entry)}
                                             >
                                                 <p className={cn("font-bold text-sm flex-1", subjectColor?.text)}>{subject.name}</p>
@@ -269,33 +176,78 @@ export function TimetablePage({
                 </CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="homework" className="mt-4">
+        <TabsContent value="tasks" className="mt-4">
             <Card>
                  <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>Hausaufgabenübersicht</CardTitle>
-                            <CardDescription>Alle deine anstehenden und erledigten Aufgaben.</CardDescription>
+                            <CardTitle>Aufgabenübersicht</CardTitle>
+                            <CardDescription>Deine Hausaufgaben, To-dos und Notizen nach Fächern sortiert.</CardDescription>
                         </div>
-                        <Button onClick={() => setDialogState({ type: 'add-homework', data: {} })}>
+                        <Button onClick={() => setDialogState({ type: 'add-task', data: {} })}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Neue Hausaufgabe
+                            Neue Aufgabe
                         </Button>
                     </div>
                  </CardHeader>
                  <CardContent className="space-y-6">
-                    {Object.values(homeworkGroups).every(g => g.length === 0) && homework.filter(h => h.isDone).length === 0 ? (
-                        <p className="text-center text-muted-foreground py-10">Keine Hausaufgaben vorhanden.</p>
-                    ) : (
-                        <>
-                            <HomeworkList title="Überfällig" homework={homeworkGroups.overdue} subjectsMap={subjectsMap} onToggle={onToggleHomework} onDelete={onDeleteHomework} />
-                            <HomeworkList title="Heute fällig" homework={homeworkGroups.today} subjectsMap={subjectsMap} onToggle={onToggleHomework} onDelete={onDeleteHomework} />
-                            <HomeworkList title="Morgen fällig" homework={homeworkGroups.tomorrow} subjectsMap={subjectsMap} onToggle={onToggleHomework} onDelete={onDeleteHomework} />
-                            <HomeworkList title="Diese Woche fällig" homework={homeworkGroups.thisWeek} subjectsMap={subjectsMap} onToggle={onToggleHomework} onDelete={onDeleteHomework} />
-                            <HomeworkList title="Später fällig" homework={homeworkGroups.later} subjectsMap={subjectsMap} onToggle={onToggleHomework} onDelete={onDeleteHomework} />
-                            <CompletedHomeworkList homework={homework} subjectsMap={subjectsMap} onToggle={onToggleHomework} onDelete={onDeleteHomework} />
-                        </>
-                    )}
+                     {tasks.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-10">Keine Aufgaben vorhanden.</p>
+                     ) : (
+                        <Accordion type="multiple" className="w-full space-y-2">
+                            {tasksBySubject.map(([subjectId, subjectTasks]) => {
+                                const subject = subjectsMap.get(subjectId);
+                                if (!subject) return null;
+
+                                const openTasks = subjectTasks.filter(t => !t.isDone);
+                                const doneTasks = subjectTasks.filter(t => t.isDone);
+                                
+                                return (
+                                    <AccordionItem key={subjectId} value={subjectId} className="border bg-card rounded-lg shadow-sm">
+                                        <AccordionTrigger className="px-4 py-3 text-lg font-medium hover:no-underline">
+                                            <span>{subject.name}</span>
+                                            <span className="text-sm text-muted-foreground font-normal ml-auto mr-2">Offen: {openTasks.length}</span>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="px-4 pb-4">
+                                            {openTasks.length > 0 && (
+                                                <ul className="space-y-2">
+                                                    {openTasks.sort((a,b) => (a.dueDate && b.dueDate) ? new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime() : 0).map(task => (
+                                                        <li key={task.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50 group">
+                                                            <Checkbox id={`task-${task.id}`} checked={task.isDone} onCheckedChange={(checked) => onToggleTask(task.id, !!checked)} className="mt-1" />
+                                                            <div className="flex-1">
+                                                                <label htmlFor={`task-${task.id}`} className={cn("font-medium", task.isDone && "line-through text-muted-foreground")}>{task.content}</label>
+                                                                <div className="text-sm text-muted-foreground flex items-center gap-4">
+                                                                    <div className="flex items-center gap-1.5"><TaskIcon type={task.type} /><span>{task.type === 'homework' ? 'Hausaufgabe' : (task.type === 'todo' ? 'To-Do' : 'Notiz')}</span></div>
+                                                                    {task.dueDate && <span className={cn(isBefore(new Date(task.dueDate), startOfToday()) && 'text-red-500')}>Fällig: {format(new Date(task.dueDate), "dd.MM.yyyy", { locale: de })}</span>}
+                                                                </div>
+                                                            </div>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => onDeleteTask(task.id)}><X className="h-4 w-4" /></Button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                             {doneTasks.length > 0 && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-muted-foreground my-2">{openTasks.length > 0 && 'Erledigt'}</h4>
+                                                    <ul className="space-y-2 opacity-60">
+                                                        {doneTasks.map(task => (
+                                                            <li key={task.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50 group">
+                                                                <Checkbox id={`task-${task.id}`} checked={task.isDone} onCheckedChange={(checked) => onToggleTask(task.id, !!checked)} className="mt-1" />
+                                                                <div className="flex-1">
+                                                                    <label htmlFor={`task-${task.id}`} className="font-medium line-through text-muted-foreground">{task.content}</label>
+                                                                </div>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => onDeleteTask(task.id)}><X className="h-4 w-4" /></Button>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                             )}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                )
+                            })}
+                        </Accordion>
+                     )}
                  </CardContent>
             </Card>
         </TabsContent>
@@ -313,11 +265,11 @@ export function TimetablePage({
         />
       )}
       
-      {dialogState.type === 'add-homework' && (
-        <AddHomeworkDialog
+      {dialogState.type === 'add-task' && (
+        <AddTaskDialog
             isOpen={true}
             onOpenChange={(isOpen) => !isOpen && setDialogState({ type: null, data: {} })}
-            onSubmit={onSaveHomework}
+            onSubmit={onSaveTask}
             subjects={subjects}
             timetable={timetable}
         />

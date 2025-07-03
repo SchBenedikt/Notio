@@ -57,11 +57,11 @@ export function SidebarContent({
                             Fächerübersicht
                         </Button>
                         <Button 
-                            variant={currentView === 'timetable' ? "secondary" : "ghost"} 
+                            variant={currentView === 'planner' ? "secondary" : "ghost"} 
                             className="justify-start w-full"
-                            onClick={() => handleViewChange('timetable')}>
+                            onClick={() => handleViewChange('planner')}>
                             <CalendarClock className="mr-2 h-4 w-4" />
-                            Stundenplan
+                            Planer
                         </Button>
                         <Button 
                             variant={currentView === 'school-calendar' ? "secondary" : "ghost"} 

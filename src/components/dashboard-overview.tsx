@@ -3,13 +3,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AppView, Grade, Subject, Homework, SchoolEvent } from "@/lib/types";
-import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, GripVertical, Notebook, LayoutGrid } from "lucide-react";
+import { AppView, Grade, Subject, Task, SchoolEvent } from "@/lib/types";
+import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, GripVertical, Notebook, LayoutGrid, ListChecks } from "lucide-react";
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { CalendarWidget } from "./calendar-widget";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -30,7 +31,7 @@ export const defaultLayouts: Layouts = {
         { i: 'performance', x: 0, y: 0, w: 2, h: 2, minW: 2, minH: 2 },
         { i: 'actions',     x: 2, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'homework',    x: 1, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tasks',       x: 1, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 2, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
     ],
@@ -38,7 +39,7 @@ export const defaultLayouts: Layouts = {
         { i: 'performance', x: 0, y: 0, w: 2, h: 2, minW: 2, minH: 2 },
         { i: 'actions',     x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 1, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'homework',    x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tasks',       x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 1, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
     ],
@@ -46,7 +47,7 @@ export const defaultLayouts: Layouts = {
         { i: 'performance', x: 0, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'actions',     x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'homework',    x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tasks',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 0, y: 8, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 10, w: 1, h: 2, minW: 1, minH: 2 },
     ],
@@ -54,7 +55,7 @@ export const defaultLayouts: Layouts = {
         { i: 'performance', x: 0, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'actions',     x: 0, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'upcoming',    x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
-        { i: 'homework',    x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'tasks',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 0, y: 8, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 10, w: 1, h: 2, minW: 1, minH: 2 },
     ],
@@ -68,13 +69,13 @@ type DashboardOverviewProps = {
   totalSubjectsCount: number;
   totalGradesCount: number;
   plannedGrades: Grade[];
-  homework: Homework[];
+  tasks: Task[];
   schoolEvents: SchoolEvent[];
   subjects: Subject[];
   onNavigate: (view: AppView) => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
-  onAddHomework: () => void;
+  onAddTask: () => void;
   layouts: Layouts;
   onLayoutChange: (currentLayout: ReactGridLayout.Layout[], allLayouts: Layouts) => void;
   visibleWidgets: Record<string, boolean>;
@@ -89,13 +90,13 @@ export function DashboardOverview({
     totalSubjectsCount,
     totalGradesCount,
     plannedGrades,
-    homework,
+    tasks,
     schoolEvents,
     subjects,
     onNavigate,
     onAddSubject,
     onAddGrade,
-    onAddHomework,
+    onAddTask,
     layouts,
     onLayoutChange,
     visibleWidgets,
@@ -103,9 +104,9 @@ export function DashboardOverview({
 }: DashboardOverviewProps) {
   
   const subjectsMap = new Map(subjects.map(s => [s.id, s.name]));
-  const upcomingHomework = homework
-    .filter(hw => !hw.isDone)
-    .sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  const upcomingTasks = tasks
+    .filter(hw => !hw.isDone && hw.dueDate)
+    .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     const widgetComponents: Record<string, React.ReactNode> = {
     performance: (
@@ -188,39 +189,45 @@ export function DashboardOverview({
         </CardContent>
       </Card>
     ),
-    homework: (
+    tasks: (
       <Card className="h-full w-full flex flex-col">
         <CardHeader className="drag-handle flex flex-row items-start justify-between">
           <div>
-            <CardTitle>Nächste Hausaufgaben</CardTitle>
+            <CardTitle>Anstehende Aufgaben</CardTitle>
             <CardDescription>Deine dringendsten Aufgaben.</CardDescription>
           </div>
           <GripVertical className="text-muted-foreground" />
         </CardHeader>
         <CardContent className="flex-1">
-          {upcomingHomework.length > 0 ? (
+          {upcomingTasks.length > 0 ? (
             <div className="space-y-3">
-              {upcomingHomework.slice(0, 4).map(hw => (
-                <div key={hw.id} className="flex items-start justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
+              {upcomingTasks.slice(0, 4).map(task => (
+                <div key={task.id} className="flex items-start justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex-1 overflow-hidden">
-                    <p className="font-semibold truncate">{hw.task}</p>
-                    <p className="text-sm text-muted-foreground">{subjectsMap.get(hw.subjectId) || 'Unbekanntes Fach'}</p>
+                    <p className="font-semibold truncate">{task.content}</p>
+                    <p className="text-sm text-muted-foreground">{subjectsMap.get(task.subjectId) || 'Unbekanntes Fach'}</p>
                   </div>
                   <div className="text-right pl-2">
-                    <p className="font-semibold">{format(new Date(hw.dueDate), "dd. MMM", { locale: de })}</p>
-                    <p className="text-sm text-muted-foreground">{format(new Date(hw.dueDate), "eeee", { locale: de })}</p>
+                    <p className={cn("font-semibold", task.type === 'note' && "text-amber-600")}>{format(new Date(task.dueDate!), "dd. MMM", { locale: de })}</p>
+                    <p className="text-sm text-muted-foreground">{format(new Date(task.dueDate!), "eeee", { locale: de })}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-10 h-full flex flex-col items-center justify-center">
-              <Notebook className="h-10 w-10 mx-auto text-muted-foreground" />
-              <p className="mt-4 font-semibold">Keine Hausaufgaben</p>
-              <p className="text-sm text-muted-foreground">Du hast alle Aufgaben erledigt. Super!</p>
+              <ListChecks className="h-10 w-10 mx-auto text-muted-foreground" />
+              <p className="mt-4 font-semibold">Keine Aufgaben offen</p>
+              <p className="text-sm text-muted-foreground">Du hast alles erledigt. Super!</p>
             </div>
           )}
         </CardContent>
+        <CardFooter>
+            <Button onClick={onAddTask} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Neue Aufgabe
+            </Button>
+        </CardFooter>
       </Card>
     ),
     calendar: (

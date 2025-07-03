@@ -17,7 +17,7 @@ const widgetLabels: Record<string, string> = {
     performance: "Leistungsübersicht",
     actions: "Schnellzugriff",
     upcoming: "Anstehende Prüfungen",
-    homework: "Hausaufgaben",
+    tasks: "Anstehende Aufgaben",
     calendar: "Schulkalender",
     tutor: "KI-Tutor & Coach",
 };

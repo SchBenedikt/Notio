@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Homework, SchoolEvent, StudyCard } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -36,8 +36,8 @@ import { DashboardOverview, defaultLayouts } from "./dashboard-overview";
 import { Skeleton } from "./ui/skeleton";
 import type { Layouts } from "react-grid-layout";
 import { debounce } from "lodash-es";
-import { TimetablePage } from "./timetable-page";
-import { AddHomeworkDialog } from "./add-homework-dialog";
+import { PlannerPage } from "./planner-page";
+import { AddTaskDialog } from "./add-task-dialog";
 import { SchoolCalendarPage } from "./school-calendar-page";
 import { AddSchoolEventDialog } from "./AddSchoolEventDialog";
 import { DashboardSettingsDialog } from "./dashboard-settings-dialog";
@@ -63,7 +63,7 @@ const defaultWidgets = {
     performance: true,
     actions: true,
     upcoming: true,
-    homework: true,
+    tasks: true,
     calendar: true,
     tutor: true,
 };
@@ -76,7 +76,7 @@ export default function Dashboard() {
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [userFiles, setUserFiles] = useState<FileSystemItem[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-  const [homework, setHomework] = useState<Homework[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allSchools, setAllSchools] = useState<School[]>([]);
   const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
@@ -95,7 +95,7 @@ export default function Dashboard() {
   const [dashboardWidgets, setDashboardWidgets] = useState<Record<string, boolean>>(defaultWidgets);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
-  const [isAddHomeworkOpen, setIsAddHomeworkOpen] = useState(false);
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isDashboardSettingsOpen, setDashboardSettingsOpen] = useState(false);
   const [view, setView] = useState<AppView>('dashboard');
@@ -135,7 +135,7 @@ export default function Dashboard() {
       setStudySets([]);
       setUserFiles([]);
       setTimetable([]);
-      setHomework([]);
+      setTasks([]);
       setProfile(null);
       setUserName(null);
       setSchoolEvents([]);
@@ -232,15 +232,15 @@ export default function Dashboard() {
     });
     unsubscribers.push(timetableUnsub);
 
-    // --- Homework listener ---
-    const homeworkQuery = query(collection(db, 'users', user.uid, 'homework'), orderBy('createdAt', 'desc'));
-    const homeworkUnsub = onSnapshot(homeworkQuery, (snapshot) => {
-        const homeworkData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Homework[];
-        setHomework(homeworkData);
+    // --- Tasks listener ---
+    const tasksQuery = query(collection(db, 'users', user.uid, 'tasks'), orderBy('createdAt', 'desc'));
+    const tasksUnsub = onSnapshot(tasksQuery, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Task[];
+        setTasks(tasksData);
     }, (error) => {
-        console.error("Error fetching homework:", error);
+        console.error("Error fetching tasks:", error);
     });
-    unsubscribers.push(homeworkUnsub);
+    unsubscribers.push(tasksUnsub);
 
     // --- All schools (one-time fetch) ---
     const fetchSchools = async () => {
@@ -727,37 +727,42 @@ export default function Dashboard() {
     }
   }
 
-  const handleSaveHomework = async (values: { task: string; dueDate: Date; subjectId: string }) => {
+  const handleSaveTask = async (values: { content: string; dueDate?: Date; subjectId: string; type: TaskType; }) => {
     if (!user) return;
-    const data = { ...values, dueDate: values.dueDate.toISOString(), isDone: false, createdAt: serverTimestamp() };
+    const data = { 
+        ...values, 
+        dueDate: values.dueDate?.toISOString(), 
+        isDone: false, 
+        createdAt: serverTimestamp() 
+    };
     const sanitizedData = JSON.parse(JSON.stringify(data));
     try {
-        await addDoc(collection(db, 'users', user.uid, 'homework'), sanitizedData);
-        toast({ title: "Hausaufgabe gespeichert" });
+        await addDoc(collection(db, 'users', user.uid, 'tasks'), sanitizedData);
+        toast({ title: "Aufgabe gespeichert" });
     } catch(error) {
-        console.error("Error saving homework:", error);
-        toast({ title: "Fehler beim Speichern der Hausaufgabe", variant: "destructive" });
+        console.error("Error saving task:", error);
+        toast({ title: "Fehler beim Speichern der Aufgabe", variant: "destructive" });
     }
   };
 
-  const handleDeleteHomework = async (homeworkId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
       if (!user) return;
       try {
-          await deleteDoc(doc(db, 'users', user.uid, 'homework', homeworkId));
-          toast({ title: "Hausaufgabe gelöscht", variant: "destructive" });
+          await deleteDoc(doc(db, 'users', user.uid, 'tasks', taskId));
+          toast({ title: "Aufgabe gelöscht", variant: "destructive" });
       } catch(error) {
-          console.error("Error deleting homework:", error);
-          toast({ title: "Fehler beim Löschen der Hausaufgabe", variant: "destructive" });
+          console.error("Error deleting task:", error);
+          toast({ title: "Fehler beim Löschen der Aufgabe", variant: "destructive" });
       }
   };
   
-  const handleToggleHomework = async (homeworkId: string, isDone: boolean) => {
+  const handleToggleTask = async (taskId: string, isDone: boolean) => {
       if (!user) return;
       try {
-          await setDoc(doc(db, 'users', user.uid, 'homework', homeworkId), { isDone }, { merge: true });
+          await setDoc(doc(db, 'users', user.uid, 'tasks', taskId), { isDone }, { merge: true });
       } catch(error) {
-          console.error("Error toggling homework:", error);
-          toast({ title: "Fehler beim Aktualisieren der Hausaufgabe", variant: "destructive" });
+          console.error("Error toggling task:", error);
+          toast({ title: "Fehler beim Aktualisieren der Aufgabe", variant: "destructive" });
       }
   };
   
@@ -859,7 +864,7 @@ export default function Dashboard() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `gradido-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `notio-export-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1017,13 +1022,13 @@ export default function Dashboard() {
             totalSubjectsCount={totalSubjectsCount}
             totalGradesCount={totalGradesCount}
             plannedGrades={plannedGrades}
-            homework={homework}
+            tasks={tasks}
             schoolEvents={schoolEvents}
             subjects={subjectsForGradeLevel}
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
             onAddGrade={handleOpenAddGradeDialog}
-            onAddHomework={() => setIsAddHomeworkOpen(true)}
+            onAddTask={() => setIsAddTaskOpen(true)}
             layouts={layouts}
             onLayoutChange={handleLayoutChange}
             visibleWidgets={dashboardWidgets}
@@ -1051,18 +1056,18 @@ export default function Dashboard() {
             onDeleteStudySet={handleDeleteStudySet}
           />
         );
-      case 'timetable':
+      case 'planner':
         return (
-          <TimetablePage
+          <PlannerPage
             timetable={timetable}
             subjects={subjectsForGradeLevel}
-            homework={homework}
+            tasks={tasks}
             maxPeriods={maxPeriods}
             onSaveEntry={handleSaveTimetableEntry}
             onDeleteEntry={handleDeleteTimetableEntry}
-            onSaveHomework={handleSaveHomework}
-            onDeleteHomework={handleDeleteHomework}
-            onToggleHomework={handleToggleHomework}
+            onSaveTask={handleSaveTask}
+            onDeleteTask={handleDeleteTask}
+            onToggleTask={handleToggleTask}
             onAddSubject={handleAddSubject}
           />
         );
@@ -1301,10 +1306,10 @@ export default function Dashboard() {
             handleDeleteGrade(gradeId);
         }}
       />
-      <AddHomeworkDialog
-        isOpen={isAddHomeworkOpen}
-        onOpenChange={setIsAddHomeworkOpen}
-        onSubmit={handleSaveHomework}
+      <AddTaskDialog
+        isOpen={isAddTaskOpen}
+        onOpenChange={setIsAddTaskOpen}
+        onSubmit={handleSaveTask}
         subjects={subjectsForGradeLevel}
         timetable={timetable}
       />
