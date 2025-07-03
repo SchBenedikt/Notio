@@ -4,13 +4,11 @@ import { useState, useMemo } from "react";
 import type { Lernzettel, Subject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Notebook, Search, ArrowDown, ArrowUp, X } from "lucide-react";
+import { Plus, Notebook, Search, ArrowDown, ArrowUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Separator } from "./ui/separator";
 
 type LernzettelPageProps = {
   lernzettel: Lernzettel[];
@@ -141,19 +139,15 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                                         {groupBy === 'none' && <TableHead className="hidden sm:table-cell">Fach</TableHead>}
                                         <TableHead className="hidden md:table-cell">Fälligkeit</TableHead>
                                         <TableHead className="hidden md:table-cell">Bearbeitet</TableHead>
-                                        <TableHead className="text-right">Aktionen</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {group.items.map((lz) => (
-                                        <TableRow key={lz.id} onDoubleClick={() => onViewLernzettel(lz.id)} className="cursor-pointer">
+                                        <TableRow key={lz.id} onClick={() => onViewLernzettel(lz.id)} className="cursor-pointer">
                                             <TableCell className="font-medium">{lz.title}</TableCell>
                                             {groupBy === 'none' && <TableCell className="hidden sm:table-cell">{subjectsMap.get(lz.subjectId || '') || '-'}</TableCell>}
                                             <TableCell className="hidden md:table-cell">{lz.dueDate ? format(new Date(lz.dueDate), 'dd.MM.yyyy') : '-'}</TableCell>
                                             <TableCell className="hidden md:table-cell">{lz.updatedAt?.toDate ? format(lz.updatedAt.toDate(), 'dd.MM.yyyy HH:mm') : '-'}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => onViewLernzettel(lz.id)}>Ansehen</Button>
-                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

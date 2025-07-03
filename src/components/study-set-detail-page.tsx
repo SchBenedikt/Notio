@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import type { StudySet, StudyCard } from "@/lib/types";
+import { useState, useMemo } from "react";
+import type { StudySet, StudyCard, Lernzettel } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion, Brain } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion, Brain, Link as LinkIcon, Notebook } from "lucide-react";
 import { FlashcardsView } from "./flashcards-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { WriteView } from "./write-view";
@@ -20,12 +20,18 @@ type StudySetDetailPageProps = {
   onBack: () => void;
   onEditSet: (set: StudySet) => void;
   onSessionFinish: (updatedCards: StudyCard[]) => Promise<void>;
+  allLernzettel: Lernzettel[];
+  onViewLernzettel: (id: string) => void;
 };
 
-export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish }: StudySetDetailPageProps) {
+export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel }: StudySetDetailPageProps) {
   const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'match' | 'quiz' | 'test' | 'learn'>('learn');
 
   const hasCards = studySet.cards.length > 0;
+  
+  const linkedLernzettel = useMemo(() => {
+    return studySet.linkedLernzettelIds?.map(id => allLernzettel.find(lz => lz.id === id)).filter(Boolean) as Lernzettel[];
+  }, [studySet.linkedLernzettelIds, allLernzettel]);
 
   return (
     <div className="space-y-6">
@@ -50,6 +56,27 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
         </div>
       </div>
       
+       {linkedLernzettel && linkedLernzettel.length > 0 && (
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                      <LinkIcon className="h-4 w-4" />
+                      Verknüpfte Lernzettel
+                  </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <div className="space-y-2">
+                      {linkedLernzettel.map(lz => (
+                          <Button key={lz.id} variant="outline" className="w-full justify-start" onClick={() => onViewLernzettel(lz.id)}>
+                              <Notebook className="mr-2 h-4 w-4" />
+                              {lz.title}
+                          </Button>
+                      ))}
+                  </div>
+              </CardContent>
+          </Card>
+      )}
+
       <Tabs value={mode} onValueChange={(value) => setMode(value as any)} className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-7 max-w-5xl">
             <TabsTrigger value="learn" disabled={!hasCards}><Brain className="mr-2 h-4 w-4" />Lernen</TabsTrigger>

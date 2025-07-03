@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
@@ -591,7 +591,12 @@ export default function Dashboard() {
         toast({ title: "Funktion nicht verfügbar", description: "Lernsets sind im Demo-Modus nicht verfügbar.", variant: "destructive" });
         return;
     }
-    const data = { ...values, gradeLevel: selectedGradeLevel };
+    const data = { 
+        ...values,
+        gradeLevel: selectedGradeLevel,
+        subjectId: values.subjectId || null,
+        linkedLernzettelIds: values.linkedLernzettelIds || [],
+    };
     try {
         if (setId) {
             const setRef = doc(db, 'users', user.uid, 'studySets', setId);
@@ -855,6 +860,12 @@ export default function Dashboard() {
         return;
     }
     
+    const dataToSave = {
+        ...values,
+        description: values.description || null,
+        endDate: values.endDate || null,
+    }
+
     if (eventId) {
         // Update existing event
         const eventRef = doc(db, 'schools', userSchoolId, 'events', eventId);
@@ -863,25 +874,19 @@ export default function Dashboard() {
             toast({ title: "Keine Berechtigung", description: "Du kannst nur deine eigenen Termine bearbeiten.", variant: 'destructive' });
             return;
         }
-        const dataToUpdate = {
-            ...values,
-            description: values.description || null,
-            endDate: values.endDate || null,
-        }
-        await updateDoc(eventRef, dataToUpdate);
+        
+        await updateDoc(eventRef, dataToSave);
         toast({ title: "Ereignis aktualisiert" });
 
     } else {
         // Create new event
         const eventData = {
-          ...values,
-          description: values.description || null,
-          endDate: values.endDate || null,
+          ...dataToSave,
           schoolId: userSchoolId,
           authorId: user.uid,
           authorName: user.displayName || 'Anonym',
           createdAt: serverTimestamp(),
-          ...(values.target === 'gradeLevel' && { gradeLevel: selectedGradeLevel }),
+          ...(values.target === 'gradeLevel' ? { gradeLevel: selectedGradeLevel } : { gradeLevel: null }),
         };
 
         try {
@@ -1243,6 +1248,7 @@ export default function Dashboard() {
             subjects={subjectsForGradeLevel}
             onBack={() => setView('studysets')}
             onSave={handleSaveStudySet}
+            allLernzettel={lernzettel}
         />;
       case 'studyset-edit':
         return <CreateEditStudySetPage 
@@ -1250,6 +1256,7 @@ export default function Dashboard() {
             subjects={subjectsForGradeLevel}
             onBack={() => setView('studysets')}
             onSave={handleSaveStudySet}
+            allLernzettel={lernzettel}
         />;
       case 'studyset-detail':
         const set = studySets.find(s => s.id === viewingStudySetId);
@@ -1259,6 +1266,8 @@ export default function Dashboard() {
             onBack={() => setView('studysets')}
             onEditSet={handleNavigateToEditStudySet}
             onSessionFinish={(updatedCards) => handleUpdateStudySetCards(set.id, updatedCards)}
+            allLernzettel={lernzettel}
+            onViewLernzettel={handleViewLernzettel}
           />;
         }
         return null;

@@ -108,6 +108,7 @@ export interface StudySet {
   cards: StudyCard[];
   gradeLevel: number;
   subjectId?: string;
+  linkedLernzettelIds?: string[];
 }
 
 export interface Lernzettel {
