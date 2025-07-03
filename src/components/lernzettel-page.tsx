@@ -58,8 +58,8 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                 break;
             case 'updatedAt':
             default:
-                compareA = a.updatedAt?.toDate()?.getTime() || 0;
-                compareB = b.updatedAt?.toDate()?.getTime() || 0;
+                compareA = a.updatedAt?.toDate ? a.updatedAt.toDate().getTime() : 0;
+                compareB = b.updatedAt?.toDate ? b.updatedAt.toDate().getTime() : 0;
                 break;
         }
 
@@ -150,7 +150,7 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                                             <TableCell className="font-medium">{lz.title}</TableCell>
                                             {groupBy === 'none' && <TableCell className="hidden sm:table-cell">{subjectsMap.get(lz.subjectId || '') || '-'}</TableCell>}
                                             <TableCell className="hidden md:table-cell">{lz.dueDate ? format(new Date(lz.dueDate), 'dd.MM.yyyy') : '-'}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{lz.updatedAt?.toDate() ? format(lz.updatedAt.toDate(), 'dd.MM.yyyy HH:mm') : '-'}</TableCell>
+                                            <TableCell className="hidden md:table-cell">{lz.updatedAt?.toDate ? format(lz.updatedAt.toDate(), 'dd.MM.yyyy HH:mm') : '-'}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="sm" onClick={() => onViewLernzettel(lz.id)}>Ansehen</Button>
                                             </TableCell>
