@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from './ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from './ui/alert-dialog';
 import { Input } from './ui/input';
 
 const subjectColors = [
@@ -327,7 +327,7 @@ export function PlannerPage({
                                                             <Button 
                                                                 variant="ghost" 
                                                                 size="icon" 
-                                                                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" 
+                                                                className="h-7 w-7 shrink-0 opacity-0 group-hover/cell:opacity-100" 
                                                                 onClick={() => item.itemType === 'task' ? onDeleteTask(item.id) : onDeleteLernzettelDueDate(item.id)}>
                                                                 <X className="h-4 w-4" />
                                                             </Button>
@@ -347,7 +347,7 @@ export function PlannerPage({
                                                                         {item.itemType === 'task' ? item.content : item.title}
                                                                     </label>
                                                                 </div>
-                                                                 <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => item.itemType === 'task' ? onDeleteTask(item.id) : onDeleteLernzettelDueDate(item.id)}><X className="h-4 w-4" /></Button>
+                                                                 <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 opacity-0 group-hover/cell:opacity-100" onClick={() => item.itemType === 'task' ? onDeleteTask(item.id) : onDeleteLernzettelDueDate(item.id)}><X className="h-4 w-4" /></Button>
                                                             </li>
                                                         ))}
                                                     </ul>
