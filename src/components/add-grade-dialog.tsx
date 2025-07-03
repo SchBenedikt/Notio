@@ -45,7 +45,10 @@ const formSchema = z.object({
     (val) => (val === "" || val == null ? undefined : Number(val)),
     z.number({ invalid_type_error: "Muss eine Zahl sein" }).min(1, "Note muss 1-6 sein").max(6, "Note muss 1-6 sein").optional()
   ),
-  weight: z.coerce.number().min(0.1, "Gewichtung muss positiv sein.").default(1),
+  weight: z.preprocess(
+    (val) => (String(val).trim() === "" ? "1" : val),
+    z.coerce.number().min(0.1, "Gewichtung muss positiv sein.")
+  ),
   notes: z.string().max(100, "Notiz darf nicht länger als 100 Zeichen sein.").optional(),
   attachments: z.array(z.object({
     name: z.string(),

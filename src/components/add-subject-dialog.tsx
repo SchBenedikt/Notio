@@ -30,8 +30,8 @@ const formSchema = z.object({
     required_error: "Du musst eine Kategorie auswählen.",
   }),
   targetGrade: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.coerce.number({invalid_type_error: "Muss eine Zahl sein"}).min(1, "Note muss 1-6 sein").max(6, "Note muss 1-6 sein").optional()
+    (val) => (val === "" || val == null ? undefined : Number(val)),
+    z.number({ invalid_type_error: "Muss eine Zahl sein" }).min(1, "Note muss 1-6 sein").max(6, "Note muss 1-6 sein").optional()
   ),
 });
 
