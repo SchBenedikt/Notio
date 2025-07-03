@@ -474,9 +474,13 @@ export default function Dashboard() {
         return;
     }
 
+    const dataToUpdate = {
+        ...updatedValues,
+        targetGrade: updatedValues.targetGrade || null,
+    };
     const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
     try {
-        await setDoc(subjectDocRef, updatedValues, { merge: true });
+        await setDoc(subjectDocRef, dataToUpdate, { merge: true });
         toast({
           title: "Fach aktualisiert",
           description: `Die Einstellungen für das Fach wurden gespeichert.`,
@@ -525,9 +529,13 @@ export default function Dashboard() {
   const handleSaveGrade = async (subjectId: string, values: AddGradeData, gradeId?: string) => {
     const gradeData = {
       subjectId,
-      ...values,
-      value: values.value ?? null, // Ensure undefined is stored as null
+      type: values.type,
+      name: values.name || null,
+      value: values.value ?? null,
+      weight: values.weight,
       date: values.date.toISOString(),
+      notes: values.notes || null,
+      attachments: values.attachments || [],
     };
     
     if (!isFirebaseEnabled || !user) {
@@ -630,18 +638,20 @@ export default function Dashboard() {
     }
     
     try {
-        const data = {
-            ...values,
-            dueDate: values.dueDate?.toISOString() || null,
-            isDone: values.dueDate ? (values.isDone ?? false) : null,
-        }
+        const dataToSave = {
+          title: values.title,
+          content: values.content,
+          subjectId: values.subjectId || null,
+          dueDate: values.dueDate?.toISOString() || null,
+          isDone: values.dueDate ? (values.isDone ?? false) : null,
+        };
 
         if (lernzettelId) {
             const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
-            await updateDoc(lernzettelRef, {...data, updatedAt: serverTimestamp() });
+            await updateDoc(lernzettelRef, {...dataToSave, updatedAt: serverTimestamp() });
             toast({ title: "Lernzettel aktualisiert" });
         } else {
-            const finalData = { ...data, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+            const finalData = { ...dataToSave, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
             await addDoc(collection(db, 'users', user.uid, 'lernzettel'), finalData);
             toast({ title: "Lernzettel erstellt" });
         }
@@ -776,7 +786,7 @@ export default function Dashboard() {
 
   const handleSaveTimetableEntry = async (day: number, period: number, values: { subjectId: string; room?: string }, entryId?: string) => {
     if (!user) return;
-    const data = { day, period, ...values };
+    const data = { day, period, ...values, room: values.room || null };
     try {
         if (entryId) {
             await setDoc(doc(db, 'users', user.uid, 'timetable', entryId), data, { merge: true });
@@ -805,7 +815,7 @@ export default function Dashboard() {
     if (!user) return;
     const data = { 
         ...values, 
-        dueDate: values.dueDate?.toISOString(), 
+        dueDate: values.dueDate?.toISOString() || null, 
         isDone: false, 
         createdAt: serverTimestamp() 
     };
@@ -853,13 +863,20 @@ export default function Dashboard() {
             toast({ title: "Keine Berechtigung", description: "Du kannst nur deine eigenen Termine bearbeiten.", variant: 'destructive' });
             return;
         }
-        await updateDoc(eventRef, values);
+        const dataToUpdate = {
+            ...values,
+            description: values.description || null,
+            endDate: values.endDate || null,
+        }
+        await updateDoc(eventRef, dataToUpdate);
         toast({ title: "Ereignis aktualisiert" });
 
     } else {
         // Create new event
         const eventData = {
           ...values,
+          description: values.description || null,
+          endDate: values.endDate || null,
           schoolId: userSchoolId,
           authorId: user.uid,
           authorName: user.displayName || 'Anonym',

@@ -135,10 +135,10 @@ export function ProfilePage({
       const profileRef = doc(db, 'profiles', user.uid);
       const updatedProfileData = {
           name: values.name,
-          bio: values.bio,
+          bio: values.bio || null,
       };
-      const sanitizedProfileData = JSON.parse(JSON.stringify(updatedProfileData));
-      await setDoc(profileRef, sanitizedProfileData, { merge: true });
+      
+      await setDoc(profileRef, updatedProfileData, { merge: true });
 
       toast({ title: "Erfolg", description: "Dein Profil wurde aktualisiert." });
       setIsEditing(false);
