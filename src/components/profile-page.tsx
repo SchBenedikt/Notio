@@ -124,10 +124,22 @@ export function ProfilePage({
   }
 
   const handleProfileUpdate = async (values: z.infer<typeof profileFormSchema>) => {
-    if (!user) return;
+    if (!user || !profile) return;
     setLoading(p => ({ ...p, profile: true }));
+
     try {
-      if (profile && values.name.toLowerCase() !== profile.name.toLowerCase()) {
+      const nameChanged = values.name.toLowerCase() !== profile.name.toLowerCase();
+      const bioChanged = (values.bio || "") !== (profile.bio || "");
+
+      if (!nameChanged && !bioChanged) {
+        toast({ title: "Keine Änderungen", description: "Es wurden keine Änderungen vorgenommen." });
+        setIsEditing(false);
+        setLoading(p => ({ ...p, profile: false }));
+        return;
+      }
+      
+      // Check for username uniqueness if it changed
+      if (nameChanged) {
         const profilesRef = collection(db, 'profiles');
         const q = query(profilesRef, where("name_lowercase", "==", values.name.toLowerCase()));
         const querySnapshot = await getDocs(q);
@@ -136,19 +148,20 @@ export function ProfilePage({
         }
       }
 
-      if (user.displayName !== values.name) {
-        await updateProfile(user, { displayName: values.name });
-        onUserNameChange(values.name);
-      }
-      
+      // Update Firestore profile
       const profileRef = doc(db, 'profiles', user.uid);
       const updatedProfileData = {
           name: values.name,
           name_lowercase: values.name.toLowerCase(),
           bio: values.bio || null,
       };
-      
       await setDoc(profileRef, updatedProfileData, { merge: true });
+
+      // Update Firebase Auth display name if changed
+      if (nameChanged) {
+        await updateProfile(user, { displayName: values.name });
+        onUserNameChange(values.name);
+      }
 
       toast({ title: "Erfolg", description: "Dein Profil wurde aktualisiert." });
       setIsEditing(false);

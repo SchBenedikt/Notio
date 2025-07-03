@@ -1511,12 +1511,9 @@ export default function Dashboard() {
         return <ProfilePage 
                   profile={profile}
                   onUserNameChange={(name) => {
-                    if (!user) return;
-                    setUserName(name);
-                    const profileRef = doc(db, 'profiles', user.uid);
-                    setDoc(profileRef, { name, name_lowercase: name.toLowerCase() }, { merge: true });
+                      setUserName(name);
                   }}
-                  onToggleFollow={handleToggleFollow}
+                  onToggleFollow={onToggleFollow}
                   userRole={userRole}
                   onUserRoleChange={(role) => {
                       setUserRole(role);
@@ -1534,7 +1531,7 @@ export default function Dashboard() {
         return <CommunityPage 
                   currentUserProfile={profile}
                   onViewProfile={handleViewProfile}
-                  onToggleFollow={handleToggleFollow}
+                  onToggleFollow={onToggleFollow}
                   subjects={subjectsForGradeLevel}
                   grades={grades}
                />;
@@ -1543,7 +1540,7 @@ export default function Dashboard() {
             return <UserProfilePage 
                       userId={viewingProfileId} 
                       onBack={() => setView('community')}
-                      onToggleFollow={handleToggleFollow}
+                      onToggleFollow={onToggleFollow}
                       currentUserProfile={profile}
                    />
         }
