@@ -13,16 +13,16 @@ import {z} from 'genkit';
 const StudyCoachInputSchema = z.object({
   subjectName: z.string().describe('The name of the subject.'),
   subjectCategory: z.string().describe('The category of the subject (Hauptfach or Nebenfach).'),
-  writtenWeight: z.number().optional().describe('The weight for written grades for this subject.'),
-  oralWeight: z.number().optional().describe('The weight for oral grades for this subject.'),
-  targetGrade: z.number().optional().describe("The student's target grade for this subject."),
+  writtenWeight: z.number().nullable().optional().describe('The weight for written grades for this subject.'),
+  oralWeight: z.number().nullable().optional().describe('The weight for oral grades for this subject.'),
+  targetGrade: z.number().nullable().optional().describe("The student's target grade for this subject."),
   grades: z
     .array(
       z.object({
-        name: z.string().optional(),
+        name: z.string().nullable().optional(),
         value: z.number(),
         type: z.string(),
-        notes: z.string().optional(),
+        notes: z.string().nullable().optional(),
         weight: z.number(),
       })
     )

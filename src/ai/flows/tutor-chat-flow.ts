@@ -48,12 +48,12 @@ const TutorChatInputSchema = z.object({
     name: z.string().describe("The name of the subject."),
     category: z.string().describe("The category of the subject."),
     average: z.string().describe("The current average grade for this subject."),
-    targetGrade: z.number().optional().describe("The student's target grade for this subject."),
+    targetGrade: z.number().nullable().optional().describe("The student's target grade for this subject."),
     grades: z.array(z.object({
-        name: z.string().optional().describe("The name of the grade/test."),
+        name: z.string().nullable().optional().describe("The name of the grade/test."),
         value: z.number().describe("The grade value (1-6)."),
         type: z.string().describe("The type of grade (e.g., Schulaufgabe)."),
-        notes: z.string().optional().describe("Notes for the grade."),
+        notes: z.string().nullable().optional().describe("Notes for the grade."),
     })).describe("The list of grades for this subject.")
   })).describe("A list of the student's subjects and their corresponding grades."),
   studySets: z.array(StudySetForTutorSchema).optional().describe("A list of study sets the user has selected for this conversation."),
