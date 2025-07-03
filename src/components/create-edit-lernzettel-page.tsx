@@ -176,7 +176,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
             break;
         case 'list':
             const lines = selectedText.split('\n');
-            if (lines.every(line => line.startsWith('- '))) {
+            if (selectedText.length > 0 && lines.every(line => line.startsWith('- '))) {
                 replacement = lines.map(line => line.substring(2)).join('\n');
             } else {
                 replacement = lines.map(line => line ? `- ${line}` : '- ').join('\n');
@@ -196,7 +196,12 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
     setTimeout(() => {
         textarea.focus();
         if (selectedText.length === 0) {
-             textarea.setSelectionRange(start + prefix.length, start + prefix.length);
+             // For bold/italic, place cursor in the middle. For others, at the end.
+            if (type === 'bold' || type === 'italic') {
+                 textarea.setSelectionRange(start + prefix.length, start + prefix.length);
+            } else {
+                 textarea.setSelectionRange(start + replacement.length, start + replacement.length);
+            }
         } else {
             textarea.setSelectionRange(start, start + replacement.length);
         }
@@ -256,7 +261,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Fach (optional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Einem Fach zuordnen..." />
