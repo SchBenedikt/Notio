@@ -22,6 +22,9 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { StudySetMultiSelectionDialog } from "./study-set-multi-selection-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const formSchema = z.object({
   title: z.string().min(1, "Titel darf nicht leer sein.").max(100),
@@ -110,6 +113,8 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
   const [isStudySetDialogOpen, setStudySetDialogOpen] = useState(false);
   const [nextLessonDate, setNextLessonDate] = useState(new Date());
   const [secondNextLessonDate, setSecondNextLessonDate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+  const contentValue = form.watch("content");
 
   useEffect(() => {
     if (lernzettelToEdit) {
@@ -313,21 +318,39 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
                 </div>
             )}
               <Separator />
-              <FormField
+               <FormField
                 control={form.control}
                 name="content"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Inhalt</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Schreibe hier deine Zusammenfassung... Markdown wird unterstützt."
-                        className="min-h-[40vh] font-mono text-sm"
-                        {...field}
-                      />
-                    </FormControl>
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="edit">Bearbeiten</TabsTrigger>
+                            <TabsTrigger value="preview">Vorschau</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="edit" className="mt-0">
+                            <FormControl>
+                            <Textarea
+                                placeholder="Schreibe hier deine Zusammenfassung..."
+                                className="min-h-[40vh] font-mono text-sm rounded-t-none"
+                                {...field}
+                            />
+                            </FormControl>
+                        </TabsContent>
+                        <TabsContent value="preview" className="mt-0">
+                             <div className="prose prose-sm dark:prose-invert max-w-none min-h-[40vh] rounded-md rounded-t-none border bg-muted/50 p-4">
+                                {contentValue ? (
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentValue}</ReactMarkdown>
+                                ) : (
+                                    <p className="text-muted-foreground italic">Hier erscheint die Vorschau deines formatierten Textes.</p>
+                                )}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                     <FormDescription>
-                      Tipp: Verlinke andere Lernzettel mit `[Link-Text](/lernzettel/ID_DES_ZETTELS)`.
+                      Nutze Markdown für Formatierungen: `# Überschrift`, `* **fett**`, `* Aufzählung`.
+                      Verlinke andere Lernzettel mit `[Link-Text](/lernzettel/ID_DES_ZETTELS)`.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -354,6 +377,20 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
             form.setValue('studySetIds', selectedIds);
         }}
     />
+     <style jsx global>{`
+        .prose h1 { font-size: 1.875rem; margin-bottom: 1rem; }
+        .prose h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.5rem; }
+        .prose h3 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .prose p, .prose ul, .prose ol { line-height: 1.6; }
+        .prose a { color: hsl(var(--primary)); text-decoration: none; }
+        .prose a:hover { text-decoration: underline; }
+        .prose blockquote { border-left-color: hsl(var(--primary)); background-color: hsl(var(--muted)); padding: 0.5rem 1rem; border-radius: 0.25rem; }
+        .prose code { background-color: hsl(var(--muted)); padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; }
+        .prose pre { background-color: hsl(var(--muted)); padding: 1rem; border-radius: 0.5rem; }
+        .prose table { width: 100%; border-collapse: collapse; }
+        .prose th, .prose td { border: 1px solid hsl(var(--border)); padding: 0.5rem; }
+        .prose th { font-weight: 600; background-color: hsl(var(--muted)); }
+    `}</style>
     </>
   );
 }
