@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Checkbox } from './ui/checkbox';
 import type { TimetableEntry, Subject, Task, AddSubjectData, TaskType, Lernzettel } from "@/lib/types";
-import { Plus, X, CalendarClock, ListChecks, BookOpen, NotebookText } from 'lucide-react';
+import { Plus, X, CalendarClock, ListChecks, BookOpen, NotebookText, Share2, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isBefore, startOfToday } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -13,6 +14,10 @@ import { EditTimetableEntryDialog } from './edit-timetable-entry-dialog';
 import { AddTaskDialog } from './add-homework-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import { Input } from './ui/input';
 
 const subjectColors = [
   { background: 'bg-red-50 dark:bg-red-900/30', border: 'border-red-200 dark:border-red-700/50', text: 'text-red-800 dark:text-red-200' },
@@ -68,6 +73,8 @@ type PlannerPageProps = {
   onToggleLernzettelDone: (lernzettelId: string, isDone: boolean) => Promise<void>;
   onDeleteLernzettelDueDate: (lernzettelId: string) => Promise<void>;
   onViewLernzettel: (id: string) => void;
+  onShareTimetable: () => Promise<string>;
+  onImportTimetable: (code: string) => Promise<void>;
 };
 
 const days = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
@@ -86,13 +93,23 @@ export function PlannerPage({
     onAddSubject,
     onToggleLernzettelDone,
     onDeleteLernzettelDueDate,
-    onViewLernzettel
+    onViewLernzettel,
+    onShareTimetable,
+    onImportTimetable
 }: PlannerPageProps) {
   const [dialogState, setDialogState] = useState<{
     type: 'edit-entry' | 'add-task' | null;
     data: any;
   }>({ type: null, data: {} });
   
+  const [isShareDialogOpen, setShareDialogOpen] = useState(false);
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [importCode, setImportCode] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const { toast } = useToast();
+
   const periods = useMemo(() => Array.from({ length: maxPeriods }, (_, i) => i + 1), [maxPeriods]);
   
   const subjectsMap = useMemo(() => new Map(subjects.map(s => [s.id, s])), [subjects]);
@@ -132,8 +149,42 @@ export function PlannerPage({
   const handleOpenEditDialog = (day: number, period: number, entry?: TimetableEntry) => {
     setDialogState({ type: 'edit-entry', data: { day, period, entryToEdit: entry } });
   };
+
+  const handleShareClick = async () => {
+    setIsSharing(true);
+    try {
+        const code = await onShareTimetable();
+        setShareCode(code);
+        setShareDialogOpen(true);
+    } catch (error) {
+        // Error toast is handled in dashboard.tsx
+    } finally {
+        setIsSharing(false);
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    setIsImporting(true);
+    try {
+        await onImportTimetable(importCode);
+        setImportDialogOpen(false);
+        setImportCode("");
+    } catch (error) {
+        // Error toast handled in dashboard.tsx
+    } finally {
+        setIsImporting(false);
+    }
+  };
+
+  const copyShareCode = () => {
+    if (shareCode) {
+        navigator.clipboard.writeText(shareCode);
+        toast({ title: "Code kopiert!", description: "Der Code wurde in deine Zwischenablage kopiert." });
+    }
+  }
   
   return (
+    <>
     <div className="space-y-6">
        <div className="space-y-1">
           <h1 className="text-3xl font-bold">Planer</h1>
@@ -149,6 +200,23 @@ export function PlannerPage({
         </TabsList>
         <TabsContent value="timetable" className="mt-4">
             <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>Stundenplan</CardTitle>
+                            <CardDescription>Verwalte deine Unterrichtsstunden.</CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+                                <Download className="mr-2 h-4 w-4" /> Importieren
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleShareClick} disabled={isSharing}>
+                                {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+                                Teilen
+                            </Button>
+                        </div>
+                    </div>
+                 </CardHeader>
                 <CardContent className="p-2 overflow-x-auto bg-card">
                     <div className="grid grid-cols-[auto_repeat(5,minmax(140px,1fr))] gap-1 min-w-[800px]">
                         <div />
@@ -318,5 +386,48 @@ export function PlannerPage({
         />
       )}
     </div>
+
+    <Dialog open={isShareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Stundenplan teilen</DialogTitle>
+                <DialogDescription>
+                    Teile diesen Code mit anderen, damit sie deinen Stundenplan importieren können. Der Code ist 24 Stunden gültig.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="bg-muted rounded-md p-4 flex items-center justify-center">
+                <p className="text-2xl font-bold tracking-widest font-mono">{shareCode}</p>
+            </div>
+            <DialogFooter>
+                <Button variant="secondary" onClick={copyShareCode}>Code kopieren</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <AlertDialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Stundenplan importieren</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Gib den Teilen-Code ein, um einen Stundenplan zu importieren. Achtung: Dein aktueller Stundenplan wird dadurch überschrieben.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Input
+                placeholder="ABC123"
+                value={importCode}
+                onChange={(e) => setImportCode(e.target.value.toUpperCase())}
+                className="font-mono"
+                maxLength={6}
+            />
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isImporting}>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction onClick={handleImportConfirm} disabled={!importCode.trim() || isImporting}>
+                    {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Importieren & Überschreiben
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

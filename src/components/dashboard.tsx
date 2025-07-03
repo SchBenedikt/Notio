@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType, Lernzettel } from "@/lib/types";
@@ -643,28 +643,23 @@ export default function Dashboard() {
         return;
     }
     
-    try {
-        const dataToSave = {
-          title: values.title,
-          content: values.content,
-          subjectId: values.subjectId || null,
-          studySetIds: values.studySetIds || [],
-          dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
-          isDone: values.dueDate ? (values.isDone ?? false) : null,
-        };
+    const dataToSave = {
+      title: values.title,
+      content: values.content,
+      subjectId: values.subjectId || null,
+      studySetIds: values.studySetIds || [],
+      dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
+      isDone: values.dueDate ? (values.isDone ?? false) : null,
+    };
 
-        if (lernzettelId) {
-            const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
-            await updateDoc(lernzettelRef, {...dataToSave, updatedAt: serverTimestamp() });
-            toast({ title: "Lernzettel aktualisiert" });
-        } else {
-            const finalData = { ...dataToSave, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
-            await addDoc(collection(db, 'users', user.uid, 'lernzettel'), finalData);
-            toast({ title: "Lernzettel erstellt" });
-        }
-    } catch (error) {
-        console.error("Error saving Lernzettel:", error);
-        toast({ title: "Fehler beim Speichern des Lernzettels", variant: "destructive" });
+    if (lernzettelId) {
+      const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
+      await updateDoc(lernzettelRef, {...dataToSave, updatedAt: serverTimestamp() });
+      toast({ title: "Lernzettel aktualisiert" });
+    } else {
+      const finalData = { ...dataToSave, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+      await addDoc(collection(db, 'users', user.uid, 'lernzettel'), finalData);
+      toast({ title: "Lernzettel erstellt" });
     }
     setView('lernzettel');
   };
@@ -942,6 +937,75 @@ export default function Dashboard() {
     }
   };
 
+   const handleShareTimetable = async (): Promise<string> => {
+    if (!user || timetable.length === 0) {
+        toast({ title: "Fehler", description: "Es gibt keinen Stundenplan zum Teilen.", variant: "destructive" });
+        throw new Error("No timetable to share.");
+    }
+
+    const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+    let shareCode = generateCode();
+    
+    let codeExists = await getDoc(doc(db, 'timetableShares', shareCode));
+    while(codeExists.exists()) {
+        shareCode = generateCode();
+        codeExists = await getDoc(doc(db, 'timetableShares', shareCode));
+    }
+
+    const shareData = {
+        userId: user.uid,
+        timetable: timetable.map(({ id, ...rest }) => rest), // Remove IDs for import
+        createdAt: serverTimestamp(),
+    };
+
+    try {
+        await setDoc(doc(db, 'timetableShares', shareCode), shareData);
+        toast({ title: "Teilen-Code erstellt!", description: "Dein Code ist für 24 Stunden gültig." });
+        return shareCode;
+    } catch(error) {
+        console.error("Error creating share link:", error);
+        toast({ title: "Fehler", description: "Der Stundenplan konnte nicht geteilt werden.", variant: "destructive" });
+        throw error;
+    }
+  };
+
+  const handleImportTimetable = async (shareCode: string): Promise<void> => {
+    if (!user || !shareCode.trim()) {
+        toast({ title: "Fehler", description: "Bitte gib einen gültigen Code ein.", variant: "destructive" });
+        throw new Error("Invalid code");
+    }
+
+    const shareRef = doc(db, 'timetableShares', shareCode.trim());
+    const shareSnap = await getDoc(shareRef);
+
+    if (!shareSnap.exists()) {
+        toast({ title: "Fehler", description: "Dieser Teilen-Code ist ungültig oder abgelaufen.", variant: "destructive" });
+        throw new Error("Share not found");
+    }
+
+    const importedTimetable = shareSnap.data().timetable as Omit<TimetableEntry, 'id'>[];
+    const batch = writeBatch(db);
+    
+    const oldTimetableQuery = query(collection(db, 'users', user.uid, 'timetable'));
+    const oldTimetableSnap = await getDocs(oldTimetableQuery);
+    oldTimetableSnap.forEach(doc => batch.delete(doc.ref));
+
+    importedTimetable.forEach(entry => {
+        const newEntryRef = doc(collection(db, 'users', user.uid, 'timetable'));
+        batch.set(newEntryRef, entry);
+    });
+
+    try {
+        await batch.commit();
+        toast({ title: "Erfolg!", description: "Der Stundenplan wurde erfolgreich importiert." });
+    } catch(error) {
+        console.error("Error importing timetable:", error);
+        toast({ title: "Fehler", description: "Der Stundenplan konnte nicht importiert werden.", variant: "destructive" });
+        throw error;
+    }
+  };
+
+
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
   };
@@ -1212,6 +1276,8 @@ export default function Dashboard() {
             onToggleLernzettelDone={handleToggleLernzettelDone}
             onDeleteLernzettelDueDate={handleDeleteLernzettelDueDate}
             onViewLernzettel={handleViewLernzettel}
+            onShareTimetable={handleShareTimetable}
+            onImportTimetable={handleImportTimetable}
           />
         );
       case 'school-calendar':
