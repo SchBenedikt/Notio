@@ -1513,7 +1513,7 @@ export default function Dashboard() {
                   onUserNameChange={(name) => {
                       setUserName(name);
                   }}
-                  onToggleFollow={onToggleFollow}
+                  onToggleFollow={handleToggleFollow}
                   userRole={userRole}
                   onUserRoleChange={(role) => {
                       setUserRole(role);
@@ -1531,7 +1531,7 @@ export default function Dashboard() {
         return <CommunityPage 
                   currentUserProfile={profile}
                   onViewProfile={handleViewProfile}
-                  onToggleFollow={onToggleFollow}
+                  onToggleFollow={handleToggleFollow}
                   subjects={subjectsForGradeLevel}
                   grades={grades}
                />;
@@ -1540,7 +1540,7 @@ export default function Dashboard() {
             return <UserProfilePage 
                       userId={viewingProfileId} 
                       onBack={() => setView('community')}
-                      onToggleFollow={onToggleFollow}
+                      onToggleFollow={handleToggleFollow}
                       currentUserProfile={profile}
                    />
         }
