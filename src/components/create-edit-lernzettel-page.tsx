@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lernzettel, Subject, TimetableEntry, StudySet } from "@/lib/types";
-import { Loader2, ArrowLeft, Calendar as CalendarIcon, Link as LinkIcon } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar as CalendarIcon, Link as LinkIcon, Bold, Italic, Heading1, Heading2, List } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
@@ -115,6 +115,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
   const [secondNextLessonDate, setSecondNextLessonDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const contentValue = form.watch("content");
+  const contentAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (lernzettelToEdit) {
@@ -146,6 +147,62 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
         setSecondNextLessonDate(getNthLessonDate(selectedSubjectId, timetable, 2));
     }
   }, [selectedSubjectId, timetable]);
+  
+  const handleFormatting = (type: 'bold' | 'italic' | 'h1' | 'h2' | 'list') => {
+    const textarea = contentAreaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    let prefix = '';
+    let suffix = '';
+    let replacement = '';
+
+    switch (type) {
+        case 'h1':
+            prefix = '# ';
+            break;
+        case 'h2':
+            prefix = '## ';
+            break;
+        case 'bold':
+            prefix = '**';
+            suffix = '**';
+            break;
+        case 'italic':
+            prefix = '*';
+            suffix = '*';
+            break;
+        case 'list':
+            const lines = selectedText.split('\n');
+            if (lines.every(line => line.startsWith('- '))) {
+                replacement = lines.map(line => line.substring(2)).join('\n');
+            } else {
+                replacement = lines.map(line => line ? `- ${line}` : '- ').join('\n');
+            }
+            break;
+    }
+
+    if (type !== 'list') {
+        replacement = prefix + selectedText + suffix;
+    }
+    
+    const currentValue = form.getValues('content');
+    const newValue = currentValue.substring(0, start) + replacement + currentValue.substring(end);
+    
+    form.setValue('content', newValue, { shouldDirty: true });
+
+    setTimeout(() => {
+        textarea.focus();
+        if (selectedText.length === 0) {
+             textarea.setSelectionRange(start + prefix.length, start + prefix.length);
+        } else {
+            textarea.setSelectionRange(start, start + replacement.length);
+        }
+    }, 0);
+  };
+
 
   const handleFormSubmit = async (values: FormValues) => {
     let finalDueDate: Date | undefined;
@@ -324,14 +381,24 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Inhalt</FormLabel>
+                     <div className="flex items-center gap-1 border rounded-t-md p-1 bg-muted">
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFormatting('h1')} title="Überschrift 1"><Heading1 className="h-4 w-4" /></Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFormatting('h2')} title="Überschrift 2"><Heading2 className="h-4 w-4" /></Button>
+                        <Separator orientation="vertical" className="h-6 mx-1" />
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFormatting('bold')} title="Fett"><Bold className="h-4 w-4" /></Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFormatting('italic')} title="Kursiv"><Italic className="h-4 w-4" /></Button>
+                        <Separator orientation="vertical" className="h-6 mx-1" />
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleFormatting('list')} title="Aufzählung"><List className="h-4 w-4" /></Button>
+                    </div>
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-2 rounded-none">
                             <TabsTrigger value="edit">Bearbeiten</TabsTrigger>
                             <TabsTrigger value="preview">Vorschau</TabsTrigger>
                         </TabsList>
                         <TabsContent value="edit" className="mt-0">
                             <FormControl>
                             <Textarea
+                                ref={contentAreaRef}
                                 placeholder="Schreibe hier deine Zusammenfassung..."
                                 className="min-h-[40vh] font-mono text-sm rounded-t-none"
                                 {...field}
@@ -349,7 +416,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
                         </TabsContent>
                     </Tabs>
                     <FormDescription>
-                      Nutze Markdown für Formatierungen: `# Überschrift`, `* **fett**`, `* Aufzählung`.
+                      Nutze Markdown für Formatierungen: `# Überschrift`, `**fett**`, `*kursiv*`, `- Aufzählung`.
                       Verlinke andere Lernzettel mit `[Link-Text](/lernzettel/ID_DES_ZETTELS)`.
                     </FormDescription>
                     <FormMessage />
