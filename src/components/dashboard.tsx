@@ -1349,6 +1349,8 @@ export default function Dashboard() {
             lernzettel={lernzettel}
             studySets={studySets}
             onNavigate={setAppView}
+            onNavigateToLernzettel={handleViewLernzettel}
+            onNavigateToStudySet={handleViewStudySet}
             onAddSubject={() => setIsAddSubjectOpen(true)}
             onAddGrade={handleOpenAddGradeDialog}
             onAddTask={() => setIsAddTaskOpen(true)}

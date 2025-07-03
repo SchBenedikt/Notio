@@ -83,6 +83,8 @@ type DashboardOverviewProps = {
   lernzettel: Lernzettel[];
   studySets: StudySet[];
   onNavigate: (view: AppView) => void;
+  onNavigateToLernzettel: (id: string) => void;
+  onNavigateToStudySet: (id: string) => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onAddTask: () => void;
@@ -106,6 +108,8 @@ export function DashboardOverview({
     lernzettel,
     studySets,
     onNavigate,
+    onNavigateToLernzettel,
+    onNavigateToStudySet,
     onAddSubject,
     onAddGrade,
     onAddTask,
@@ -283,10 +287,17 @@ export function DashboardOverview({
                 {recentLernzettel.length > 0 ? (
                     <div className="space-y-2">
                         {recentLernzettel.slice(0, 4).map(note => (
-                            <div key={note.id} className="p-2 sm:p-3 rounded-lg bg-muted/50">
-                                <p className="font-semibold truncate">{note.title}</p>
-                                <p className="text-xs text-muted-foreground">{subjectsMap.get(note.subjectId || '') || 'Ohne Fach'}</p>
-                            </div>
+                            <Button 
+                                key={note.id} 
+                                variant="ghost" 
+                                className="w-full h-auto justify-start p-2 sm:p-3 text-left" 
+                                onClick={() => onNavigateToLernzettel(note.id)}
+                            >
+                                <div>
+                                    <p className="font-semibold truncate">{note.title}</p>
+                                    <p className="text-xs text-muted-foreground">{subjectsMap.get(note.subjectId || '') || 'Ohne Fach'}</p>
+                                </div>
+                            </Button>
                         ))}
                     </div>
                 ) : (
@@ -317,10 +328,17 @@ export function DashboardOverview({
                  {recentStudySets.length > 0 ? (
                     <div className="space-y-2">
                         {recentStudySets.slice(0, 4).map(set => (
-                            <div key={set.id} className="p-2 sm:p-3 rounded-lg bg-muted/50">
-                                <p className="font-semibold truncate">{set.title}</p>
-                                <p className="text-xs text-muted-foreground">{set.cards.length} Begriffe</p>
-                            </div>
+                            <Button
+                                key={set.id}
+                                variant="ghost"
+                                className="w-full h-auto justify-start p-2 sm:p-3 text-left"
+                                onClick={() => onNavigateToStudySet(set.id)}
+                            >
+                                <div>
+                                    <p className="font-semibold truncate">{set.title}</p>
+                                    <p className="text-xs text-muted-foreground">{set.cards.length} Begriffe</p>
+                                </div>
+                            </Button>
                         ))}
                     </div>
                 ) : (
