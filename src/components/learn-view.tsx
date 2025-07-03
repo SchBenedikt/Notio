@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -15,9 +16,10 @@ import { shuffle } from 'lodash-es';
 type LearnViewProps = {
   studySet: StudySet;
   onSessionFinish: (updatedCards: StudyCard[]) => Promise<void>;
+  googleAiApiKey: string;
 };
 
-export function LearnView({ studySet, onSessionFinish }: LearnViewProps) {
+export function LearnView({ studySet, onSessionFinish, googleAiApiKey }: LearnViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionCards, setSessionCards] = useState<StudyCard[]>([]);
@@ -40,7 +42,11 @@ export function LearnView({ studySet, onSessionFinish }: LearnViewProps) {
       setUpdatedCardsData(new Map());
 
       try {
-        const response = await createStudySession({ cards: studySet.cards, maxCards: 15 });
+        const response = await createStudySession({ 
+            cards: studySet.cards, 
+            maxCards: 15,
+            apiKey: googleAiApiKey,
+        });
         const cardsForSession = response.cardIds
           .map(id => studySet.cards.find(c => c.id === id))
           .filter((c): c is StudyCard => !!c);
@@ -59,7 +65,7 @@ export function LearnView({ studySet, onSessionFinish }: LearnViewProps) {
       }
     };
     startNewSession();
-  }, [studySet, key]);
+  }, [studySet, key, googleAiApiKey]);
 
   const currentCard = sessionCards[currentIndex];
 

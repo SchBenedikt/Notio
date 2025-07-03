@@ -22,9 +22,10 @@ type TutorChatProps = {
   allGrades: Grade[];
   studySets: StudySet[];
   lernzettel: Lernzettel[];
+  googleAiApiKey: string;
 };
 
-export function TutorChat({ subjects, allGrades, studySets, lernzettel }: TutorChatProps) {
+export function TutorChat({ subjects, allGrades, studySets, lernzettel, googleAiApiKey }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst mir auch Dateien, Lernzettel oder Lernsets zum Analysieren geben." }
   ]);
@@ -93,6 +94,7 @@ export function TutorChat({ subjects, allGrades, studySets, lernzettel }: TutorC
         })),
         lernzettel: selectedLernzettel.map(l => ({ title: l.title, content: l.content })),
         history: newMessages,
+        apiKey: googleAiApiKey,
       });
       setMessages(prev => [...prev, { role: 'model', content: response.response }]);
     } catch (error) {
@@ -327,7 +329,7 @@ export function TutorChat({ subjects, allGrades, studySets, lernzettel }: TutorC
             />
         </TabsContent>
         <TabsContent value="coach">
-            <StudyCoachPage subjects={subjects} allGrades={allGrades} />
+            <StudyCoachPage subjects={subjects} allGrades={allGrades} googleAiApiKey={googleAiApiKey} />
         </TabsContent>
     </Tabs>
   );

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI that creates a spaced repetition study session.
@@ -7,8 +8,10 @@
  * - StudySessionOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import { getDueDate } from '@/lib/srs';
 
 
@@ -29,7 +32,8 @@ export type StudyCardForSrs = z.infer<typeof StudyCardForSrsSchema>;
 
 const StudySessionInputSchema = z.object({
   cards: z.array(StudyCardForSrsSchema).describe('The list of all flashcards in the set with their SRS data.'),
-  maxCards: z.number().default(15).describe('The maximum number of cards to include in the session.')
+  maxCards: z.number().default(15).describe('The maximum number of cards to include in the session.'),
+  apiKey: z.string().optional().describe("Optional Google AI API Key."),
 });
 export type StudySessionInput = z.infer<typeof StudySessionInputSchema>;
 
@@ -44,12 +48,25 @@ export async function createStudySession(input: StudySessionInput): Promise<Stud
     return studySessionFlow(input);
 }
 
+const studySessionFlow = ai.defineFlow(
+  {
+    name: 'studySessionFlow',
+    inputSchema: StudySessionInputSchema,
+    outputSchema: StudySessionOutputSchema,
+  },
+  async (input) => {
+    if (input.cards.length === 0) {
+      return { cardIds: [], sessionTitle: "Leeres Lernset" };
+    }
 
-const prompt = ai.definePrompt({
-  name: 'studySessionPrompt',
-  input: {schema: StudySessionInputSchema},
-  output: {schema: StudySessionOutputSchema},
-  prompt: `Du bist ein intelligenter Lern-Coach. Deine Aufgabe ist es, eine personalisierte Lerneinheit basierend auf dem Spaced-Repetition-Prinzip zu erstellen.
+    const { apiKey, ...promptData } = input;
+    const localAi = genkit({plugins: [googleAI({ apiKey: apiKey ?? undefined })]});
+
+    const prompt = localAi.definePrompt({
+      name: 'studySessionPrompt',
+      input: {schema: z.object({ cards: z.array(StudyCardForSrsSchema), maxCards: z.number().default(15) })},
+      output: {schema: StudySessionOutputSchema},
+      prompt: `Du bist ein intelligenter Lern-Coach. Deine Aufgabe ist es, eine personalisierte Lerneinheit basierend auf dem Spaced-Repetition-Prinzip zu erstellen.
   Analysiere die folgende Liste von Karteikarten und ihren Lerndaten (Interval, Ease Factor, letztes Abfragedatum).
 
   Wähle bis zu {{maxCards}} Karten für die heutige Lernsitzung aus. Deine Auswahl sollte nach folgender Priorität erfolgen:
@@ -75,19 +92,9 @@ const prompt = ai.definePrompt({
   {{/each}}
   
   Antworte im vorgegebenen JSON-Format.`,
-});
+    });
 
-const studySessionFlow = ai.defineFlow(
-  {
-    name: 'studySessionFlow',
-    inputSchema: StudySessionInputSchema,
-    outputSchema: StudySessionOutputSchema,
-  },
-  async (input) => {
-    if (input.cards.length === 0) {
-      return { cardIds: [], sessionTitle: "Leeres Lernset" };
-    }
-    const {output} = await prompt(input);
+    const {output} = await prompt(promptData);
     if (!output) {
         throw new Error("AI failed to create a study session.");
     }

@@ -103,6 +103,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState<string | null>(null);
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [dashboardWidgets, setDashboardWidgets] = useState<Record<string, boolean>>(defaultWidgets);
+  const [googleAiApiKey, setGoogleAiApiKey] = useState<string>('');
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -180,6 +181,7 @@ export default function Dashboard() {
         setMinorSubjectWeight(settingsData.minorSubjectWeight ?? 1);
         setMaxPeriods(settingsData.maxPeriods ?? 10);
         setTheme(settingsData.theme ?? 'blue');
+        setGoogleAiApiKey(settingsData.googleAiApiKey || '');
         
         if (typeof settingsData.isDarkMode === 'boolean') {
           setIsDarkMode(settingsData.isDarkMode);
@@ -219,6 +221,7 @@ export default function Dashboard() {
           schoolId: '',
           dashboardLayouts: defaultLayouts,
           dashboardWidgets: defaultWidgets,
+          googleAiApiKey: '',
         };
         setDoc(settingsRef, defaultSettings);
       }
@@ -758,6 +761,7 @@ export default function Dashboard() {
         const generatedData = await generateStudySetFromNote({
             noteTitle: note.title,
             noteContent: note.content,
+            apiKey: googleAiApiKey,
         });
 
         const setId = await handleSaveStudySet({ ...generatedData, subjectId: note.subjectId || null }, undefined);
@@ -782,6 +786,7 @@ export default function Dashboard() {
         const result = await summarizeNote({
             noteTitle: note.title,
             noteContent: note.content,
+            apiKey: googleAiApiKey,
         });
         
         const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', note.id);
@@ -1536,6 +1541,7 @@ export default function Dashboard() {
             allLernzettel={lernzettel}
             onViewLernzettel={handleViewLernzettel}
             onToggleFavorite={handleToggleStudySetFavorite}
+            googleAiApiKey={googleAiApiKey}
           />;
         }
         return null;
@@ -1546,6 +1552,7 @@ export default function Dashboard() {
             allGrades={grades}
             studySets={studySets}
             lernzettel={lernzettel}
+            googleAiApiKey={googleAiApiKey}
           />
         );
       case 'calculator':
@@ -1647,6 +1654,11 @@ export default function Dashboard() {
             onIsDarkModeChange={(isDark) => {
                 setIsDarkMode(isDark);
                 saveSetting('isDarkMode', isDark);
+            }}
+            googleAiApiKey={googleAiApiKey}
+            onGoogleAiApiKeyChange={(key) => {
+                setGoogleAiApiKey(key);
+                saveSetting('googleAiApiKey', key);
             }}
         />;
       default:

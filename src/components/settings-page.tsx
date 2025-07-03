@@ -1,10 +1,11 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Weight, Palette, CalendarClock } from 'lucide-react';
+import { Settings, Weight, Palette, CalendarClock, KeyRound } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 
@@ -19,6 +20,8 @@ type SettingsPageProps = {
   onThemeChange: (theme: string) => void;
   isDarkMode: boolean;
   onIsDarkModeChange: (isDark: boolean) => void;
+  googleAiApiKey: string;
+  onGoogleAiApiKeyChange: (key: string) => void;
 };
 
 const themes = [
@@ -43,6 +46,8 @@ export function SettingsPage({
     onThemeChange,
     isDarkMode,
     onIsDarkModeChange,
+    googleAiApiKey,
+    onGoogleAiApiKeyChange
 }: SettingsPageProps) {
 
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
@@ -163,6 +168,26 @@ export function SettingsPage({
                             id="dark-mode"
                             checked={isDarkMode}
                             onCheckedChange={onIsDarkModeChange}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5 text-muted-foreground" />API-Schlüssel</CardTitle>
+                    <CardDescription>
+                        Optional: Gib deinen eigenen Google AI API-Schlüssel ein. Wenn du das Feld leer lässt, wird der Standard-Schlüssel der App verwendet.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="api-key">Google AI API Key</Label>
+                        <Input
+                            id="api-key"
+                            type="password"
+                            placeholder="••••••••••••••••••••••••••••"
+                            value={googleAiApiKey}
+                            onChange={(e) => onGoogleAiApiKeyChange(e.target.value)}
                         />
                     </div>
                 </CardContent>

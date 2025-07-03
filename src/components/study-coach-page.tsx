@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { getStudyCoachTips, StudyCoachOutput } from "@/ai/flows/study-coach-flow
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "./ui/badge";
 
-const StudyCoachResult = ({ subject, grades }: { subject: Subject; grades: Grade[] }) => {
+const StudyCoachResult = ({ subject, grades, apiKey }: { subject: Subject; grades: Grade[]; apiKey: string }) => {
   const [loading, setLoading] = useState(true);
   const [response, setResponse] = useState<StudyCoachOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,8 @@ const StudyCoachResult = ({ subject, grades }: { subject: Subject; grades: Grade
       writtenWeight: subject.writtenWeight,
       oralWeight: subject.oralWeight,
       targetGrade: subject.targetGrade,
-      grades: mappedGrades 
+      grades: mappedGrades,
+      apiKey: apiKey,
     })
       .then(res => {
         setResponse(res);
@@ -45,7 +47,7 @@ const StudyCoachResult = ({ subject, grades }: { subject: Subject; grades: Grade
       .finally(() => {
         setLoading(false);
       });
-  }, [subject, grades]);
+  }, [subject, grades, apiKey]);
 
   if (loading) {
     return (
@@ -97,9 +99,10 @@ const StudyCoachResult = ({ subject, grades }: { subject: Subject; grades: Grade
 type StudyCoachPageProps = {
   subjects: Subject[];
   allGrades: Grade[];
+  googleAiApiKey: string;
 };
 
-export function StudyCoachPage({ subjects, allGrades }: StudyCoachPageProps) {
+export function StudyCoachPage({ subjects, allGrades, googleAiApiKey }: StudyCoachPageProps) {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
 
   const selectedSubject = useMemo(() => {
@@ -165,7 +168,7 @@ export function StudyCoachPage({ subjects, allGrades }: StudyCoachPageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <StudyCoachResult subject={selectedSubject} grades={gradesForSelectedSubject} />
+            <StudyCoachResult subject={selectedSubject} grades={gradesForSelectedSubject} apiKey={googleAiApiKey} />
           </CardContent>
         </Card>
       )}

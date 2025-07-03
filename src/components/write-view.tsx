@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -15,9 +16,10 @@ import { evaluateAnswer } from '@/ai/flows/evaluate-answer-flow';
 
 type WriteViewProps = {
   cards: StudyCard[];
+  googleAiApiKey: string;
 };
 
-export function WriteView({ cards }: WriteViewProps) {
+export function WriteView({ cards, googleAiApiKey }: WriteViewProps) {
   const [shuffledCards, setShuffledCards] = useState<StudyCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
@@ -66,6 +68,7 @@ export function WriteView({ cards }: WriteViewProps) {
         userAnswer: inputValue,
         correctTerm: currentCard.term,
         definition: currentCard.definition,
+        apiKey: googleAiApiKey,
       });
 
       setEvaluationResult({ isCorrect: result.isCorrect, feedback: result.feedback });

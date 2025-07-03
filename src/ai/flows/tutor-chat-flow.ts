@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI tutor that can chat with the student and process files.
@@ -8,8 +9,10 @@
  * - TutorChatOutput - The return type for the getTutorResponse function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const AttachmentSchema = z.object({
   name: z.string(),
@@ -64,6 +67,7 @@ const TutorChatInputSchema = z.object({
   studySets: z.array(StudySetForTutorSchema).optional().describe("A list of study sets the user has selected for this conversation."),
   lernzettel: z.array(LernzettelForTutorSchema).optional().describe("A list of study notes the user has selected for this conversation."),
   history: z.array(ChatMessageSchema).describe('The chat history so far. The last message is the current user query.'),
+  apiKey: z.string().optional().describe("Optional Google AI API Key."),
 });
 export type TutorChatInput = z.infer<typeof TutorChatInputSchema>;
 
@@ -85,9 +89,12 @@ const tutorChatFlow = ai.defineFlow(
   },
   async (input) => {
     
+    const { apiKey, ...originalInput } = input;
+    const localAi = genkit({plugins: [googleAI({ apiKey: apiKey ?? undefined })]});
+
     let subjectsInfo = "Der Schüler hat noch keine Fächer oder Noten für diese Klassenstufe eingetragen.";
-    if (input.subjects.length > 0) {
-        subjectsInfo = "Hier ist die aktuelle Notenübersicht des Schülers:\n\n" + input.subjects.map(s => {
+    if (originalInput.subjects.length > 0) {
+        subjectsInfo = "Hier ist die aktuelle Notenübersicht des Schülers:\n\n" + originalInput.subjects.map(s => {
             const gradeList = s.grades.length > 0 
                 ? s.grades.map(g => `- ${g.name || g.type}: Note ${g.value}${g.notes ? ` (Notiz: ${g.notes})` : ''}`).join('\n')
                 : "  Noch keine Noten eingetragen.";
@@ -97,8 +104,8 @@ const tutorChatFlow = ai.defineFlow(
     }
 
     let studySetsInfo = "";
-    if (input.studySets && input.studySets.length > 0) {
-        studySetsInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernsets für diesen Chat ausgewählt. Beziehe dich auf die Begriffe, Definitionen und Lernfortschrittsdaten (SRS), um Fragen zu beantworten, Zusammenfassungen zu erstellen oder Übungsaufgaben zu generieren:\n\n" + input.studySets.map(set => {
+    if (originalInput.studySets && originalInput.studySets.length > 0) {
+        studySetsInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernsets für diesen Chat ausgewählt. Beziehe dich auf die Begriffe, Definitionen und Lernfortschrittsdaten (SRS), um Fragen zu beantworten, Zusammenfassungen zu erstellen oder Übungsaufgaben zu generieren:\n\n" + originalInput.studySets.map(set => {
             const cardList = set.cards.map(card => {
                 let srsInfo = "- Status: Neue Karte";
                 if (card.srs) {
@@ -113,8 +120,8 @@ const tutorChatFlow = ai.defineFlow(
     }
     
     let lernzettelInfo = "";
-    if (input.lernzettel && input.lernzettel.length > 0) {
-        lernzettelInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernzettel für diesen Chat ausgewählt. Beziehe dich auf deren Inhalte, um Fragen zu beantworten oder Zusammenfassungen zu erstellen:\n\n" + input.lernzettel.map(note => {
+    if (originalInput.lernzettel && originalInput.lernzettel.length > 0) {
+        lernzettelInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernzettel für diesen Chat ausgewählt. Beziehe dich auf deren Inhalte, um Fragen zu beantworten oder Zusammenfassungen zu erstellen:\n\n" + originalInput.lernzettel.map(note => {
             return `Lernzettel: "${note.title}"\nInhalt:\n---\n${note.content}\n---`;
         }).join('\n\n');
     }
@@ -134,10 +141,10 @@ ${lernzettelInfo}
 
 Sei ermutigend, geduldig und sprich den Schüler mit "Du" an. Antworte immer auf Deutsch.`;
 
-    const lastMessage = input.history[input.history.length - 1];
+    const lastMessage = originalInput.history[originalInput.history.length - 1];
     
     // Construct the history for Genkit, including attachments
-    const historyForGenkit = input.history.slice(0, -1).map((msg) => {
+    const historyForGenkit = originalInput.history.slice(0, -1).map((msg) => {
         const content: ({ text: string } | { media: { url: string } })[] = [{ text: msg.content }];
         if (msg.attachments) {
             msg.attachments.forEach(att => {
@@ -158,7 +165,7 @@ Sei ermutigend, geduldig und sprich den Schüler mit "Du" an. Antworte immer auf
         });
     }
     
-    const response = await ai.generate({
+    const response = await localAi.generate({
         model: 'googleai/gemini-1.5-flash',
         prompt: promptParts,
         history: historyForGenkit,

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -28,9 +29,10 @@ type StudySetDetailPageProps = {
   allLernzettel: Lernzettel[];
   onViewLernzettel: (id: string) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
+  googleAiApiKey: string;
 };
 
-export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite }: StudySetDetailPageProps) {
+export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite, googleAiApiKey }: StudySetDetailPageProps) {
   const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'match' | 'quiz' | 'test' | 'learn'>('learn');
 
   const hasCards = studySet.cards.length > 0;
@@ -119,7 +121,7 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
         </TabsList>
 
         <TabsContent value="learn" className="mt-4">
-            {hasCards ? <LearnView studySet={studySet} onSessionFinish={onSessionFinish} /> : null}
+            {hasCards ? <LearnView studySet={studySet} onSessionFinish={onSessionFinish} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
         <TabsContent value="list" className="mt-4">
             <Card>
@@ -162,16 +164,16 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
             {hasCards ? <FlashcardsView cards={studySet.cards} /> : null}
         </TabsContent>
         <TabsContent value="write" className="mt-4">
-            {hasCards ? <WriteView cards={studySet.cards} /> : null}
+            {hasCards ? <WriteView cards={studySet.cards} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
          <TabsContent value="match" className="mt-4">
             {hasCards ? <MatchView cards={studySet.cards} /> : null}
         </TabsContent>
          <TabsContent value="quiz" className="mt-4">
-            {hasCards ? <StudySetQuizView studySet={studySet} /> : null}
+            {hasCards ? <StudySetQuizView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
         <TabsContent value="test" className="mt-4">
-            {hasCards ? <StudySetTestView studySet={studySet} /> : null}
+            {hasCards ? <StudySetTestView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
       </Tabs>
     </div>

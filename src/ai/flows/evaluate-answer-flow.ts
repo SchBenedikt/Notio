@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI that evaluates a user's answer in a quiz.
@@ -7,13 +8,16 @@
  * - EvaluateAnswerOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const EvaluateAnswerInputSchema = z.object({
   userAnswer: z.string().describe("The answer the user provided."),
   correctTerm: z.string().describe("The correct term the user was supposed to provide."),
   definition: z.string().describe("The definition or prompt shown to the user for context."),
+  apiKey: z.string().optional().describe("Optional Google AI API Key."),
 });
 export type EvaluateAnswerInput = z.infer<typeof EvaluateAnswerInputSchema>;
 
@@ -36,11 +40,21 @@ export async function evaluateAnswer(input: EvaluateAnswerInput): Promise<Evalua
   return evaluateAnswerFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'evaluateAnswerPrompt',
-  input: {schema: EvaluateAnswerInputSchema},
-  output: {schema: EvaluateAnswerOutputSchema},
-  prompt: `Du bist ein hilfreicher und verständnisvoller Lern-Assistent. Deine Aufgabe ist es, die Antwort eines Schülers im "Schreiben"-Lernmodus zu bewerten. Der Schüler bekommt eine Definition und muss den korrekten Begriff eingeben.
+const evaluateAnswerFlow = ai.defineFlow(
+  {
+    name: 'evaluateAnswerFlow',
+    inputSchema: EvaluateAnswerInputSchema,
+    outputSchema: EvaluateAnswerOutputSchema,
+  },
+  async (input) => {
+    const { apiKey, ...promptData } = input;
+    const localAi = genkit({plugins: [googleAI({ apiKey: apiKey ?? undefined })]});
+    
+    const prompt = localAi.definePrompt({
+      name: 'evaluateAnswerPrompt',
+      input: {schema: z.object({ userAnswer: z.string(), correctTerm: z.string(), definition: z.string() })},
+      output: {schema: EvaluateAnswerOutputSchema},
+      prompt: `Du bist ein hilfreicher und verständnisvoller Lern-Assistent. Deine Aufgabe ist es, die Antwort eines Schülers im "Schreiben"-Lernmodus zu bewerten. Der Schüler bekommt eine Definition und muss den korrekten Begriff eingeben.
 
   Kontext:
   - Definition: "{{definition}}"
@@ -55,16 +69,9 @@ const prompt = ai.definePrompt({
       - Bei einer falschen Antwort (kein Tippfehler): Gib die richtige Antwort an, z.B. "Nicht ganz. Die richtige Antwort lautet '{{correctTerm}}'."
 
   Antworte im vorgegebenen JSON-Format.`,
-});
+    });
 
-const evaluateAnswerFlow = ai.defineFlow(
-  {
-    name: 'evaluateAnswerFlow',
-    inputSchema: EvaluateAnswerInputSchema,
-    outputSchema: EvaluateAnswerOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(promptData);
     if (!output) {
         throw new Error("AI failed to evaluate the answer.");
     }

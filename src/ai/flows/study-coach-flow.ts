@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered study coach that provides feedback and tips.
@@ -7,8 +8,10 @@
  * - StudyCoachOutput - The return type for the studyCoachFlow function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const StudyCoachInputSchema = z.object({
   subjectName: z.string().describe('The name of the subject.'),
@@ -27,6 +30,7 @@ const StudyCoachInputSchema = z.object({
       })
     )
     .describe('A list of grades for the subject.'),
+  apiKey: z.string().optional().describe("Optional Google AI API Key."),
 });
 export type StudyCoachInput = z.infer<typeof StudyCoachInputSchema>;
 
@@ -39,30 +43,6 @@ export type StudyCoachOutput = z.infer<typeof StudyCoachOutputSchema>;
 export async function getStudyCoachTips(input: StudyCoachInput): Promise<StudyCoachOutput> {
   return studyCoachFlow(input);
 }
-
-const prompt = ai.definePrompt({
-  name: 'studyCoachPrompt',
-  input: {schema: StudyCoachInputSchema},
-  output: {schema: StudyCoachOutputSchema},
-  prompt: `Du bist ein positiver und motivierender Lern-Coach für Schüler in Deutschland.
-Analysiere die folgenden Noten für das Fach '{{subjectName}}' ({{subjectCategory}}).
-{{#if targetGrade}}Der Schüler hat sich eine Wunschnote von {{targetGrade}} zum Ziel gesetzt. Beziehe das in deine Analyse mit ein und gib konkrete Tipps, wie dieses Ziel erreicht werden kann. Vergleiche den aktuellen Schnitt mit der Wunschnote.{{/if}}
-Gib eine kurze, aufmunternde Einschätzung der aktuellen Situation und dann 3-5 konkrete, umsetzbare Lerntipps.
-Berücksichtige dabei die Notenwerte (1=sehr gut, 6=ungenügend), die Notentypen ('Schulaufgabe' ist wichtiger als 'mündliche Note') und eventuelle Notizen des Schülers.
-{{#if writtenWeight}}
-Für dieses Hauptfach gilt eine spezielle Gewichtung: Schriftliche Noten zählen {{writtenWeight}}-fach und mündliche Noten {{oralWeight}}-fach.
-{{else}}
-Die einzelne Gewichtung (x-Wert) gibt an, wie stark eine Note zählt.
-{{/if}}
-Sprich den Schüler direkt und freundlich mit 'Du' an. Antworte auf Deutsch.
-
-Hier sind die Noten:
-{{#each grades}}
-- Bezeichnung: {{#if this.name}}{{this.name}}{{else}}{{this.type}}{{/if}}, Note: {{this.value}}, Gewichtung: {{this.weight}}{{#if this.notes}}, Notiz: "{{this.notes}}"{{/if}}
-{{/each}}
-
-Gib deine Antwort im vorgegebenen JSON-Format.`,
-});
 
 const studyCoachFlow = ai.defineFlow(
   {
@@ -79,7 +59,47 @@ const studyCoachFlow = ai.defineFlow(
       };
     }
 
-    const {output} = await prompt(input);
+    const { apiKey, ...promptData } = input;
+    const localAi = genkit({plugins: [googleAI({ apiKey: apiKey ?? undefined })]});
+
+    const prompt = localAi.definePrompt({
+      name: 'studyCoachPrompt',
+      input: {schema: z.object({
+          subjectName: z.string(),
+          subjectCategory: z.string(),
+          writtenWeight: z.number().nullable().optional(),
+          oralWeight: z.number().nullable().optional(),
+          targetGrade: z.number().nullable().optional(),
+          grades: z.array(z.object({
+              name: z.string().nullable().optional(),
+              value: z.number(),
+              type: z.string(),
+              notes: z.string().nullable().optional(),
+              weight: z.number(),
+            }))
+        })},
+      output: {schema: StudyCoachOutputSchema},
+      prompt: `Du bist ein positiver und motivierender Lern-Coach für Schüler in Deutschland.
+    Analysiere die folgenden Noten für das Fach '{{subjectName}}' ({{subjectCategory}}).
+    {{#if targetGrade}}Der Schüler hat sich eine Wunschnote von {{targetGrade}} zum Ziel gesetzt. Beziehe das in deine Analyse mit ein und gib konkrete Tipps, wie dieses Ziel erreicht werden kann. Vergleiche den aktuellen Schnitt mit der Wunschnote.{{/if}}
+    Gib eine kurze, aufmunternde Einschätzung der aktuellen Situation und dann 3-5 konkrete, umsetzbare Lerntipps.
+    Berücksichtige dabei die Notenwerte (1=sehr gut, 6=ungenügend), die Notentypen ('Schulaufgabe' ist wichtiger als 'mündliche Note') und eventuelle Notizen des Schülers.
+    {{#if writtenWeight}}
+    Für dieses Hauptfach gilt eine spezielle Gewichtung: Schriftliche Noten zählen {{writtenWeight}}-fach und mündliche Noten {{oralWeight}}-fach.
+    {{else}}
+    Die einzelne Gewichtung (x-Wert) gibt an, wie stark eine Note zählt.
+    {{/if}}
+    Sprich den Schüler direkt und freundlich mit 'Du' an. Antworte auf Deutsch.
+
+    Hier sind die Noten:
+    {{#each grades}}
+    - Bezeichnung: {{#if this.name}}{{this.name}}{{else}}{{this.type}}{{/if}}, Note: {{this.value}}, Gewichtung: {{this.weight}}{{#if this.notes}}, Notiz: "{{this.notes}}"{{/if}}
+    {{/each}}
+
+    Gib deine Antwort im vorgegebenen JSON-Format.`,
+    });
+
+    const {output} = await prompt(promptData);
     return output!;
   }
 );

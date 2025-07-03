@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI that generates a comprehensive test from a study set.
@@ -7,8 +8,10 @@
  * - StudySetTestOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const StudyCardSchema = z.object({
   id: z.string(),
@@ -20,6 +23,7 @@ const StudySetTestInputSchema = z.object({
   title: z.string().describe('The title of the study set.'),
   description: z.string().optional().describe('The description of the study set.'),
   cards: z.array(StudyCardSchema).describe('The list of flashcards (term and definition).'),
+  apiKey: z.string().optional().describe("Optional Google AI API Key."),
 });
 export type StudySetTestInput = z.infer<typeof StudySetTestInputSchema>;
 
@@ -61,29 +65,6 @@ export async function generateStudySetTest(input: StudySetTestInput): Promise<St
   return studySetTestFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'studySetTestPrompt',
-  input: {schema: StudySetTestInputSchema},
-  output: {schema: StudySetTestOutputSchema},
-  prompt: `Du bist ein erfahrener Lehrer, der einen umfassenden Test aus einem Lernset erstellt.
-Deine Aufgabe ist es, einen Test mit 5 bis 10 Fragen zu generieren, der verschiedene Frage-Typen mischt: Multiple-Choice, offene schriftliche Fragen und Wahr/Falsch-Fragen. Wichtig: Alle Fragen, Antworten, Optionen und Erklärungen müssen auf Deutsch sein.
-- **Multiple-Choice:** Erstelle eine klare Frage mit 4 plausiblen Antwortmöglichkeiten, von denen nur eine korrekt ist.
-- **Schriftlich:** Gib eine Definition vor und frage nach dem korrekten Begriff.
-- **Wahr/Falsch:** Formuliere eine Aussage über einen Begriff und seine Definition. Diese Aussage muss entweder klar wahr oder klar falsch sein. Manchmal sollte die Aussage korrekt sein, manchmal sollte sie einen falschen Begriff zur Definition zuordnen.
-- Variiere die Fragetypen, um den Test abwechslungsreich zu gestalten.
-- Gib für jede Frage eine kurze Erklärung, warum die Antwort korrekt ist.
-
-Lernset-Titel: {{title}}
-{{#if description}}Lernset-Beschreibung: {{description}}{{/if}}
-
-Karten:
-{{#each cards}}
-- Begriff: "{{term}}", Definition: "{{definition}}"
-{{/each}}
-
-Erstelle den Test und gib das Ergebnis im vorgegebenen JSON-Format mit den unterschiedlichen Objekten im 'questions'-Array zurück.`,
-});
-
 const studySetTestFlow = ai.defineFlow(
   {
     name: 'studySetTestFlow',
@@ -91,7 +72,37 @@ const studySetTestFlow = ai.defineFlow(
     outputSchema: StudySetTestOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    const { apiKey, ...promptData } = input;
+    const localAi = genkit({plugins: [googleAI({ apiKey: apiKey ?? undefined })]});
+    
+    const prompt = localAi.definePrompt({
+      name: 'studySetTestPrompt',
+      input: {schema: z.object({
+          title: z.string(),
+          description: z.string().optional(),
+          cards: z.array(StudyCardSchema),
+        })},
+      output: {schema: StudySetTestOutputSchema},
+      prompt: `Du bist ein erfahrener Lehrer, der einen umfassenden Test aus einem Lernset erstellt.
+    Deine Aufgabe ist es, einen Test mit 5 bis 10 Fragen zu generieren, der verschiedene Frage-Typen mischt: Multiple-Choice, offene schriftliche Fragen und Wahr/Falsch-Fragen. Wichtig: Alle Fragen, Antworten, Optionen und Erklärungen müssen auf Deutsch sein.
+    - **Multiple-Choice:** Erstelle eine klare Frage mit 4 plausiblen Antwortmöglichkeiten, von denen nur eine korrekt ist.
+    - **Schriftlich:** Gib eine Definition vor und frage nach dem korrekten Begriff.
+    - **Wahr/Falsch:** Formuliere eine Aussage über einen Begriff und seine Definition. Diese Aussage muss entweder klar wahr oder klar falsch sein. Manchmal sollte die Aussage korrekt sein, manchmal sollte sie einen falschen Begriff zur Definition zuordnen.
+    - Variiere die Fragetypen, um den Test abwechslungsreich zu gestalten.
+    - Gib für jede Frage eine kurze Erklärung, warum die Antwort korrekt ist.
+
+    Lernset-Titel: {{title}}
+    {{#if description}}Lernset-Beschreibung: {{description}}{{/if}}
+
+    Karten:
+    {{#each cards}}
+    - Begriff: "{{term}}", Definition: "{{definition}}"
+    {{/each}}
+
+    Erstelle den Test und gib das Ergebnis im vorgegebenen JSON-Format mit den unterschiedlichen Objekten im 'questions'-Array zurück.`,
+    });
+
+    const {output} = await prompt(promptData);
     if (!output?.questions || output.questions.length === 0) {
         throw new Error("AI failed to generate test questions.");
     }

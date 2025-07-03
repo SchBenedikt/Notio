@@ -177,7 +177,7 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onN
         </CardContent>
       </Card>
 
-      <style jsx global>{`
+      <style jsx global>{\`
         .prose h1 {
           font-size: 2.25rem;
           margin-bottom: 1rem;
@@ -221,7 +221,7 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onN
             padding: 1rem;
             border-radius: 0.5rem;
         }
-      `}</style>
+      \`}</style>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -12,9 +13,10 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 type StudySetQuizViewProps = {
   studySet: StudySet;
+  googleAiApiKey: string;
 };
 
-export function StudySetQuizView({ studySet }: StudySetQuizViewProps) {
+export function StudySetQuizView({ studySet, googleAiApiKey }: StudySetQuizViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -38,6 +40,7 @@ export function StudySetQuizView({ studySet }: StudySetQuizViewProps) {
           title: studySet.title,
           description: studySet.description,
           cards: studySet.cards,
+          apiKey: googleAiApiKey,
         });
         setQuestions(response.questions);
       } catch (err) {
@@ -48,7 +51,7 @@ export function StudySetQuizView({ studySet }: StudySetQuizViewProps) {
       }
     };
     fetchQuiz();
-  }, [studySet, key]);
+  }, [studySet, key, googleAiApiKey]);
   
   const handleAnswerSelect = (answer: string) => {
     if (isAnswered) return;

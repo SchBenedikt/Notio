@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -16,11 +17,12 @@ import { Label } from './ui/label';
 
 type StudySetTestViewProps = {
   studySet: StudySet;
+  googleAiApiKey: string;
 };
 
 type AnswerStatus = 'unanswered' | 'checking' | 'correct' | 'incorrect';
 
-export function StudySetTestView({ studySet }: StudySetTestViewProps) {
+export function StudySetTestView({ studySet, googleAiApiKey }: StudySetTestViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
@@ -45,6 +47,7 @@ export function StudySetTestView({ studySet }: StudySetTestViewProps) {
           title: studySet.title,
           description: studySet.description,
           cards: studySet.cards,
+          apiKey: googleAiApiKey,
         });
         setQuestions(response.questions);
       } catch (err) {
@@ -55,7 +58,7 @@ export function StudySetTestView({ studySet }: StudySetTestViewProps) {
       }
     };
     fetchTest();
-  }, [studySet, key]);
+  }, [studySet, key, googleAiApiKey]);
   
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -68,6 +71,7 @@ export function StudySetTestView({ studySet }: StudySetTestViewProps) {
       userAnswer: answer,
       correctTerm: correctAnswer,
       definition: definition,
+      apiKey: googleAiApiKey,
     });
     return result.isCorrect;
   };
