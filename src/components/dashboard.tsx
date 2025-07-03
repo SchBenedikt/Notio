@@ -1327,7 +1327,7 @@ export default function Dashboard() {
   };
   
   const renderView = () => {
-    if (dataLoading && !['community', 'user-profile', 'school-calendar', 'activity'].includes(view)) {
+    if (dataLoading && !['community', 'user-profile', 'school-calendar', 'activity', 'files'].includes(view)) {
       return <DashboardSkeleton />;
     }
     switch (view) {
