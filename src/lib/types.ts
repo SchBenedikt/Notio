@@ -1,4 +1,5 @@
 import type { Timestamp } from "firebase/firestore";
+import { LucideIcon } from "lucide-react";
 
 export interface Attachment {
   name: string;
@@ -209,5 +210,26 @@ export interface Task {
   createdAt: Timestamp;
 }
 
+export type ActivityType = 
+    | 'SUBJECT_CREATED' 
+    | 'GRADE_ADDED' 
+    | 'GRADE_PLANNED'
+    | 'STUDY_SET_CREATED'
+    | 'STUDY_SET_LEARNED'
+    | 'LERNZETTEL_CREATED'
+    | 'LERNZETTEL_EDITED'
+    | 'TASK_CREATED'
+    | 'TASK_COMPLETED'
+    | 'DATA_IMPORTED'
+    | 'TIMETABLE_IMPORTED'
 
-export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'planner' | 'school-calendar' | 'lernzettel' | 'lernzettel-create' | 'lernzettel-edit' | 'lernzettel-detail';
+export interface ActivityLog {
+    id: string;
+    type: ActivityType;
+    timestamp: Timestamp;
+    description: string;
+    icon: string; // Lucide icon name
+    details?: Record<string, any>;
+}
+
+export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'planner' | 'school-calendar' | 'lernzettel' | 'lernzettel-create' | 'lernzettel-edit' | 'lernzettel-detail' | 'activity';

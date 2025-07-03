@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType, Lernzettel } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType, Lernzettel, ActivityType, ActivityLog } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -45,6 +45,7 @@ import { LernzettelPage } from "./lernzettel-page";
 import { CreateEditLernzettelPage } from "./create-edit-lernzettel-page";
 import { LernzettelDetailPage } from "./lernzettel-detail-page";
 import { generateStudySetFromNote } from "@/ai/flows/create-studyset-from-note-flow";
+import { ActivityPage } from "./activity-page";
 
 
 const DashboardSkeleton = () => (
@@ -85,6 +86,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allSchools, setAllSchools] = useState<School[]>([]);
   const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   
   // Settings state
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<number>(10);
@@ -120,13 +122,22 @@ export default function Dashboard() {
 
   const { toast } = useToast();
 
+  const logActivity = useCallback((type: ActivityType, description: string, icon: string, details?: Record<string, any>) => {
+    if (!user || !isFirebaseEnabled) return;
+    const activityData = {
+      type,
+      description,
+      icon,
+      details: details || {},
+      timestamp: serverTimestamp(),
+    };
+    addDoc(collection(db, 'users', user.uid, 'activity'), activityData);
+  }, [user, isFirebaseEnabled]);
+
   const saveSetting = useCallback(debounce((key: string, value: any) => {
     if (!user || !isFirebaseEnabled) return;
     const settingsDocRef = doc(db, 'users', user.uid, 'settings', 'main');
     try {
-      // Firestore does not support 'undefined' values.
-      // We can create a temporary object and then stringify and parse it 
-      // to easily remove any properties with undefined values from nested objects.
       const sanitizedData = JSON.parse(JSON.stringify({ [key]: value }));
       setDoc(settingsDocRef, sanitizedData, { merge: true });
     } catch (error) {
@@ -150,6 +161,7 @@ export default function Dashboard() {
       setProfile(null);
       setUserName(null);
       setSchoolEvents([]);
+      setActivityLogs([]);
       return;
     }
 
@@ -253,6 +265,16 @@ export default function Dashboard() {
     });
     unsubscribers.push(tasksUnsub);
 
+    // --- Activity Log listener ---
+    const activityQuery = query(collection(db, 'users', user.uid, 'activity'), orderBy('timestamp', 'desc'), where('timestamp', '!=', null));
+    const activityUnsub = onSnapshot(activityQuery, (snapshot) => {
+        const activityData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ActivityLog[];
+        setActivityLogs(activityData);
+    }, (error) => {
+        console.error("Error fetching activity log:", error);
+    });
+    unsubscribers.push(activityUnsub);
+
     // --- All schools (one-time fetch) ---
     const fetchSchools = async () => {
         const schoolsQuery = query(collection(db, 'schools'));
@@ -342,7 +364,11 @@ export default function Dashboard() {
     }
     
     const subjectIds = subjects.map(s => s.id);
-    // Firestore 'in' query limit is 30. We'll assume a user has less than 30 subjects per grade level.
+    if (subjectIds.length === 0) {
+        setGrades([]);
+        setDataLoading(false);
+        return;
+    }
     const gradesQuery = query(collection(db, 'users', user.uid, 'grades'), where('subjectId', 'in', subjectIds));
     
     const gradesUnsub = onSnapshot(gradesQuery, (snapshot) => {
@@ -424,7 +450,7 @@ export default function Dashboard() {
 
   const awards = useMemo<Award[]>(() => {
     return awardsDefinitions.map(def => {
-      const result = def.check(subjectsForGradeLevel, grades, overallAverage);
+      const result = def.check(subjectsForGradeLevel, grades, overallAverage, studySets, lernzettel, tasks);
       return {
         id: def.id,
         name: def.name,
@@ -437,7 +463,7 @@ export default function Dashboard() {
         progress: result.progress,
       };
     });
-  }, [subjectsForGradeLevel, grades, overallAverage]);
+  }, [subjectsForGradeLevel, grades, overallAverage, studySets, lernzettel, tasks]);
 
   const handleAddSubject = async (values: AddSubjectData): Promise<string> => {
     const newSubjectData = {
@@ -459,6 +485,7 @@ export default function Dashboard() {
     
     try {
         const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), newSubjectData);
+        logActivity('SUBJECT_CREATED', `Fach "${values.name}" erstellt`, 'Plus');
         toast({
             title: "Fach hinzugefügt",
             description: `Das Fach "${values.name}" wurde erfolgreich erstellt.`,
@@ -532,6 +559,7 @@ export default function Dashboard() {
   };
 
   const handleSaveGrade = async (subjectId: string, values: AddGradeData, gradeId?: string) => {
+    const subjectName = subjects.find(s => s.id === subjectId)?.name || '';
     const gradeData = {
       subjectId,
       type: values.type,
@@ -562,6 +590,11 @@ export default function Dashboard() {
         toast({ title: "Note aktualisiert", description: "Die Änderungen an der Note wurden gespeichert." });
       } else {
         await addDoc(collection(db, 'users', user.uid, 'grades'), gradeData);
+        if (values.value) {
+            logActivity('GRADE_ADDED', `Note ${values.value} in "${subjectName}" hinzugefügt`, 'ClipboardCheck');
+        } else {
+            logActivity('GRADE_PLANNED', `Termin für "${subjectName}" geplant`, 'ClipboardCheck');
+        }
         toast({ title: "Note hinzugefügt", description: `Eine neue Note wurde erfolgreich gespeichert.` });
       }
     } catch (error) {
@@ -609,6 +642,7 @@ export default function Dashboard() {
             return setId;
         } else {
             const docRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
+            logActivity('STUDY_SET_CREATED', `Lernset "${values.title}" erstellt`, 'BrainCircuit');
             toast({ title: "Lernset erstellt" });
             return docRef.id;
         }
@@ -623,6 +657,8 @@ export default function Dashboard() {
       try {
           const setRef = doc(db, 'users', user.uid, 'studySets', setId);
           await updateDoc(setRef, { cards: JSON.parse(JSON.stringify(updatedCards)) });
+          const studySet = studySets.find(s => s.id === setId);
+          logActivity('STUDY_SET_LEARNED', `Lerneinheit für "${studySet?.title}" abgeschlossen`, 'Check');
           toast({ title: "Lernfortschritt gespeichert!" });
       } catch (error) {
           console.error("Error updating study set cards:", error);
@@ -659,10 +695,12 @@ export default function Dashboard() {
     if (lernzettelId) {
       const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
       await updateDoc(lernzettelRef, {...dataToSave, updatedAt: serverTimestamp() });
+      logActivity('LERNZETTEL_EDITED', `Lernzettel "${values.title}" bearbeitet`, 'FileText');
       toast({ title: "Lernzettel aktualisiert" });
     } else {
       const finalData = { ...dataToSave, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
       await addDoc(collection(db, 'users', user.uid, 'lernzettel'), finalData);
+      logActivity('LERNZETTEL_CREATED', `Lernzettel "${values.title}" erstellt`, 'FilePlus');
       toast({ title: "Lernzettel erstellt" });
     }
     setView('lernzettel');
@@ -708,10 +746,14 @@ export default function Dashboard() {
     try {
         const ref = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
         await updateDoc(ref, { isDone });
+        if(isDone) {
+            const lz = lernzettel.find(l => l.id === lernzettelId);
+            logActivity('TASK_COMPLETED', `Lernziel "${lz?.title}" als erledigt markiert`, 'Check');
+        }
     } catch (error) {
         toast({title: 'Fehler', variant: 'destructive'})
     }
-  };
+  }
   
   const handleDeleteLernzettelDueDate = async (lernzettelId: string) => {
      if (!user || !isFirebaseEnabled) return;
@@ -843,6 +885,7 @@ export default function Dashboard() {
 
   const handleSaveTask = async (values: { content: string; dueDate?: Date; subjectId: string; type: TaskType; }) => {
     if (!user) return;
+    const subjectName = subjects.find(s => s.id === values.subjectId)?.name || '';
     const data = { 
         ...values, 
         dueDate: values.dueDate?.toISOString() || null, 
@@ -851,6 +894,7 @@ export default function Dashboard() {
     };
     try {
         await addDoc(collection(db, 'users', user.uid, 'tasks'), data);
+        logActivity('TASK_CREATED', `Aufgabe für "${subjectName}" erstellt`, 'ListChecks');
         toast({ title: "Aufgabe gespeichert" });
     } catch(error) {
         console.error("Error saving task:", error);
@@ -873,6 +917,10 @@ export default function Dashboard() {
       if (!user) return;
       try {
           await setDoc(doc(db, 'users', user.uid, 'tasks', taskId), { isDone }, { merge: true });
+           if(isDone) {
+            const task = tasks.find(t => t.id === taskId);
+            logActivity('TASK_COMPLETED', `Aufgabe "${task?.content}" als erledigt markiert`, 'Check');
+        }
       } catch(error) {
           console.error("Error toggling task:", error);
           toast({ title: "Fehler beim Aktualisieren der Aufgabe", variant: "destructive" });
@@ -956,10 +1004,16 @@ export default function Dashboard() {
         codeExists = await getDoc(doc(db, 'timetableShares', shareCode));
     }
 
+    const subjectIdsInTimetable = new Set(timetable.map(e => e.subjectId));
+    const subjectsToShare = subjects.filter(s => subjectIdsInTimetable.has(s.id));
+
     const shareData = {
         userId: user.uid,
-        timetable: timetable.map(({ id, ...rest }) => rest), // Remove IDs for import
         createdAt: serverTimestamp(),
+        data: {
+          timetable: timetable.map(({ id, ...rest }) => rest), // Remove IDs for import
+          subjects: subjectsToShare.map(s => ({id: s.id, name: s.name, category: s.category })),
+        }
     };
 
     try {
@@ -987,20 +1041,49 @@ export default function Dashboard() {
         throw new Error("Share not found");
     }
 
-    const importedTimetable = shareSnap.data().timetable as Omit<TimetableEntry, 'id'>[];
+    const importedData = shareSnap.data().data as {
+        timetable: Omit<TimetableEntry, 'id'>[];
+        subjects: {id: string; name: string; category: SubjectCategory}[];
+    };
+
+    const currentSubjects = subjectsForGradeLevel;
+    const subjectIdMap = new Map<string, string>();
     const batch = writeBatch(db);
-    
+
+    for (const importedSubject of importedData.subjects) {
+        const existingSubject = currentSubjects.find(s => s.name.toLowerCase() === importedSubject.name.toLowerCase());
+        if (existingSubject) {
+            subjectIdMap.set(importedSubject.id, existingSubject.id);
+        } else {
+            const newSubjectData = {
+                gradeLevel: selectedGradeLevel,
+                name: importedSubject.name,
+                category: importedSubject.category,
+                targetGrade: null,
+                writtenWeight: importedSubject.category === 'Hauptfach' ? 2 : null,
+                oralWeight: importedSubject.category === 'Hauptfach' ? 1 : null,
+            };
+            const newSubjectRef = doc(collection(db, 'users', user.uid, 'subjects'));
+            batch.set(newSubjectRef, newSubjectData);
+            subjectIdMap.set(importedSubject.id, newSubjectRef.id);
+        }
+    }
+
     const oldTimetableQuery = query(collection(db, 'users', user.uid, 'timetable'));
     const oldTimetableSnap = await getDocs(oldTimetableQuery);
     oldTimetableSnap.forEach(doc => batch.delete(doc.ref));
 
-    importedTimetable.forEach(entry => {
-        const newEntryRef = doc(collection(db, 'users', user.uid, 'timetable'));
-        batch.set(newEntryRef, entry);
+    importedData.timetable.forEach(entry => {
+        const newSubjectId = subjectIdMap.get(entry.subjectId);
+        if (newSubjectId) {
+            const newEntryRef = doc(collection(db, 'users', user.uid, 'timetable'));
+            batch.set(newEntryRef, { ...entry, subjectId: newSubjectId });
+        }
     });
 
     try {
         await batch.commit();
+        logActivity('TIMETABLE_IMPORTED', 'Stundenplan importiert', 'Import');
         toast({ title: "Erfolg!", description: "Der Stundenplan wurde erfolgreich importiert." });
     } catch(error) {
         console.error("Error importing timetable:", error);
@@ -1083,6 +1166,7 @@ export default function Dashboard() {
                   if (importedCount > 0) {
                     setSubjects(newSubjects);
                     setGrades(newGrades);
+                    logActivity('DATA_IMPORTED', `${importedCount} Einträge aus CSV importiert`, 'Import');
                   }
 
                   toast({
@@ -1215,7 +1299,7 @@ export default function Dashboard() {
   };
   
   const renderView = () => {
-    if (dataLoading && !['community', 'user-profile', 'school-calendar'].includes(view)) {
+    if (dataLoading && !['community', 'user-profile', 'school-calendar', 'activity'].includes(view)) {
       return <DashboardSkeleton />;
     }
     switch (view) {
@@ -1242,6 +1326,8 @@ export default function Dashboard() {
             onOpenSettings={() => setDashboardSettingsOpen(true)}
           />
         );
+      case 'activity':
+          return <ActivityPage activities={activityLogs} />;
       case 'subjects':
         return (
           <SubjectList

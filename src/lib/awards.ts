@@ -1,5 +1,5 @@
-import type { Subject, Grade } from './types';
-import { Award as AwardIcon, Star, Target, BookCopy, ClipboardList, TrendingUp, Shield, FileArchive, CheckCircle } from 'lucide-react';
+import type { Subject, Grade, StudySet, Lernzettel, Task } from './types';
+import { Award as AwardIcon, Star, Target, BookCopy, ClipboardList, TrendingUp, Shield, FileArchive, CheckCircle, Notebook, BrainCircuit, ListChecks } from 'lucide-react';
 import { calculateFinalGrade } from '@/lib/utils';
 
 type AwardCheckResult = {
@@ -18,7 +18,14 @@ type AwardDefinition = {
     icon: React.ComponentType<{ className?: string }>;
     tier: 'bronze' | 'silver' | 'gold' | 'special';
     isRepeatable?: boolean;
-    check: (subjects: Subject[], grades: Grade[], overallAverage: string) => AwardCheckResult;
+    check: (
+        subjects: Subject[], 
+        grades: Grade[], 
+        overallAverage: string,
+        studySets: StudySet[],
+        lernzettel: Lernzettel[],
+        tasks: Task[],
+    ) => AwardCheckResult;
 }
 
 export const awardsDefinitions: AwardDefinition[] = [
@@ -49,6 +56,33 @@ export const awardsDefinitions: AwardDefinition[] = [
         icon: FileArchive,
         tier: 'bronze',
         check: (_, grades) => ({ unlocked: grades.some(g => g.attachments && g.attachments.length > 0) }),
+    },
+    {
+        id: 'first_studyset',
+        name: 'Kartenspieler',
+        description: 'Dein erstes Lernset ist erstellt. Viel Erfolg beim Üben!',
+        secretDescription: 'Erstelle dein erstes Lernset.',
+        icon: BrainCircuit,
+        tier: 'bronze',
+        check: (subjects, grades, avg, studySets) => ({ unlocked: studySets.length > 0, progress: { current: studySets.length, target: 1 } }),
+    },
+    {
+        id: 'first_lernzettel',
+        name: 'Wissens-Grundstein',
+        description: 'Dein erster Lernzettel ist geschrieben. Perfekt, um Wissen festzuhalten.',
+        secretDescription: 'Erstelle deinen ersten Lernzettel.',
+        icon: Notebook,
+        tier: 'bronze',
+        check: (subjects, grades, avg, studySets, lernzettel) => ({ unlocked: lernzettel.length > 0, progress: { current: lernzettel.length, target: 1 } }),
+    },
+    {
+        id: 'first_task',
+        name: 'Planungs-Genie',
+        description: 'Du hast deine erste Aufgabe im Planer erstellt. Gut organisiert ist halb gelernt!',
+        secretDescription: 'Erstelle deine erste Aufgabe (Hausaufgabe oder To-Do).',
+        icon: ListChecks,
+        tier: 'bronze',
+        check: (subjects, grades, avg, studySets, lernzettel, tasks) => ({ unlocked: tasks.length > 0, progress: { current: tasks.length, target: 1 } }),
     },
     // --- QUANTITY AWARDS (Leveled) ---
     {
@@ -95,6 +129,24 @@ export const awardsDefinitions: AwardDefinition[] = [
         icon: BookCopy,
         tier: 'silver',
         check: (subjects) => ({ unlocked: subjects.length >= 10, progress: { current: subjects.length, target: 10 } }),
+    },
+    {
+        id: 'studysets_5',
+        name: 'Karten-Hai',
+        description: 'Du hast schon 5 Lernsets erstellt. Übung macht den Meister!',
+        secretDescription: 'Erstelle 5 verschiedene Lernsets.',
+        icon: BrainCircuit,
+        tier: 'silver',
+        check: (subjects, grades, avg, studySets) => ({ unlocked: studySets.length >= 5, progress: { current: studySets.length, target: 5 } }),
+    },
+     {
+        id: 'lernzettel_10',
+        name: 'Wissens-Architekt',
+        description: '10 Lernzettel! Dein persönliches Lexikon wächst und wächst.',
+        secretDescription: 'Erstelle 10 verschiedene Lernzettel.',
+        icon: Notebook,
+        tier: 'silver',
+        check: (subjects, grades, avg, studySets, lernzettel) => ({ unlocked: lernzettel.length >= 10, progress: { current: lernzettel.length, target: 10 } }),
     },
     // --- PERFORMANCE AWARDS ---
     {
@@ -197,7 +249,7 @@ export const awardsDefinitions: AwardDefinition[] = [
         tier: 'silver',
         check: (_, grades) => {
             if (grades.length < 5) return { unlocked: false, progress: {current: grades.length, target: 5} };
-            return { unlocked: !grades.some(g => g.value > 4) };
+            return { unlocked: !grades.some(g => g.value != null && g.value > 4) };
         },
     },
 ];

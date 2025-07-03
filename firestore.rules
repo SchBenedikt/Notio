@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -12,18 +11,15 @@ service cloud.firestore {
 
     // USER DATA (subjects, grades, settings, files, etc.):
     // Users can only access documents under their own user ID.
-    // Limit upload size to 5MB to prevent abuse.
     match /users/{userId}/{document=**} {
-      allow read, write, delete: if request.auth.uid == userId;
+      allow read, write, create, delete: if request.auth.uid == userId;
     }
     
     // POSTS: Authenticated users can read/create posts.
     // Only the author can update or delete their own post.
     match /posts/{postId} {
       allow read, create: if request.auth != null;
-      allow update: if request.auth.uid == resource.data.authorId;
-      // Allow deleting post and its comments in a batch
-      allow delete: if request.auth.uid == resource.data.authorId;
+      allow update, delete: if request.auth.uid == resource.data.authorId;
       
       // COMMENTS: Authenticated users can read/create comments.
       // Only the author can update or delete their own comment.
@@ -34,25 +30,17 @@ service cloud.firestore {
     }
 
     // SCHOOL DATA: Authenticated users can read/write events for their own school.
-    // School list is readable by any authenticated user.
     match /schools/{schoolId} {
-       allow read, create: if request.auth != null;
-
-       match /events/{eventId} {
-         allow read: if request.auth != null;
-         allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)/settings/main).data.schoolId == schoolId;
+      allow read, create: if request.auth != null;
+      match /events/{eventId} {
+         allow read, create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)/settings/main).data.schoolId == schoolId;
          allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)/settings/main).data.schoolId == schoolId && request.auth.uid == resource.data.authorId;
-       }
+      }
     }
-
-    // TIMETABLE SHARES:
+    
+    // TIMETABLE SHARES: Authenticated users can create and read share codes.
     match /timetableShares/{shareId} {
-      // Anyone authenticated can read a share if they have the code.
-      allow read: if request.auth != null;
-      // Only the owner of the timetable can create a share document for their data.
-      allow create: if request.auth.uid == request.resource.data.userId;
-      // Shares are immutable and cannot be deleted/updated by clients.
-      allow update, delete: if false;
+      allow read, create: if request.auth != null;
     }
   }
 }

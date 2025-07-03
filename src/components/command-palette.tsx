@@ -18,6 +18,7 @@ import {
   CalendarClock,
   CalendarDays,
   Notebook,
+  Activity,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -36,7 +37,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "planner" | "school-calendar" | "lernzettel") => void;
+  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "planner" | "school-calendar" | "lernzettel" | "activity") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -78,6 +79,10 @@ export function CommandPalette({
                 <CommandItem onSelect={() => runCommand(() => onNavigate("dashboard"))}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("activity"))}>
+                    <Activity className="mr-2 h-4 w-4" />
+                    <span>Aktivität</span>
                 </CommandItem>
                 <CommandItem onSelect={() => runCommand(() => onNavigate("subjects"))}>
                     <BookCopy className="mr-2 h-4 w-4" />

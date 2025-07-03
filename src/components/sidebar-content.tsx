@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from "@/components/ui/separator";
 import { AppView } from '@/lib/types';
-import { Award, BookCopy, MessageCircle, LayoutDashboard, Calculator, Database, Files, BrainCircuit, User, Users, Settings, CalendarClock, CalendarDays, Notebook } from 'lucide-react';
+import { Award, BookCopy, MessageCircle, LayoutDashboard, Calculator, Database, Files, BrainCircuit, User, Users, Settings, CalendarClock, CalendarDays, Notebook, Activity } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 type SidebarContentProps = {
@@ -48,6 +48,13 @@ export function SidebarContent({
                             onClick={() => handleViewChange('dashboard')}>
                             <LayoutDashboard className="mr-2 h-4 w-4" />
                             Dashboard
+                        </Button>
+                        <Button 
+                            variant={currentView === 'activity' ? "secondary" : "ghost"} 
+                            className="justify-start w-full"
+                            onClick={() => handleViewChange('activity')}>
+                            <Activity className="mr-2 h-4 w-4" />
+                            Aktivität
                         </Button>
                         <Button 
                             variant={currentView === 'subjects' ? "secondary" : "ghost"} 
