@@ -20,6 +20,8 @@ const widgetLabels: Record<string, string> = {
     tasks: "Anstehende Aufgaben",
     calendar: "Schulkalender",
     tutor: "KI-Tutor & Coach",
+    lernzettel: "Letzte Lernzettel",
+    studysets: "Deine Lernsets",
 };
 
 export function DashboardSettingsDialog({ isOpen, onOpenChange, widgets, onWidgetChange }: DashboardSettingsDialogProps) {

@@ -72,6 +72,8 @@ const defaultWidgets = {
     tasks: true,
     calendar: true,
     tutor: true,
+    lernzettel: true,
+    studysets: true,
 };
 
 export default function Dashboard() {
@@ -1344,6 +1346,8 @@ export default function Dashboard() {
             tasks={tasks}
             schoolEvents={schoolEvents}
             subjects={subjectsForGradeLevel}
+            lernzettel={lernzettel}
+            studySets={studySets}
             onNavigate={setAppView}
             onAddSubject={() => setIsAddSubjectOpen(true)}
             onAddGrade={handleOpenAddGradeDialog}

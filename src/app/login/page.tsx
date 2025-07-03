@@ -32,6 +32,8 @@ const defaultWidgets = {
     tasks: true,
     calendar: true,
     tutor: true,
+    lernzettel: true,
+    studysets: true,
 };
 
 const GoogleIcon = () => (

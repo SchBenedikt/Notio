@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AppView, Grade, Subject, Task, SchoolEvent } from "@/lib/types";
+import { AppView, Grade, Subject, Task, SchoolEvent, Lernzettel, StudySet } from "@/lib/types";
 import { ArrowRight, BookCopy, BrainCircuit, Calendar, CheckCircle, Plus, Sparkles, TrendingUp, GripVertical, Notebook, LayoutGrid, ListChecks } from "lucide-react";
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
@@ -34,6 +34,8 @@ export const defaultLayouts: Layouts = {
         { i: 'tasks',       x: 1, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 2, y: 2, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'lernzettel',  x: 1, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'studysets',   x: 2, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
     ],
     md: [
         { i: 'performance', x: 0, y: 0, w: 2, h: 2, minW: 2, minH: 2 },
@@ -42,6 +44,8 @@ export const defaultLayouts: Layouts = {
         { i: 'tasks',       x: 0, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 1, y: 4, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'lernzettel',  x: 1, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'studysets',   x: 0, y: 8, w: 2, h: 2, minW: 1, minH: 2 },
     ],
     sm: [
         { i: 'performance', x: 0, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
@@ -50,6 +54,8 @@ export const defaultLayouts: Layouts = {
         { i: 'tasks',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 0, y: 8, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 10, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'lernzettel',  x: 0, y: 12, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'studysets',   x: 0, y: 14, w: 1, h: 2, minW: 1, minH: 2 },
     ],
     xs: [
         { i: 'performance', x: 0, y: 0, w: 1, h: 2, minW: 1, minH: 2 },
@@ -58,6 +64,8 @@ export const defaultLayouts: Layouts = {
         { i: 'tasks',       x: 0, y: 6, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'calendar',    x: 0, y: 8, w: 1, h: 2, minW: 1, minH: 2 },
         { i: 'tutor',       x: 0, y: 10, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'lernzettel',  x: 0, y: 12, w: 1, h: 2, minW: 1, minH: 2 },
+        { i: 'studysets',   x: 0, y: 14, w: 1, h: 2, minW: 1, minH: 2 },
     ],
 };
 
@@ -72,6 +80,8 @@ type DashboardOverviewProps = {
   tasks: Task[];
   schoolEvents: SchoolEvent[];
   subjects: Subject[];
+  lernzettel: Lernzettel[];
+  studySets: StudySet[];
   onNavigate: (view: AppView) => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
@@ -93,6 +103,8 @@ export function DashboardOverview({
     tasks,
     schoolEvents,
     subjects,
+    lernzettel,
+    studySets,
     onNavigate,
     onAddSubject,
     onAddGrade,
@@ -107,6 +119,12 @@ export function DashboardOverview({
   const upcomingTasks = tasks
     .filter(hw => !hw.isDone && hw.dueDate)
     .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+  
+  const recentLernzettel = [...lernzettel]
+    .sort((a,b) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0));
+
+  const recentStudySets = [...studySets]
+    .sort((a,b) => a.title.localeCompare(b.title));
 
     const widgetComponents: Record<string, React.ReactNode> = {
     performance: (
@@ -251,6 +269,74 @@ export function DashboardOverview({
           </Button>
         </CardFooter>
       </Card>
+    ),
+    lernzettel: (
+        <Card className="h-full w-full flex flex-col">
+            <CardHeader className="drag-handle flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>Letzte Lernzettel</CardTitle>
+                    <CardDescription>Deine zuletzt bearbeiteten Notizen.</CardDescription>
+                </div>
+                <GripVertical className="text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="flex-1">
+                {recentLernzettel.length > 0 ? (
+                    <div className="space-y-2">
+                        {recentLernzettel.slice(0, 4).map(note => (
+                            <div key={note.id} className="p-2 sm:p-3 rounded-lg bg-muted/50">
+                                <p className="font-semibold truncate">{note.title}</p>
+                                <p className="text-xs text-muted-foreground">{subjectsMap.get(note.subjectId || '') || 'Ohne Fach'}</p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-10 h-full flex flex-col items-center justify-center">
+                        <Notebook className="h-10 w-10 mx-auto text-muted-foreground" />
+                        <p className="mt-4 font-semibold">Keine Lernzettel</p>
+                        <p className="text-sm text-muted-foreground">Erstelle deinen ersten Lernzettel.</p>
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="mt-auto border-t pt-4">
+                 <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground" onClick={() => onNavigate('lernzettel')}>
+                    Alle Lernzettel anzeigen <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </CardFooter>
+        </Card>
+    ),
+    studysets: (
+        <Card className="h-full w-full flex flex-col">
+            <CardHeader className="drag-handle flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>Deine Lernsets</CardTitle>
+                    <CardDescription>Übe mit deinen Karteikarten.</CardDescription>
+                </div>
+                <GripVertical className="text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="flex-1">
+                 {recentStudySets.length > 0 ? (
+                    <div className="space-y-2">
+                        {recentStudySets.slice(0, 4).map(set => (
+                            <div key={set.id} className="p-2 sm:p-3 rounded-lg bg-muted/50">
+                                <p className="font-semibold truncate">{set.title}</p>
+                                <p className="text-xs text-muted-foreground">{set.cards.length} Begriffe</p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-10 h-full flex flex-col items-center justify-center">
+                        <BrainCircuit className="h-10 w-10 mx-auto text-muted-foreground" />
+                        <p className="mt-4 font-semibold">Keine Lernsets</p>
+                        <p className="text-sm text-muted-foreground">Erstelle dein erstes Lernset.</p>
+                    </div>
+                )}
+            </CardContent>
+             <CardFooter className="mt-auto border-t pt-4">
+                 <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground" onClick={() => onNavigate('studysets')}>
+                    Alle Lernsets anzeigen <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </CardFooter>
+        </Card>
     ),
   };
   
