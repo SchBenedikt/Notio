@@ -93,6 +93,12 @@ export interface StudyCard {
   id: string;
   term: string;
   definition: string;
+  srs?: {
+    interval: number; // in days
+    easeFactor: number;
+    repetitions: number;
+    lastReviewed: string; // ISO date string
+  };
 }
 
 export interface StudySet {

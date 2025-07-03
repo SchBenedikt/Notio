@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Homework, SchoolEvent } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Homework, SchoolEvent, StudyCard } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -587,6 +587,18 @@ export default function Dashboard() {
     setView('studysets');
   };
 
+  const handleUpdateStudySetCards = async (setId: string, updatedCards: StudyCard[]) => {
+      if (!user || !isFirebaseEnabled) return;
+      try {
+          const setRef = doc(db, 'users', user.uid, 'studySets', setId);
+          await updateDoc(setRef, { cards: JSON.parse(JSON.stringify(updatedCards)) });
+          toast({ title: "Lernfortschritt gespeichert!" });
+      } catch (error) {
+          console.error("Error updating study set cards:", error);
+          toast({ title: "Fehler beim Speichern des Fortschritts", variant: "destructive" });
+      }
+  };
+
   const handleDeleteStudySet = async (setId: string) => {
     if (!user || !isFirebaseEnabled) return;
     try {
@@ -1094,6 +1106,7 @@ export default function Dashboard() {
             studySet={set}
             onBack={() => setView('studysets')}
             onEditSet={handleNavigateToEditStudySet}
+            onSessionFinish={(updatedCards) => handleUpdateStudySetCards(set.id, updatedCards)}
           />;
         }
         return null;

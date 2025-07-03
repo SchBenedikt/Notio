@@ -4,3 +4,4 @@ import './flows/tutor-chat-flow';
 import './flows/study-set-quiz-flow';
 import './flows/evaluate-answer-flow';
 import './flows/study-set-test-flow';
+import './flows/study-session-flow';
