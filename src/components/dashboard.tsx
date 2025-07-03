@@ -124,7 +124,11 @@ export default function Dashboard() {
     if (!user || !isFirebaseEnabled) return;
     const settingsDocRef = doc(db, 'users', user.uid, 'settings', 'main');
     try {
-      setDoc(settingsDocRef, { [key]: value }, { merge: true });
+      // Firestore does not support 'undefined' values.
+      // We can create a temporary object and then stringify and parse it 
+      // to easily remove any properties with undefined values from nested objects.
+      const sanitizedData = JSON.parse(JSON.stringify({ [key]: value }));
+      setDoc(settingsDocRef, sanitizedData, { merge: true });
     } catch (error) {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });

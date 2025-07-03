@@ -23,7 +23,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { SchoolSelector } from '@/components/school-selector';
 import type { School } from '@/lib/types';
+import { defaultLayouts } from '@/components/dashboard-overview';
 
+const defaultWidgets = {
+    performance: true,
+    actions: true,
+    upcoming: true,
+    tasks: true,
+    calendar: true,
+    tutor: true,
+};
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
@@ -107,10 +116,13 @@ export default function LoginPage() {
                 selectedGradeLevel: 10,
                 mainSubjectWeight: 2,
                 minorSubjectWeight: 1,
+                maxPeriods: 10,
                 theme: 'blue',
                 isDarkMode: false,
                 role: signupRole,
                 schoolId: signupSchoolId,
+                dashboardLayouts: defaultLayouts,
+                dashboardWidgets: defaultWidgets,
             });
 
             // Create profile document
@@ -150,10 +162,13 @@ export default function LoginPage() {
                     selectedGradeLevel: 10,
                     mainSubjectWeight: 2,
                     minorSubjectWeight: 1,
+                    maxPeriods: 10,
                     theme: 'blue',
                     isDarkMode: false,
                     role: 'student',
                     schoolId: '',
+                    dashboardLayouts: defaultLayouts,
+                    dashboardWidgets: defaultWidgets,
                 });
             }
 
