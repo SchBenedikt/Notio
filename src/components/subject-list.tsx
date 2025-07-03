@@ -1,10 +1,11 @@
+
 "use client";
 
 import { Subject, Grade, StudySet } from "@/lib/types";
 import { SubjectCard } from "./subject-card";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 type SubjectListProps = {
   mainSubjects: Subject[];
@@ -85,6 +86,18 @@ export function SubjectList({
 
   return (
     <div className="container mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Fächerübersicht</h1>
+          <p className="text-muted-foreground">
+            Verwalte deine Fächer und Noten für diese Klassenstufe.
+          </p>
+        </div>
+        <Button onClick={onAddSubject}>
+          <Plus className="mr-2 h-4 w-4" /> Neues Fach
+        </Button>
+      </div>
+
       <Button
         variant="outline"
         className="w-full h-12 text-base rounded-lg flex justify-start items-center text-muted-foreground"
@@ -98,7 +111,7 @@ export function SubjectList({
       </Button>
 
       {noSearchResults ? (
-        <div className="text-center py-20 flex flex-col items-center justify-center min-h-[50vh] bg-background/50 rounded-lg">
+        <div className="text-center py-20 flex flex-col items-center justify-center min-h-[50vh] bg-background/50 rounded-lg border border-dashed">
           <h2 className="text-2xl font-semibold">Keine Fächer gefunden</h2>
           <p className="text-muted-foreground mt-2 max-w-md mx-auto">
             Für die ausgewählte Klassenstufe gibt es keine Fächer.
