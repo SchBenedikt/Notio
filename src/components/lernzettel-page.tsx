@@ -5,13 +5,16 @@ import { useState, useMemo } from "react";
 import type { Lernzettel, Subject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Notebook, Search, ArrowDown, ArrowUp, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Plus, Notebook, Search, ArrowDown, ArrowUp, MoreVertical, Pencil, Trash2, Star } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Label } from "./ui/label";
+import { Switch } from "./ui/switch";
+import { cn } from "@/lib/utils";
 
 type LernzettelPageProps = {
   lernzettel: Lernzettel[];
@@ -20,25 +23,31 @@ type LernzettelPageProps = {
   onEditLernzettel: (set: Lernzettel) => void;
   onDeleteLernzettel: (id: string) => void;
   onAddNew: () => void;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
 };
 
 type SortBy = "updatedAt" | "title" | "dueDate";
 type GroupBy = "subject" | "none";
 type SortOrder = "asc" | "desc";
 
-export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditLernzettel, onDeleteLernzettel, onAddNew }: LernzettelPageProps) {
+export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditLernzettel, onDeleteLernzettel, onAddNew, onToggleFavorite }: LernzettelPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("updatedAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const subjectsMap = useMemo(() => new Map(subjects.map(s => [s.id, s.name])), [subjects]);
 
   const processedLernzettel = useMemo(() => {
     let filtered = lernzettel;
+    if (showFavoritesOnly) {
+      filtered = filtered.filter(lz => lz.isFavorite);
+    }
+
     if (searchQuery.trim()) {
       const lowercasedQuery = searchQuery.toLowerCase();
-      filtered = lernzettel.filter(lz =>
+      filtered = filtered.filter(lz =>
         lz.title.toLowerCase().includes(lowercasedQuery) ||
         (lz.content && lz.content.toLowerCase().includes(lowercasedQuery))
       );
@@ -68,7 +77,7 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
         if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
         return 0;
     });
-  }, [lernzettel, searchQuery, sortBy, sortOrder]);
+  }, [lernzettel, searchQuery, sortBy, sortOrder, showFavoritesOnly]);
   
   const groupedLernzettel = useMemo(() => {
     if (groupBy === 'none') {
@@ -109,6 +118,10 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                 <Input placeholder="Suchen..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10"/>
             </div>
             <div className="flex gap-2">
+                <div className="flex items-center space-x-2 border bg-background rounded-md px-3">
+                    <Switch id="favorites-only-lz" checked={showFavoritesOnly} onCheckedChange={setShowFavoritesOnly} />
+                    <Label htmlFor="favorites-only-lz" className="text-sm">Nur Favoriten</Label>
+                </div>
                 <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupBy)}>
                     <SelectTrigger className="w-full md:w-[150px]"><SelectValue placeholder="Gruppieren..." /></SelectTrigger>
                     <SelectContent><SelectItem value="none">Keine Gruppierung</SelectItem><SelectItem value="subject">Nach Fach</SelectItem></SelectContent>
@@ -138,6 +151,7 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-[40px] pl-2"></TableHead>
                                         <TableHead>Titel</TableHead>
                                         {groupBy === 'none' && <TableHead className="hidden sm:table-cell">Fach</TableHead>}
                                         <TableHead className="hidden md:table-cell">Fälligkeit</TableHead>
@@ -148,6 +162,11 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                                 <TableBody>
                                     {group.items.map((lz) => (
                                         <TableRow key={lz.id} className="group">
+                                            <TableCell className="pl-2">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onToggleFavorite(lz.id, !!lz.isFavorite)}>
+                                                    <Star className={cn("h-5 w-5 transition-colors", lz.isFavorite ? "text-yellow-400 fill-current" : "text-muted-foreground/50 hover:text-yellow-400")} />
+                                                </Button>
+                                            </TableCell>
                                             <TableCell className="font-medium cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{lz.title}</TableCell>
                                             {groupBy === 'none' && <TableCell className="hidden sm:table-cell cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{subjectsMap.get(lz.subjectId || '') || '-'}</TableCell>}
                                             <TableCell className="hidden md:table-cell cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{lz.dueDate ? format(new Date(lz.dueDate), 'dd.MM.yyyy') : '-'}</TableCell>
@@ -195,7 +214,7 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
         ) : (
           <div className="text-center py-20 flex flex-col items-center justify-center min-h-[50vh] bg-background/50 rounded-lg border border-dashed">
             <h2 className="text-2xl font-semibold">Keine Ergebnisse</h2>
-            <p className="text-muted-foreground mt-2 max-w-md">Für deine Suche nach "{searchQuery}" wurde kein Lernzettel gefunden.</p>
+            <p className="text-muted-foreground mt-2 max-w-md">Für deine Suche nach "{searchQuery}" oder deine Filter wurde kein Lernzettel gefunden.</p>
           </div>
         )
       ) : (

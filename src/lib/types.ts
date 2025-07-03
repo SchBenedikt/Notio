@@ -119,6 +119,7 @@ export interface StudySet {
   cards: StudyCard[];
   gradeLevel: number;
   subjectId?: string | null;
+  isFavorite?: boolean;
 }
 
 export interface Lernzettel {
@@ -133,6 +134,7 @@ export interface Lernzettel {
   updatedAt: Timestamp;
   dueDate?: string | null; // ISO String
   isDone?: boolean | null;
+  isFavorite?: boolean;
 }
 
 export interface QuizQuestion {

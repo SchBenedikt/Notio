@@ -5,10 +5,11 @@ import { useState, useMemo } from 'react';
 import type { Lernzettel, StudySet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles, Trash2, Star } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 type LernzettelDetailPageProps = {
   lernzettel: Lernzettel;
@@ -20,6 +21,7 @@ type LernzettelDetailPageProps = {
   onViewStudySet: (setId: string) => void;
   onCreateStudySetFromAI: (note: Lernzettel) => Promise<void>;
   onCreateSummary: (note: Lernzettel) => Promise<void>;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
 };
 
 const YouTubeEmbed = ({ href }: { href?: string }) => {
@@ -45,7 +47,7 @@ const YouTubeEmbed = ({ href }: { href?: string }) => {
     );
 };
 
-export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary }: LernzettelDetailPageProps) {
+export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary, onToggleFavorite }: LernzettelDetailPageProps) {
   const [isGeneratingSet, setIsGeneratingSet] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   
@@ -84,6 +86,9 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onN
           Zurück zu allen Lernzetteln
         </Button>
         <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="icon" title="Favorisieren" onClick={() => onToggleFavorite(lernzettel.id, !!lernzettel.isFavorite)}>
+                <Star className={cn("h-4 w-4", lernzettel.isFavorite ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground")} />
+            </Button>
             <Button variant="outline" onClick={() => onEdit(lernzettel)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Bearbeiten

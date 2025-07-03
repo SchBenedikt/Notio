@@ -651,6 +651,7 @@ export default function Dashboard() {
         ...values,
         gradeLevel: selectedGradeLevel,
         subjectId: values.subjectId || null,
+        isFavorite: setId ? studySets.find(s => s.id === setId)?.isFavorite || false : false,
     };
     try {
         if (setId) {
@@ -667,6 +668,18 @@ export default function Dashboard() {
     } catch (error) {
         console.error("Error saving study set:", error);
         toast({ title: "Fehler beim Speichern des Lernsets", variant: "destructive" });
+    }
+  };
+
+  const handleToggleStudySetFavorite = async (setId: string, isFavorite: boolean) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'studySets', setId), {
+        isFavorite: !isFavorite,
+      });
+      toast({ title: !isFavorite ? "Lernset favorisiert" : "Favorit entfernt" });
+    } catch (error) {
+      toast({ title: "Fehler", description: "Favoriten-Status konnte nicht geändert werden.", variant: "destructive" });
     }
   };
 
@@ -709,6 +722,7 @@ export default function Dashboard() {
       dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
       isDone: values.dueDate ? (values.isDone ?? false) : null,
       summary: values.summary || null,
+      isFavorite: lernzettelId ? lernzettel.find(l => l.id === lernzettelId)?.isFavorite || false : false,
     };
 
     if (lernzettelId) {
@@ -723,6 +737,18 @@ export default function Dashboard() {
       toast({ title: "Lernzettel erstellt" });
     }
     setView('lernzettel');
+  };
+
+  const handleToggleLernzettelFavorite = async (lernzettelId: string, isFavorite: boolean) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'lernzettel', lernzettelId), {
+        isFavorite: !isFavorite,
+      });
+      toast({ title: !isFavorite ? "Lernzettel favorisiert" : "Favorit entfernt" });
+    } catch (error) {
+      toast({ title: "Fehler", description: "Favoriten-Status konnte nicht geändert werden.", variant: "destructive" });
+    }
   };
 
   const handleCreateStudySetFromAI = async (note: Lernzettel) => {
@@ -1434,6 +1460,7 @@ export default function Dashboard() {
             onEditLernzettel={handleNavigateToEditLernzettel}
             onDeleteLernzettel={handleDeleteLernzettel}
             onAddNew={handleNavigateToCreateLernzettel}
+            onToggleFavorite={handleToggleLernzettelFavorite}
         />;
       case 'lernzettel-create':
         return <CreateEditLernzettelPage 
@@ -1465,6 +1492,7 @@ export default function Dashboard() {
             onViewStudySet={handleViewStudySet}
             onCreateStudySetFromAI={handleCreateStudySetFromAI}
             onCreateSummary={handleCreateLernzettelSummary}
+            onToggleFavorite={handleToggleLernzettelFavorite}
           />;
         }
         return null;
@@ -1476,6 +1504,7 @@ export default function Dashboard() {
             onEditStudySet={handleNavigateToEditStudySet}
             onDeleteStudySet={handleDeleteStudySet}
             onAddNew={handleNavigateToCreateStudySet}
+            onToggleFavorite={handleToggleStudySetFavorite}
         />;
       case 'studyset-create':
         return <CreateEditStudySetPage 
@@ -1506,6 +1535,7 @@ export default function Dashboard() {
             onSessionFinish={(updatedCards) => handleUpdateStudySetCards(set.id, updatedCards)}
             allLernzettel={lernzettel}
             onViewLernzettel={handleViewLernzettel}
+            onToggleFavorite={handleToggleStudySetFavorite}
           />;
         }
         return null;

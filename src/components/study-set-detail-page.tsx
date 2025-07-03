@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion, Brain, Link as LinkIcon, Notebook } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion, Brain, Link as LinkIcon, Notebook, Star } from "lucide-react";
 import { FlashcardsView } from "./flashcards-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { WriteView } from "./write-view";
@@ -27,9 +27,10 @@ type StudySetDetailPageProps = {
   onSessionFinish: (updatedCards: StudyCard[]) => Promise<void>;
   allLernzettel: Lernzettel[];
   onViewLernzettel: (id: string) => void;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
 };
 
-export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel }: StudySetDetailPageProps) {
+export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite }: StudySetDetailPageProps) {
   const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'match' | 'quiz' | 'test' | 'learn'>('learn');
 
   const hasCards = studySet.cards.length > 0;
@@ -73,10 +74,15 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
                     <span>{studySet.cards.length} Begriff{studySet.cards.length !== 1 ? 'e' : ''}</span>
                 </div>
             </div>
-             <Button variant="outline" onClick={() => onEditSet(studySet)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Bearbeiten
-            </Button>
+             <div className="flex gap-2">
+                <Button variant="outline" size="icon" title="Favorisieren" onClick={() => onToggleFavorite(studySet.id, !!studySet.isFavorite)}>
+                    <Star className={cn("h-4 w-4", studySet.isFavorite ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground")} />
+                </Button>
+                <Button variant="outline" onClick={() => onEditSet(studySet)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Bearbeiten
+                </Button>
+            </div>
         </div>
       </div>
       
