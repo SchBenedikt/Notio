@@ -23,13 +23,24 @@ const ChatMessageSchema = z.object({
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
+
+const SrsDataForTutorSchema = z.object({
+    interval: z.number().describe("The number of days until the next review."),
+    easeFactor: z.number().describe("A factor representing how easy the card is."),
+    repetitions: z.number().describe("How many times the card has been reviewed successfully."),
+    lastReviewed: z.string().describe("The ISO date string of the last review."),
+}).optional();
+
+const StudyCardForTutorSchema = z.object({
+    term: z.string(),
+    definition: z.string(),
+    srs: SrsDataForTutorSchema.describe("Spaced Repetition System data for this card. If present, it indicates the card's learning status."),
+});
+
 const StudySetForTutorSchema = z.object({
   title: z.string().describe("The title of the study set."),
   description: z.string().optional().describe("The description of the study set."),
-  cards: z.array(z.object({
-    term: z.string(),
-    definition: z.string(),
-  })).describe("The flashcards in the study set."),
+  cards: z.array(StudyCardForTutorSchema).describe("The flashcards in the study set, potentially with SRS data."),
 });
 
 const TutorChatInputSchema = z.object({
@@ -81,14 +92,27 @@ const tutorChatFlow = ai.defineFlow(
 
     let studySetsInfo = "";
     if (input.studySets && input.studySets.length > 0) {
-        studySetsInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernsets für diesen Chat ausgewählt. Beziehe dich auf die Begriffe und Definitionen, um Fragen zu beantworten, Zusammenfassungen zu erstellen oder Übungsaufgaben zu generieren:\n\n" + input.studySets.map(set => {
-            const cardList = set.cards.map(card => `- Begriff: "${card.term}", Definition: "${card.definition}"`).join('\n');
+        studySetsInfo = "\n\nZusätzlich hat der Schüler die folgenden Lernsets für diesen Chat ausgewählt. Beziehe dich auf die Begriffe, Definitionen und Lernfortschrittsdaten (SRS), um Fragen zu beantworten, Zusammenfassungen zu erstellen oder Übungsaufgaben zu generieren:\n\n" + input.studySets.map(set => {
+            const cardList = set.cards.map(card => {
+                let srsInfo = "- Status: Neue Karte";
+                if (card.srs) {
+                    const dueDate = new Date(card.srs.lastReviewed);
+                    dueDate.setDate(dueDate.getDate() + card.srs.interval);
+                    srsInfo = `- Letzte Wiederholung: ${new Date(card.srs.lastReviewed).toLocaleDateString('de-DE')}, Fällig am: ${dueDate.toLocaleDateString('de-DE')}`;
+                }
+                return `  - Begriff: "${card.term}", Definition: "${card.definition}"\n    - Lernstatus: ${srsInfo}`;
+            }).join('\n');
             return `Lernset: "${set.title}"\n${set.description ? `Beschreibung: ${set.description}\n` : ''}Karten:\n${cardList}`;
         }).join('\n\n');
     }
 
     const systemPrompt = `Du bist ein hilfsbereiter und freundlicher KI-Tutor für einen Schüler in Deutschland. Deine Aufgabe ist es, Fragen zu beantworten, Konzepte zu erklären und bei den Hausaufgaben zu helfen.
 Du hast Zugriff auf die aktuellen Noten und Fächer des Schülers. Nutze diese Informationen, um kontextbezogene und hilfreiche Antworten zu geben. Wenn der Schüler z.B. fragt "Wie kann ich mich verbessern?", beziehe dich auf die Fächer mit schlechteren Noten und berücksichtige seine Wunschnote.
+
+Du hast auch Zugriff auf die Lernfortschrittsdaten (Spaced Repetition System - SRS) für einzelne Karteikarten, falls der Nutzer diese im "Lernen"-Modus verwendet hat.
+Nutze diese SRS-Daten (Intervall, letztes Abfragedatum), um Fragen zu beantworten wie "Welche Karten sollte ich heute wiederholen?" oder "Wann ist die nächste Wiederholung für das Thema X fällig?".
+Das heutige Datum ist ${new Date().toLocaleDateString('de-DE')}.
+
 Du kannst auch Dateien wie Bilder, PDFs oder andere Dokumente als Anhänge erhalten. Beziehe diese in deine Analyse und Antworten mit ein.
 
 ${subjectsInfo}

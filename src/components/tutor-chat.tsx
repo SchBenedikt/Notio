@@ -84,7 +84,7 @@ export function TutorChat({ subjects, allGrades, studySets }: TutorChatProps) {
         studySets: selectedStudySets.map(s => ({
             title: s.title,
             description: s.description,
-            cards: s.cards.map(c => ({ term: c.term, definition: c.definition })),
+            cards: s.cards,
         })),
         history: newMessages,
       });

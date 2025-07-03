@@ -14,6 +14,11 @@ import { StudySetQuizView } from "./study-set-quiz-view";
 import { MatchView } from "./match-view";
 import { StudySetTestView } from "./study-set-test-view";
 import { LearnView } from "./learn-view";
+import { getDueDate } from '@/lib/srs';
+import { format, isToday, isPast } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
+import { cn } from "@/lib/utils";
 
 type StudySetDetailPageProps = {
   studySet: StudySet;
@@ -30,8 +35,27 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
   const hasCards = studySet.cards.length > 0;
   
   const linkedLernzettel = useMemo(() => {
-    return allLernzettel.filter(lz => lz.studySetId === studySet.id);
+    return allLernzettel.filter(lz => lz.studySetIds?.includes(studySet.id));
   }, [studySet.id, allLernzettel]);
+
+  const getSrsStatus = (card: StudyCard) => {
+    if (!card.srs || card.srs.repetitions === 0) {
+        return { text: "Neu", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300" };
+    }
+    const dueDate = getDueDate(card);
+    if (isToday(dueDate) || isPast(dueDate)) {
+        return { text: "Fällig", color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300" };
+    }
+    return { text: "Gelernt", color: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300" };
+  };
+
+  const getDueDateString = (card: StudyCard) => {
+      if (!card.srs || card.srs.repetitions === 0) {
+          return "Sofort";
+      }
+      const dueDate = getDueDate(card);
+      return format(dueDate, "dd.MM.yy");
+  };
 
   return (
     <div className="space-y-6">
@@ -95,24 +119,33 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
             <Card>
                 <CardHeader>
                     <CardTitle>Begriffe im Lernset</CardTitle>
-                    <CardDescription>Hier ist eine Übersicht aller Begriffe und Definitionen in diesem Set.</CardDescription>
+                    <CardDescription>Hier ist eine Übersicht aller Begriffe und Definitionen in diesem Set inklusive deines Lernfortschritts.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[50vh] pr-4">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-1/2">Begriff</TableHead>
-                                    <TableHead className="w-1/2">Definition</TableHead>
+                                    <TableHead className="w-[30%]">Begriff</TableHead>
+                                    <TableHead className="w-[40%]">Definition</TableHead>
+                                    <TableHead className="w-[15%] hidden md:table-cell">Status</TableHead>
+                                    <TableHead className="w-[15%] text-right">Nächste Wiederholung</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {studySet.cards.map((card) => (
-                                    <TableRow key={card.id}>
-                                    <TableCell className="font-medium">{card.term}</TableCell>
-                                    <TableCell>{card.definition}</TableCell>
-                                    </TableRow>
-                                ))}
+                                {studySet.cards.map((card) => {
+                                    const status = getSrsStatus(card);
+                                    return (
+                                        <TableRow key={card.id}>
+                                            <TableCell className="font-medium">{card.term}</TableCell>
+                                            <TableCell>{card.definition}</TableCell>
+                                            <TableCell className="hidden md:table-cell">
+                                                <Badge variant="outline" className={cn("border", status.color)}>{status.text}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono text-sm">{getDueDateString(card)}</TableCell>
+                                        </TableRow>
+                                    )
+                                })}
                             </TableBody>
                         </Table>
                     </ScrollArea>
