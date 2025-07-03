@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, BookCopy, BrainCircuit, Check, ClipboardCheck, FilePlus, FileText, Import, ListChecks, Notebook, Plus, Settings } from "lucide-react";
+import { Activity, BookCopy, BrainCircuit, Check, ClipboardCheck, FilePlus, FileText, Import, ListChecks, Notebook, Plus, Settings, Trash2 } from "lucide-react";
 import type { ActivityLog } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
@@ -10,7 +10,9 @@ import { cn } from "@/lib/utils";
 
 const activityIcons: Record<string, React.ElementType> = {
     SUBJECT_CREATED: Plus,
+    SUBJECT_DELETED: Trash2,
     GRADE_ADDED: ClipboardCheck,
+    GRADE_DELETED: Trash2,
     GRADE_PLANNED: ClipboardCheck,
     STUDY_SET_CREATED: BrainCircuit,
     STUDY_SET_LEARNED: Check,
@@ -58,7 +60,7 @@ export function ActivityPage({ activities }: ActivityPageProps) {
 
                                 <p className="font-medium text-sm">{activity.description}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(activity.timestamp.toDate(), { addSuffix: true, locale: de })}
+                                    {activity.timestamp.toDate ? formatDistanceToNow(activity.timestamp.toDate(), { addSuffix: true, locale: de }) : 'Gerade eben'}
                                 </p>
                             </div>
                         )

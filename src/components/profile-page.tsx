@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { reauthenticateWithCredential, EmailAuthProvider, updateProfile, updateEmail, updatePassword, deleteUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDocs, collection, query, writeBatch, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDocs, collection, query, writeBatch, setDoc, onSnapshot, where } from "firebase/firestore";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { SchoolSelector } from "./school-selector";
 
 const profileFormSchema = z.object({
-  name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein.").max(50, "Name darf nicht länger als 50 Zeichen sein."),
+  name: z.string().min(2, "Benutzername muss mindestens 2 Zeichen lang sein.").max(50, "Benutzername darf nicht länger als 50 Zeichen sein."),
   bio: z.string().max(160, "Biografie darf nicht länger als 160 Zeichen sein.").optional(),
 });
 
@@ -104,16 +104,6 @@ export function ProfilePage({
     return () => unsub();
   }, [isFirebaseEnabled]);
 
-  const emailForm = useForm<z.infer<typeof emailFormSchema>>({
-    resolver: zodResolver(emailFormSchema),
-    defaultValues: { newEmail: "", password: "" },
-  });
-
-  const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
-    resolver: zodResolver(passwordFormSchema),
-    defaultValues: { currentPassword: "", newPassword: "" },
-  });
-  
   const handleCancelEdit = () => {
     setIsEditing(false);
     if(profile) {
@@ -127,6 +117,15 @@ export function ProfilePage({
     if (!user) return;
     setLoading(p => ({ ...p, profile: true }));
     try {
+      if (profile && values.name.toLowerCase() !== profile.name.toLowerCase()) {
+        const profilesRef = collection(db, 'profiles');
+        const q = query(profilesRef, where("name_lowercase", "==", values.name.toLowerCase()));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            throw new Error("Dieser Benutzername ist bereits vergeben.");
+        }
+      }
+
       if (user.displayName !== values.name) {
         await updateProfile(user, { displayName: values.name });
         onUserNameChange(values.name);
@@ -135,6 +134,7 @@ export function ProfilePage({
       const profileRef = doc(db, 'profiles', user.uid);
       const updatedProfileData = {
           name: values.name,
+          name_lowercase: values.name.toLowerCase(),
           bio: values.bio || null,
       };
       
@@ -295,7 +295,7 @@ export function ProfilePage({
                     <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4 p-4 border rounded-lg">
                         <h4 className="font-medium flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> Öffentliches Profil</h4>
                         <FormField control={profileForm.control} name="name" render={({ field }) => (
-                            <FormItem><FormLabel>Anzeigename</FormLabel><FormControl><Input placeholder="Dein Name" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Benutzername</FormLabel><FormControl><Input placeholder="Dein Name" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={profileForm.control} name="bio" render={({ field }) => (
                             <FormItem><FormLabel>Biografie (optional)</FormLabel><FormControl><Textarea placeholder="Erzähle etwas über dich..." {...field} /></FormControl><FormMessage /></FormItem>
@@ -390,7 +390,7 @@ export function ProfilePage({
                  <div className="flex items-start gap-4 p-3 border rounded-md">
                     <User className="h-5 w-5 text-muted-foreground mt-1" />
                     <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">Anzeigename</p>
+                        <p className="text-xs text-muted-foreground">Benutzername</p>
                         <p className="font-medium">{profile?.name || user.displayName || "Nicht festgelegt"}</p>
                     </div>
                 </div>

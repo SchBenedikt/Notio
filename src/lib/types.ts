@@ -50,6 +50,7 @@ export type AddSubjectData = {
 export interface Profile {
   uid: string;
   name: string;
+  name_lowercase: string;
   email: string;
   bio?: string | null;
   following?: string[];
@@ -212,7 +213,9 @@ export interface Task {
 
 export type ActivityType = 
     | 'SUBJECT_CREATED' 
+    | 'SUBJECT_DELETED'
     | 'GRADE_ADDED' 
+    | 'GRADE_DELETED'
     | 'GRADE_PLANNED'
     | 'STUDY_SET_CREATED'
     | 'STUDY_SET_LEARNED'

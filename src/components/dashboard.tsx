@@ -547,6 +547,8 @@ export default function Dashboard() {
       
       await batch.commit();
 
+      logActivity('SUBJECT_DELETED', `Fach "${subjectName}" gelöscht`, 'Trash2');
+
       toast({
         title: "Fach gelöscht",
         description: `${subjectName} und alle zugehörigen Noten wurden gelöscht.`,
@@ -612,6 +614,11 @@ export default function Dashboard() {
     }
 
     try {
+      const gradeToDelete = grades.find(g => g.id === gradeId);
+      if (gradeToDelete) {
+          const subjectName = subjects.find(s => s.id === gradeToDelete.subjectId)?.name || 'einem Fach';
+          logActivity('GRADE_DELETED', `Note in "${subjectName}" gelöscht`, 'Trash2');
+      }
       await deleteDoc(doc(db, 'users', user.uid, 'grades', gradeId));
       toast({
         title: "Note gelöscht",
@@ -1507,7 +1514,7 @@ export default function Dashboard() {
                     if (!user) return;
                     setUserName(name);
                     const profileRef = doc(db, 'profiles', user.uid);
-                    setDoc(profileRef, { name }, { merge: true });
+                    setDoc(profileRef, { name, name_lowercase: name.toLowerCase() }, { merge: true });
                   }}
                   onToggleFollow={handleToggleFollow}
                   userRole={userRole}

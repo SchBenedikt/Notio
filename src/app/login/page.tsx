@@ -9,7 +9,7 @@ import {
     GoogleAuthProvider,
     signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, addDoc, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,13 +82,25 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+            let emailToLogin = loginEmail;
+            // Check if it's an email or username
+            if (!loginEmail.includes('@') && !loginEmail.includes('.')) { // Simple check
+                const profilesRef = collection(db, 'profiles');
+                const q = query(profilesRef, where("name_lowercase", "==", loginEmail.toLowerCase()));
+                const querySnapshot = await getDocs(q);
+                if (querySnapshot.empty) {
+                    throw new Error("Benutzername nicht gefunden.");
+                }
+                const userProfile = querySnapshot.docs[0].data();
+                emailToLogin = userProfile.email;
+            }
+            await signInWithEmailAndPassword(auth, emailToLogin, loginPassword);
             router.push('/dashboard');
         } catch (error: any) {
             toast({
                 variant: 'destructive',
                 title: 'Fehler bei der Anmeldung',
-                description: error.message,
+                description: error.message === 'Benutzername nicht gefunden.' ? error.message : "Falsche Anmeldedaten oder Benutzer nicht gefunden.",
             });
         } finally {
             setLoading(false);
@@ -104,8 +116,20 @@ export default function LoginPage() {
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!signupName.trim()) {
+            toast({ variant: 'destructive', title: 'Benutzername erforderlich' });
+            return;
+        }
         setLoading(true);
         try {
+            // Check for username uniqueness
+            const profilesRef = collection(db, 'profiles');
+            const q = query(profilesRef, where("name_lowercase", "==", signupName.toLowerCase()));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                throw new Error("Dieser Benutzername ist bereits vergeben.");
+            }
+
             const userCredential = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
             const user = userCredential.user;
             
@@ -129,6 +153,7 @@ export default function LoginPage() {
             await setDoc(doc(db, 'profiles', user.uid), {
                 uid: user.uid,
                 name: signupName,
+                name_lowercase: signupName.toLowerCase(),
                 email: signupEmail,
                 bio: `Hallo, ich bin ${signupName}! Ich benutze Notio, um meinen Schulerfolg zu organisieren.`
             });
@@ -153,11 +178,20 @@ export default function LoginPage() {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
             
-            // Check for settings doc
-            const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
-            const settingsSnap = await getDoc(settingsRef);
+            const profileRef = doc(db, 'profiles', user.uid);
+            const profileSnap = await getDoc(profileRef);
 
-            if (!settingsSnap.exists()) {
+            if (!profileSnap.exists()) {
+                const googleName = user.displayName || 'Neuer Nutzer';
+                const profilesQuery = collection(db, 'profiles');
+                const q = query(profilesQuery, where("name_lowercase", "==", googleName.toLowerCase()));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    throw new Error("Dein Google-Benutzername ist bereits vergeben. Bitte registriere dich mit E-Mail und Passwort, um einen einzigartigen Namen zu wählen.");
+                }
+
+                const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
                 await setDoc(settingsRef, {
                     selectedGradeLevel: 10,
                     mainSubjectWeight: 2,
@@ -170,18 +204,13 @@ export default function LoginPage() {
                     dashboardLayouts: defaultLayouts,
                     dashboardWidgets: defaultWidgets,
                 });
-            }
-
-            // Check for profile doc
-            const profileRef = doc(db, 'profiles', user.uid);
-            const profileSnap = await getDoc(profileRef);
-
-            if (!profileSnap.exists()) {
-                 await setDoc(profileRef, {
+                
+                await setDoc(profileRef, {
                     uid: user.uid,
-                    name: user.displayName,
+                    name: googleName,
+                    name_lowercase: googleName.toLowerCase(),
                     email: user.email,
-                    bio: `Hallo, ich bin ${user.displayName}! Ich benutze Notio, um meinen Schulerfolg zu organisieren.`
+                    bio: `Hallo, ich bin ${googleName}! Ich benutze Notio, um meinen Schulerfolg zu organisieren.`
                 });
             }
 
@@ -242,8 +271,8 @@ export default function LoginPage() {
                         <CardContent>
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="login-email">Email</Label>
-                                    <Input id="login-email" type="email" placeholder="deine@email.de" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                                    <Label htmlFor="login-email">Email oder Benutzername</Label>
+                                    <Input id="login-email" type="text" placeholder="name@email.de oder MaxMuster" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="login-password">Passwort</Label>
@@ -273,7 +302,7 @@ export default function LoginPage() {
                         <CardContent>
                             <form onSubmit={handleSignUp} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="signup-name">Name</Label>
+                                    <Label htmlFor="signup-name">Benutzername</Label>
                                     <Input id="signup-name" placeholder="Max Mustermann" value={signupName} onChange={(e) => setSignupName(e.target.value)} required />
                                 </div>
                                 <div className="space-y-2">
