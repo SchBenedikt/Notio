@@ -79,6 +79,16 @@ export function ProfilePage({
     resolver: zodResolver(profileFormSchema),
     defaultValues: { name: "", bio: "" },
   });
+  
+  const emailForm = useForm<z.infer<typeof emailFormSchema>>({
+    resolver: zodResolver(emailFormSchema),
+    defaultValues: { newEmail: "", password: "" },
+  });
+
+  const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: { currentPassword: "", newPassword: "" },
+  });
 
   useEffect(() => {
     if (user && profile) {
