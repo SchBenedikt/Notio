@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from './ui/alert-dialog';
 import { Input } from './ui/input';
 
 const subjectColors = [
