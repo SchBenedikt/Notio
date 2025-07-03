@@ -43,7 +43,6 @@ const TaskIcon = ({ type }: { type: TaskType }) => {
     switch(type) {
         case 'homework': return <ListChecks className="h-5 w-5 text-blue-500" />;
         case 'todo': return <ListChecks className="h-5 w-5 text-purple-500" />;
-        case 'note': return <BookOpen className="h-5 w-5 text-yellow-600" />;
         default: return null;
     }
 }
@@ -217,7 +216,7 @@ export function PlannerPage({
                                                             <div className="flex-1">
                                                                 <label htmlFor={`task-${task.id}`} className={cn("font-medium", task.isDone && "line-through text-muted-foreground")}>{task.content}</label>
                                                                 <div className="text-sm text-muted-foreground flex items-center gap-4">
-                                                                    <div className="flex items-center gap-1.5"><TaskIcon type={task.type} /><span>{task.type === 'homework' ? 'Hausaufgabe' : (task.type === 'todo' ? 'To-Do' : 'Notiz')}</span></div>
+                                                                    <div className="flex items-center gap-1.5"><TaskIcon type={task.type} /><span>{task.type === 'homework' ? 'Hausaufgabe' : 'To-Do'}</span></div>
                                                                     {task.dueDate && <span className={cn(isBefore(new Date(task.dueDate), startOfToday()) && 'text-red-500')}>Fällig: {format(new Date(task.dueDate), "dd.MM.yyyy", { locale: de })}</span>}
                                                                 </div>
                                                             </div>

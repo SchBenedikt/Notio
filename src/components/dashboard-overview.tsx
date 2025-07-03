@@ -208,7 +208,7 @@ export function DashboardOverview({
                     <p className="text-sm text-muted-foreground">{subjectsMap.get(task.subjectId) || 'Unbekanntes Fach'}</p>
                   </div>
                   <div className="text-right pl-2">
-                    <p className={cn("font-semibold", task.type === 'note' && "text-amber-600")}>{format(new Date(task.dueDate!), "dd. MMM", { locale: de })}</p>
+                    <p className={cn("font-semibold")}>{format(new Date(task.dueDate!), "dd. MMM", { locale: de })}</p>
                     <p className="text-sm text-muted-foreground">{format(new Date(task.dueDate!), "eeee", { locale: de })}</p>
                   </div>
                 </div>

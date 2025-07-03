@@ -185,7 +185,7 @@ export interface TimetableEntry {
   room?: string;
 }
 
-export type TaskType = 'homework' | 'todo' | 'note';
+export type TaskType = 'homework' | 'todo';
 export interface Task {
   id: string;
   subjectId: string;

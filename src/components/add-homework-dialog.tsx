@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Notebook, ListTodo, PencilLine } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Notebook, ListTodo } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
@@ -22,7 +22,7 @@ import { Switch } from "./ui/switch";
 
 const formSchema = z.object({
   subjectId: z.string().min(1, "Bitte wähle ein Fach aus."),
-  type: z.enum(['homework', 'todo', 'note']),
+  type: z.enum(['homework', 'todo']),
   content: z.string().min(1, "Der Inhalt darf nicht leer sein.").max(200),
   hasDueDate: z.boolean().default(false),
   dueDateOption: z.enum(["next", "second", "custom"], {
@@ -169,7 +169,7 @@ export function AddTaskDialog({ isOpen, onOpenChange, onSubmit, subjects, timeta
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel>Aufgaben-Typ</FormLabel>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-3 gap-2 pt-1">
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-2 pt-1">
                         <Label htmlFor="type-homework" className={cn("flex flex-col items-center justify-center gap-2 rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer", taskType === 'homework' && "border-primary")}>
                             <RadioGroupItem value="homework" id="type-homework" className="sr-only" />
                             <Notebook className="h-6 w-6" /> Hausaufgabe
@@ -177,10 +177,6 @@ export function AddTaskDialog({ isOpen, onOpenChange, onSubmit, subjects, timeta
                          <Label htmlFor="type-todo" className={cn("flex flex-col items-center justify-center gap-2 rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer", taskType === 'todo' && "border-primary")}>
                             <RadioGroupItem value="todo" id="type-todo" className="sr-only" />
                             <ListTodo className="h-6 w-6" /> To-Do
-                        </Label>
-                         <Label htmlFor="type-note" className={cn("flex flex-col items-center justify-center gap-2 rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer", taskType === 'note' && "border-primary")}>
-                            <RadioGroupItem value="note" id="type-note" className="sr-only" />
-                            <PencilLine className="h-6 w-6" /> Notiz
                         </Label>
                     </RadioGroup>
                 </FormItem>
