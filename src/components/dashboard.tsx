@@ -123,8 +123,7 @@ export default function Dashboard() {
     if (!user || !isFirebaseEnabled) return;
     const settingsDocRef = doc(db, 'users', user.uid, 'settings', 'main');
     try {
-      const sanitizedValue = JSON.parse(JSON.stringify({ [key]: value }));
-      setDoc(settingsDocRef, sanitizedValue, { merge: true });
+      setDoc(settingsDocRef, { [key]: value }, { merge: true });
     } catch (error) {
       console.error("Error updating setting: ", error);
       toast({ title: "Fehler beim Speichern der Einstellung", variant: "destructive" });
@@ -454,8 +453,7 @@ export default function Dashboard() {
     }
     
     try {
-        const sanitizedData = JSON.parse(JSON.stringify(newSubjectData));
-        const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), sanitizedData);
+        const docRef = await addDoc(collection(db, 'users', user.uid, 'subjects'), newSubjectData);
         toast({
             title: "Fach hinzugefügt",
             description: `Das Fach "${values.name}" wurde erfolgreich erstellt.`,
@@ -478,8 +476,7 @@ export default function Dashboard() {
 
     const subjectDocRef = doc(db, 'users', user.uid, 'subjects', subjectId);
     try {
-        const sanitizedValues = JSON.parse(JSON.stringify(updatedValues));
-        await setDoc(subjectDocRef, sanitizedValues, { merge: true });
+        await setDoc(subjectDocRef, updatedValues, { merge: true });
         toast({
           title: "Fach aktualisiert",
           description: `Die Einstellungen für das Fach wurden gespeichert.`,
@@ -546,13 +543,12 @@ export default function Dashboard() {
     }
 
     try {
-      const sanitizedGradeData = JSON.parse(JSON.stringify(gradeData));
       if (gradeId) {
         const gradeDocRef = doc(db, 'users', user.uid, 'grades', gradeId);
-        await setDoc(gradeDocRef, sanitizedGradeData, { merge: true });
+        await setDoc(gradeDocRef, gradeData, { merge: true });
         toast({ title: "Note aktualisiert", description: "Die Änderungen an der Note wurden gespeichert." });
       } else {
-        await addDoc(collection(db, 'users', user.uid, 'grades'), sanitizedGradeData);
+        await addDoc(collection(db, 'users', user.uid, 'grades'), gradeData);
         toast({ title: "Note hinzugefügt", description: `Eine neue Note wurde erfolgreich gespeichert.` });
       }
     } catch (error) {
@@ -588,14 +584,13 @@ export default function Dashboard() {
         return;
     }
     const data = { ...values, gradeLevel: selectedGradeLevel };
-    const sanitizedData = JSON.parse(JSON.stringify(data));
     try {
         if (setId) {
             const setRef = doc(db, 'users', user.uid, 'studySets', setId);
-            await setDoc(setRef, sanitizedData, { merge: true });
+            await setDoc(setRef, data, { merge: true });
             toast({ title: "Lernset aktualisiert" });
         } else {
-            await addDoc(collection(db, 'users', user.uid, 'studySets'), sanitizedData);
+            await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
             toast({ title: "Lernset erstellt" });
         }
     } catch (error) {
@@ -638,13 +633,11 @@ export default function Dashboard() {
         if (lernzettelId) {
             const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
             const data = { ...values, updatedAt: serverTimestamp() };
-            const sanitizedData = JSON.parse(JSON.stringify(data));
-            await updateDoc(lernzettelRef, sanitizedData);
+            await updateDoc(lernzettelRef, data);
             toast({ title: "Lernzettel aktualisiert" });
         } else {
             const data = { ...values, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
-            const sanitizedData = JSON.parse(JSON.stringify(data));
-            await addDoc(collection(db, 'users', user.uid, 'lernzettel'), sanitizedData);
+            await addDoc(collection(db, 'users', user.uid, 'lernzettel'), data);
             toast({ title: "Lernzettel erstellt" });
         }
     } catch (error) {
@@ -757,12 +750,11 @@ export default function Dashboard() {
   const handleSaveTimetableEntry = async (day: number, period: number, values: { subjectId: string; room?: string }, entryId?: string) => {
     if (!user) return;
     const data = { day, period, ...values };
-    const sanitizedData = JSON.parse(JSON.stringify(data));
     try {
         if (entryId) {
-            await setDoc(doc(db, 'users', user.uid, 'timetable', entryId), sanitizedData, { merge: true });
+            await setDoc(doc(db, 'users', user.uid, 'timetable', entryId), data, { merge: true });
         } else {
-            await addDoc(collection(db, 'users', user.uid, 'timetable'), sanitizedData);
+            await addDoc(collection(db, 'users', user.uid, 'timetable'), data);
         }
         toast({ title: "Stundenplan gespeichert" });
     } catch(error) {
@@ -790,9 +782,8 @@ export default function Dashboard() {
         isDone: false, 
         createdAt: serverTimestamp() 
     };
-    const sanitizedData = JSON.parse(JSON.stringify(data));
     try {
-        await addDoc(collection(db, 'users', user.uid, 'tasks'), sanitizedData);
+        await addDoc(collection(db, 'users', user.uid, 'tasks'), data);
         toast({ title: "Aufgabe gespeichert" });
     } catch(error) {
         console.error("Error saving task:", error);
@@ -835,7 +826,7 @@ export default function Dashboard() {
             toast({ title: "Keine Berechtigung", description: "Du kannst nur deine eigenen Termine bearbeiten.", variant: 'destructive' });
             return;
         }
-        await updateDoc(eventRef, JSON.parse(JSON.stringify(values)));
+        await updateDoc(eventRef, values);
         toast({ title: "Ereignis aktualisiert" });
 
     } else {
@@ -850,8 +841,7 @@ export default function Dashboard() {
         };
 
         try {
-            const sanitizedData = JSON.parse(JSON.stringify(eventData));
-            await addDoc(collection(db, 'schools', userSchoolId, 'events'), sanitizedData);
+            await addDoc(collection(db, 'schools', userSchoolId, 'events'), eventData);
             toast({ title: "Ereignis erstellt", description: "Das Ereignis wurde dem Schulkalender hinzugefügt." });
         } catch (error) {
             console.error("Error adding school event:", error);
