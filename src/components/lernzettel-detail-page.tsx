@@ -1,17 +1,20 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
 import type { Lernzettel, StudySet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles } from "lucide-react";
+import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles, Trash2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 
 type LernzettelDetailPageProps = {
   lernzettel: Lernzettel;
   onBack: () => void;
   onEdit: (lernzettel: Lernzettel) => void;
+  onDelete: (id: string) => Promise<void>;
   onNavigateToNote: (noteId: string) => void;
   allStudySets: StudySet[];
   onViewStudySet: (setId: string) => void;
@@ -42,7 +45,7 @@ const YouTubeEmbed = ({ href }: { href?: string }) => {
     );
 };
 
-export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary }: LernzettelDetailPageProps) {
+export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary }: LernzettelDetailPageProps) {
   const [isGeneratingSet, setIsGeneratingSet] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   
@@ -93,6 +96,20 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
                 {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 {lernzettel.summary ? 'Zusammenfassung generiert' : 'KI-Zusammenfassung'}
             </Button>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="icon" title="Löschen">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader><AlertDialogTitle>Lernzettel wirklich löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(lernzettel.id)} className="bg-destructive hover:bg-destructive/90">Endgültig löschen</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
       </div>
       

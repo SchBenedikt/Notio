@@ -1,14 +1,17 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
 import type { Lernzettel, Subject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Notebook, Search, ArrowDown, ArrowUp } from "lucide-react";
+import { Plus, Notebook, Search, ArrowDown, ArrowUp, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type LernzettelPageProps = {
   lernzettel: Lernzettel[];
@@ -139,15 +142,47 @@ export function LernzettelPage({ lernzettel, subjects, onViewLernzettel, onEditL
                                         {groupBy === 'none' && <TableHead className="hidden sm:table-cell">Fach</TableHead>}
                                         <TableHead className="hidden md:table-cell">Fälligkeit</TableHead>
                                         <TableHead className="hidden md:table-cell">Bearbeitet</TableHead>
+                                        <TableHead><span className="sr-only">Aktionen</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {group.items.map((lz) => (
-                                        <TableRow key={lz.id} onClick={() => onViewLernzettel(lz.id)} className="cursor-pointer">
-                                            <TableCell className="font-medium">{lz.title}</TableCell>
-                                            {groupBy === 'none' && <TableCell className="hidden sm:table-cell">{subjectsMap.get(lz.subjectId || '') || '-'}</TableCell>}
-                                            <TableCell className="hidden md:table-cell">{lz.dueDate ? format(new Date(lz.dueDate), 'dd.MM.yyyy') : '-'}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{lz.updatedAt?.toDate ? format(lz.updatedAt.toDate(), 'dd.MM.yyyy HH:mm') : '-'}</TableCell>
+                                        <TableRow key={lz.id} className="group">
+                                            <TableCell className="font-medium cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{lz.title}</TableCell>
+                                            {groupBy === 'none' && <TableCell className="hidden sm:table-cell cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{subjectsMap.get(lz.subjectId || '') || '-'}</TableCell>}
+                                            <TableCell className="hidden md:table-cell cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{lz.dueDate ? format(new Date(lz.dueDate), 'dd.MM.yyyy') : '-'}</TableCell>
+                                            <TableCell className="hidden md:table-cell cursor-pointer" onClick={() => onViewLernzettel(lz.id)}>{lz.updatedAt?.toDate ? format(lz.updatedAt.toDate(), 'dd.MM.yyyy HH:mm') : '-'}</TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => onEditLernzettel(lz)}>
+                                                            <Pencil className="mr-2 h-4 w-4" /> Bearbeiten
+                                                        </DropdownMenuItem>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" /> Löschen
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Lernzettel löschen?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => onDeleteLernzettel(lz.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

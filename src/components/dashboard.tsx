@@ -765,6 +765,9 @@ export default function Dashboard() {
     try {
         await deleteDoc(doc(db, 'users', user.uid, 'lernzettel', lernzettelId));
         toast({ title: "Lernzettel gelöscht", variant: "destructive" });
+        if (view === 'lernzettel-detail' && viewingLernzettelId === lernzettelId) {
+            setView('lernzettel');
+        }
     } catch (error) {
         console.error("Error deleting Lernzettel:", error);
         toast({ title: "Fehler beim Löschen des Lernzettels", variant: "destructive" });
@@ -1448,6 +1451,7 @@ export default function Dashboard() {
             lernzettel={lz}
             onBack={() => setView('lernzettel')}
             onEdit={handleNavigateToEditLernzettel}
+            onDelete={handleDeleteLernzettel}
             onNavigateToNote={handleViewLernzettel}
             allStudySets={studySets}
             onViewStudySet={handleViewStudySet}
