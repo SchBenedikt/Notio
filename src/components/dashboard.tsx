@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType, Lernzettel, ActivityType, ActivityLog } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType, Lernzettel, ActivityType, ActivityLog, Post } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -1568,6 +1568,10 @@ export default function Dashboard() {
                   subjects={subjectsForGradeLevel}
                   grades={grades}
                   userFiles={userFiles}
+                  studySets={studySets}
+                  lernzettel={lernzettel}
+                  onNavigateToLernzettel={handleViewLernzettel}
+                  onNavigateToStudySet={handleViewStudySet}
                />;
       case 'user-profile':
         if (viewingProfileId) {

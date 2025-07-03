@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
-import type { Post, Profile, Subject, Grade, Attachment, FileSystemItem } from '@/lib/types';
+import type { Post, Profile, Subject, Grade, Attachment, FileSystemItem, StudySet, Lernzettel } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Loader2, Users, MessageSquare, Repeat, Flag, MoreHorizontal, Pencil, Trash2, Paperclip, X } from 'lucide-react';
+import { Heart, Loader2, Users, MessageSquare, Share2, Flag, MoreHorizontal, Pencil, Trash2, Paperclip, X, BrainCircuit, Notebook } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EditPostDialog } from './edit-post-dialog';
 import { PostComments } from './post-comments';
 import { PostFileSelectionDialog } from './post-file-selection-dialog';
+import { PostStudySetSelectionDialog } from './post-studyset-selection-dialog';
+import { PostLernzettelSelectionDialog } from './post-lernzettel-selection-dialog';
 
 const PostSkeleton = () => (
     <Card>
@@ -50,14 +52,26 @@ type CommunityPageProps = {
   subjects: Subject[];
   grades: Grade[];
   userFiles: FileSystemItem[];
+  studySets: StudySet[];
+  lernzettel: Lernzettel[];
+  onNavigateToStudySet: (id: string) => void;
+  onNavigateToLernzettel: (id: string) => void;
 }
 
-export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollow, subjects, grades, userFiles }: CommunityPageProps) {
+export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollow, subjects, grades, userFiles, studySets, lernzettel, onNavigateToStudySet, onNavigateToLernzettel }: CommunityPageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
+  const newPostTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostAttachments, setNewPostAttachments] = useState<Attachment[]>([]);
+  const [sharedStudySet, setSharedStudySet] = useState<StudySet | null>(null);
+  const [sharedLernzettel, setSharedLernzettel] = useState<Lernzettel | null>(null);
+  
   const [isFileSelectorOpen, setFileSelectorOpen] = useState(false);
+  const [isStudySetSelectorOpen, setStudySetSelectorOpen] = useState(false);
+  const [isLernzettelSelectorOpen, setLernzettelSelectorOpen] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -105,23 +119,34 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
   }, [isFirebaseEnabled, toast]);
 
   const handlePostSubmit = async () => {
-    if ((!newPostContent.trim() && newPostAttachments.length === 0) || !user || !user.displayName) {
-        toast({ title: "Fehler", description: "Der Beitrag muss Inhalt oder einen Anhang haben.", variant: "destructive" });
+    if ((!newPostContent.trim() && newPostAttachments.length === 0 && !sharedStudySet && !sharedLernzettel) || !user || !user.displayName) {
+        toast({ title: "Fehler", description: "Der Beitrag kann nicht leer sein.", variant: "destructive" });
         return;
     }
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'posts'), {
+      const postData: Partial<Post> = {
         authorId: user.uid,
         authorName: user.displayName,
         content: newPostContent,
         attachments: newPostAttachments,
         likes: [],
         commentCount: 0,
-        createdAt: serverTimestamp(),
-      });
+        createdAt: serverTimestamp() as any,
+      };
+
+      if (sharedStudySet) {
+        postData.studySetRef = { id: sharedStudySet.id, title: sharedStudySet.title, cardCount: sharedStudySet.cards.length };
+      }
+      if (sharedLernzettel) {
+        postData.lernzettelRef = { id: sharedLernzettel.id, title: sharedLernzettel.title };
+      }
+
+      await addDoc(collection(db, 'posts'), postData);
       setNewPostContent('');
       setNewPostAttachments([]);
+      setSharedLernzettel(null);
+      setSharedStudySet(null);
       toast({ title: "Beitrag veröffentlicht!" });
     } catch (error: any) {
       console.error("Error adding post: ", error);
@@ -168,25 +193,19 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
       }
   };
 
-  const handleReportPost = (postId: string) => {
-    console.log(`Reporting post ${postId}`);
-    toast({
-        title: "Beitrag gemeldet",
-        description: "Danke für dein Feedback. Wir werden den Beitrag überprüfen.",
-    });
+  const handleSharePost = (post: Post) => {
+    const quote = `\n\n> @${post.authorName} schrieb:\n> ${post.content}`;
+    setNewPostContent(prev => prev + quote);
+    newPostTextareaRef.current?.focus();
+    newPostTextareaRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const toggleComments = (postId: string) => {
-    setVisibleComments(prev => prev === postId ? null : prev);
-  };
 
   const removeSelectedAttachment = (indexToRemove: number) => {
     setNewPostAttachments(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const hasAnyAttachmentsInApp = useMemo(() => {
-    return userFiles.some(f => f.type === 'file');
-  }, [userFiles]);
+  const hasAnyAttachmentsInApp = useMemo(() => userFiles.some(f => f.type === 'file'), [userFiles]);
 
   const profilesMap = new Map(profiles.map(p => [p.uid, p]));
   
@@ -211,15 +230,39 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
         <CardContent>
           <div className="grid w-full gap-2">
             <Textarea 
+              ref={newPostTextareaRef}
               placeholder="Was möchtest du teilen?" 
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
               maxLength={1000}
               disabled={!user || isSubmitting}
             />
-            {newPostAttachments.length > 0 && (
+            
+            {(newPostAttachments.length > 0 || sharedLernzettel || sharedStudySet) && (
                 <div className="p-2 border rounded-lg space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">Anhänge:</p>
+                     {sharedLernzettel && (
+                        <div className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded-md">
+                             <div className="flex items-center gap-2 truncate">
+                                <Notebook className="h-4 w-4" />
+                                <span className="truncate">{sharedLernzettel.title}</span>
+                             </div>
+                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSharedLernzettel(null)}>
+                                <X className="h-4 w-4" />
+                             </Button>
+                        </div>
+                    )}
+                    {sharedStudySet && (
+                        <div className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded-md">
+                             <div className="flex items-center gap-2 truncate">
+                                <BrainCircuit className="h-4 w-4" />
+                                <span className="truncate">{sharedStudySet.title}</span>
+                             </div>
+                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSharedStudySet(null)}>
+                                <X className="h-4 w-4" />
+                             </Button>
+                        </div>
+                    )}
                     {newPostAttachments.map((att, index) => (
                         <div key={index} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded-md">
                              <div className="flex items-center gap-2 truncate">
@@ -234,10 +277,12 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                 </div>
             )}
             <div className="flex justify-between items-center">
-                <Button variant="outline" size="icon" onClick={() => setFileSelectorOpen(true)} disabled={!hasAnyAttachmentsInApp || isSubmitting} title="Datei anhängen">
-                    <Paperclip className="h-4 w-4" />
-                </Button>
-                <Button onClick={handlePostSubmit} disabled={isSubmitting || (!newPostContent.trim() && newPostAttachments.length === 0) || !user}>
+                <div className="flex gap-1">
+                    <Button variant="outline" size="icon" onClick={() => setFileSelectorOpen(true)} disabled={!hasAnyAttachmentsInApp || isSubmitting} title="Datei anhängen"><Paperclip className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" onClick={() => setLernzettelSelectorOpen(true)} disabled={lernzettel.length === 0 || isSubmitting || !!sharedStudySet} title="Lernzettel anhängen"><Notebook className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" onClick={() => setStudySetSelectorOpen(true)} disabled={studySets.length === 0 || isSubmitting || !!sharedLernzettel} title="Lernset anhängen"><BrainCircuit className="h-4 w-4" /></Button>
+                </div>
+                <Button onClick={handlePostSubmit} disabled={isSubmitting || (!newPostContent.trim() && newPostAttachments.length === 0 && !sharedStudySet && !sharedLernzettel) || !user}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Beitrag veröffentlichen
                 </Button>
@@ -284,30 +329,12 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                             </div>
                             {isOwnPost ? (
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
+                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => setEditingPost(post)}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Bearbeiten
-                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setEditingPost(post)}><Pencil className="mr-2 h-4 w-4" />Bearbeiten</DropdownMenuItem>
                                         <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                                  <Trash2 className="mr-2 h-4 w-4" />
-                                                  Löschen
-                                                </DropdownMenuItem>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader><AlertDialogTitle>Beitrag löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDeletePost(post.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
+                                            <AlertDialogTrigger asChild><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Löschen</DropdownMenuItem></AlertDialogTrigger>
+                                            <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Beitrag löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={() => handleDeletePost(post.id)} className="bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
                                         </AlertDialog>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -323,40 +350,41 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                         {post.attachments && post.attachments.length > 0 && (
                             <div className="mt-4 space-y-2">
                                 {post.attachments.map((att, index) => (
-                                    <a
-                                        key={index}
-                                        href={att.dataUrl}
-                                        download={att.name}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 p-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-sm font-medium text-primary"
-                                    >
-                                        <Paperclip className="h-4 w-4" />
-                                        <span>{att.name}</span>
-                                    </a>
+                                    <a key={index} href={att.dataUrl} download={att.name} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-sm font-medium text-primary"><Paperclip className="h-4 w-4" /><span>{att.name}</span></a>
                                 ))}
                             </div>
                         )}
-                        <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-                            <Button variant="ghost" size="sm" onClick={() => handleLikePost(post.id)} disabled={!user}>
-                                <Heart className={`mr-2 h-4 w-4 ${hasLiked ? 'text-red-500 fill-current' : ''}`} />
-                                <span>{post.likes.length}</span>
-                            </Button>
-                             <Button variant="ghost" size="sm" onClick={() => toggleComments(post.id)}>
-                                <MessageSquare className="mr-2 h-4 w-4" />
-                                <span>{post.commentCount || 0}</span>
-                            </Button>
-                             <Button variant="ghost" size="sm" disabled>
-                                <Repeat className="mr-2 h-4 w-4" />
-                                <span>0</span>
-                            </Button>
-                             <Button variant="ghost" size="icon" className="ml-auto" onClick={() => handleReportPost(post.id)}>
-                                <Flag className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        {visibleComments === post.id && (
-                           <PostComments postId={post.id} profilesMap={profilesMap} />
+                        {post.studySetRef && (
+                           <button onClick={() => onNavigateToStudySet(post.studySetRef!.id)} className="w-full mt-4 text-left">
+                               <Card className="hover:bg-muted/50 transition-colors">
+                                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
+                                       <BrainCircuit className="h-6 w-6 text-primary" />
+                                       <div>
+                                           <p className="font-semibold text-sm">{post.studySetRef.title}</p>
+                                           <p className="text-xs text-muted-foreground">{post.studySetRef.cardCount} Begriffe</p>
+                                       </div>
+                                   </CardHeader>
+                               </Card>
+                           </button>
                         )}
+                        {post.lernzettelRef && (
+                           <button onClick={() => onNavigateToLernzettel(post.lernzettelRef!.id)} className="w-full mt-4 text-left">
+                               <Card className="hover:bg-muted/50 transition-colors">
+                                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
+                                       <Notebook className="h-6 w-6 text-primary" />
+                                       <div>
+                                           <p className="font-semibold text-sm">{post.lernzettelRef.title}</p>
+                                       </div>
+                                   </CardHeader>
+                               </Card>
+                           </button>
+                        )}
+                        <div className="flex items-center gap-1 mt-4 pt-4 border-t">
+                            <Button variant="ghost" size="sm" onClick={() => handleLikePost(post.id)} disabled={!user}><Heart className={`mr-2 h-4 w-4 ${hasLiked ? 'text-red-500 fill-current' : ''}`} /><span>{post.likes.length}</span></Button>
+                             <Button variant="ghost" size="sm" onClick={() => toggleComments(post.id)}><MessageSquare className="mr-2 h-4 w-4" /><span>{post.commentCount || 0}</span></Button>
+                             <Button variant="ghost" size="sm" onClick={() => handleSharePost(post)}><Share2 className="mr-2 h-4 w-4" />Teilen</Button>
+                        </div>
+                        {visibleComments === post.id && <PostComments postId={post.id} profilesMap={profilesMap} />}
                     </CardContent>
                   </Card>
               )
@@ -369,20 +397,10 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
         )}
       </div>
 
-      {editingPost && (
-        <EditPostDialog
-            post={editingPost}
-            isOpen={!!editingPost}
-            onOpenChange={(isOpen) => !isOpen && setEditingPost(null)}
-            onUpdate={handleUpdatePost}
-        />
-      )}
-      <PostFileSelectionDialog
-        isOpen={isFileSelectorOpen}
-        onOpenChange={setFileSelectorOpen}
-        onFilesSelected={(files) => setNewPostAttachments(prev => [...prev, ...files])}
-        userFiles={userFiles}
-      />
+      {editingPost && <EditPostDialog post={editingPost} isOpen={!!editingPost} onOpenChange={(isOpen) => !isOpen && setEditingPost(null)} onUpdate={handleUpdatePost} />}
+      <PostFileSelectionDialog isOpen={isFileSelectorOpen} onOpenChange={setFileSelectorOpen} onFilesSelected={(files) => setNewPostAttachments(prev => [...prev, ...files])} userFiles={userFiles} />
+      <PostStudySetSelectionDialog isOpen={isStudySetSelectorOpen} onOpenChange={setStudySetSelectorOpen} onStudySetSelected={setSharedStudySet} allStudySets={studySets} />
+      <PostLernzettelSelectionDialog isOpen={isLernzettelSelectorOpen} onOpenChange={setLernzettelSelectorOpen} onLernzettelSelected={setSharedLernzettel} allLernzettel={lernzettel} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { Timestamp } from "firebase/firestore";
-import { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export interface Attachment {
   name: string;
@@ -74,6 +74,15 @@ export interface Post {
   commentCount: number;
   createdAt: Timestamp;
   attachments?: Attachment[];
+  studySetRef?: {
+    id: string;
+    title: string;
+    cardCount: number;
+  };
+  lernzettelRef?: {
+    id: string;
+    title: string;
+  };
 }
 
 export interface Award {

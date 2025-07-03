@@ -13,6 +13,7 @@ const fontInter = Inter({
 export const metadata: Metadata = {
   title: "Notio",
   description: "Dein intelligenter Begleiter für bessere Noten und Lernerfolg.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -33,6 +34,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <meta name="theme-color" content="#3b82f6" />
       </head>
       <body
         className={cn("font-body antialiased", fontInter.variable)}
