@@ -45,6 +45,7 @@ import { LernzettelPage } from "./lernzettel-page";
 import { CreateEditLernzettelPage } from "./create-edit-lernzettel-page";
 import { LernzettelDetailPage } from "./lernzettel-detail-page";
 import { generateStudySetFromNote } from "@/ai/flows/create-studyset-from-note-flow";
+import { summarizeNote } from "@/ai/flows/summarize-note-flow";
 import { ActivityPage } from "./activity-page";
 
 
@@ -697,6 +698,7 @@ export default function Dashboard() {
       studySetIds: values.studySetIds || [],
       dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
       isDone: values.dueDate ? (values.isDone ?? false) : null,
+      summary: values.summary || null,
     };
 
     if (lernzettelId) {
@@ -734,6 +736,25 @@ export default function Dashboard() {
     } catch (error) {
         console.error("Error creating study set from note:", error);
         toast({ title: "Fehler", description: "Das Lernset konnte nicht erstellt werden.", variant: "destructive" });
+    }
+  };
+  
+  const handleCreateLernzettelSummary = async (note: Lernzettel) => {
+    if (!user) return;
+    toast({ title: "Zusammenfassung wird generiert...", description: "Die KI fasst den Inhalt zusammen." });
+    try {
+        const result = await summarizeNote({
+            noteTitle: note.title,
+            noteContent: note.content,
+        });
+        
+        const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', note.id);
+        await updateDoc(lernzettelRef, { summary: result.summary });
+        
+        toast({ title: "Zusammenfassung erstellt!", description: "Die KI-Zusammenfassung wurde dem Lernzettel hinzugefügt." });
+    } catch (error) {
+        console.error("Error creating summary:", error);
+        toast({ title: "Fehler", description: "Die Zusammenfassung konnte nicht erstellt werden.", variant: "destructive" });
     }
   };
 
@@ -1280,7 +1301,7 @@ export default function Dashboard() {
         console.error("Error toggling follow:", error);
         toast({ variant: 'destructive', title: 'Fehler', description: 'Aktion konnte nicht ausgeführt werden.' });
     }
-  }
+  };
 
   const handleAddSchool = async (name: string, address: string): Promise<string> => {
       const docRef = await addDoc(collection(db, "schools"), { name, address });
@@ -1425,6 +1446,7 @@ export default function Dashboard() {
             allStudySets={studySets}
             onViewStudySet={handleViewStudySet}
             onCreateStudySetFromAI={handleCreateStudySetFromAI}
+            onCreateSummary={handleCreateLernzettelSummary}
           />;
         }
         return null;

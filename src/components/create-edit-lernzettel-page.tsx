@@ -216,7 +216,13 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
             case 'custom': finalDueDate = values.customDate; break;
         }
     }
-    await onSave({ ...values, dueDate: finalDueDate || undefined, studySetIds: values.studySetIds || [] }, lernzettelToEdit?.id);
+    const dataToSave = { 
+        ...values, 
+        dueDate: finalDueDate || undefined, 
+        studySetIds: values.studySetIds || [],
+        summary: lernzettelToEdit?.summary || null,
+    }
+    await onSave(dataToSave as any, lernzettelToEdit?.id);
   };
 
   const { isSubmitting } = form.formState;
@@ -423,8 +429,8 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
                         </TabsContent>
                     </Tabs>
                     <FormDescription>
-                      Nutze Markdown für Formatierungen: `# Überschrift`, `**fett**`, `- Liste`, `- [ ] Checkliste`, `> Zitat`.
-                      Verlinke andere Lernzettel mit `[Link-Text](/lernzettel/ID_DES_ZETTELS)`.
+                      Nutze Markdown für Formatierungen. Verlinke andere Lernzettel mit `[Link-Text](/lernzettel/ID)`.
+                      Füge YouTube-Videos ein, indem du den Link in eine neue Zeile stellst.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

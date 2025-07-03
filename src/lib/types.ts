@@ -116,6 +116,7 @@ export interface Lernzettel {
   id: string;
   title: string;
   content: string; // Markdown
+  summary?: string | null;
   subjectId?: string | null;
   studySetIds?: string[] | null;
   gradeLevel: number;

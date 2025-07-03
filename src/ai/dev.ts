@@ -6,3 +6,4 @@ import './flows/evaluate-answer-flow';
 import './flows/study-set-test-flow';
 import './flows/study-session-flow';
 import './flows/create-studyset-from-note-flow';
+import './flows/summarize-note-flow';

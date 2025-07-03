@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import type { Lernzettel, StudySet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook } from "lucide-react";
+import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -16,10 +16,35 @@ type LernzettelDetailPageProps = {
   allStudySets: StudySet[];
   onViewStudySet: (setId: string) => void;
   onCreateStudySetFromAI: (note: Lernzettel) => Promise<void>;
+  onCreateSummary: (note: Lernzettel) => Promise<void>;
 };
 
-export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI }: LernzettelDetailPageProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
+const YouTubeEmbed = ({ href }: { href?: string }) => {
+    if (!href) return null;
+    const videoIdRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = href.match(videoIdRegex);
+    const videoId = match ? match[1] : null;
+
+    if (!videoId) return <a href={href} target="_blank" rel="noopener noreferrer">{href}</a>;
+
+    return (
+        <div className="my-4 aspect-video w-full overflow-hidden rounded-lg border">
+            <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+            ></iframe>
+        </div>
+    );
+};
+
+export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary }: LernzettelDetailPageProps) {
+  const [isGeneratingSet, setIsGeneratingSet] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
   
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined) => {
     if (href && href.startsWith('/lernzettel/')) {
@@ -37,9 +62,15 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
   }, [lernzettel.studySetIds, allStudySets]);
 
   const handleGenerateSet = async () => {
-    setIsGenerating(true);
+    setIsGeneratingSet(true);
     await onCreateStudySetFromAI(lernzettel);
-    setIsGenerating(false);
+    setIsGeneratingSet(false);
+  }
+  
+  const handleGenerateSummary = async () => {
+    setIsSummarizing(true);
+    await onCreateSummary(lernzettel);
+    setIsSummarizing(false);
   }
 
   return (
@@ -49,17 +80,35 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
           <ArrowLeft className="mr-2 h-4 w-4" />
           Zurück zu allen Lernzetteln
         </Button>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onEdit(lernzettel)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Bearbeiten
             </Button>
-            <Button onClick={handleGenerateSet} disabled={isGenerating}>
-                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+            <Button onClick={handleGenerateSet} disabled={isGeneratingSet}>
+                {isGeneratingSet ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
                 Lernset mit KI erstellen
+            </Button>
+             <Button onClick={handleGenerateSummary} disabled={isSummarizing || !!lernzettel.summary}>
+                {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                {lernzettel.summary ? 'Zusammenfassung generiert' : 'KI-Zusammenfassung'}
             </Button>
         </div>
       </div>
+      
+      {lernzettel.summary && (
+        <Card className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800 animate-fade-in-down">
+            <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                    <Sparkles className="h-4 w-4" />
+                    KI-Zusammenfassung
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-amber-900 dark:text-amber-200">{lernzettel.summary}</p>
+            </CardContent>
+        </Card>
+      )}
 
        {linkedStudySets.length > 0 && (
           <Card>
@@ -87,15 +136,16 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                a: ({ node, ...props }) => (
-                  <a 
-                    {...props} 
-                    onClick={(e) => handleLinkClick(e, props.href)}
-                    className="text-primary hover:underline"
-                    target={props.href && props.href.startsWith('/lernzettel/') ? '_self' : '_blank'}
-                    rel="noopener noreferrer"
-                  />
-                ),
+                a: ({ node, ...props }) => {
+                    const href = props.href;
+                    if (href && (href.includes('youtube.com') || href.includes('youtu.be'))) {
+                        return <YouTubeEmbed href={href} />;
+                    }
+                    if (href && href.startsWith('/lernzettel/')) {
+                         return <button onClick={(e) => handleLinkClick(e as any, href)} className="text-primary hover:underline p-0 m-0 font-normal text-left bg-transparent">{props.children}</button>;
+                    }
+                    return <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />;
+                },
               }}
             >
               {lernzettel.content}
