@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { Lernzettel, Subject, TimetableEntry } from "@/lib/types";
+import type { Lernzettel, Subject, TimetableEntry, StudySet } from "@/lib/types";
 import { Loader2, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Separator } from "./ui/separator";
@@ -25,6 +25,7 @@ import { de } from "date-fns/locale";
 const formSchema = z.object({
   title: z.string().min(1, "Titel darf nicht leer sein.").max(100),
   subjectId: z.string().optional(),
+  studySetId: z.string().optional(),
   content: z.string().min(1, "Inhalt darf nicht leer sein."),
   hasDueDate: z.boolean().default(false),
   dueDateOption: z.enum(["next", "second", "custom"]).optional(),
@@ -85,21 +86,23 @@ type CreateEditLernzettelPageProps = {
   onSave: (values: Omit<FormValues, 'id'>, lernzettelId?: string) => Promise<void>;
   lernzettelToEdit?: Lernzettel | null;
   subjects: Subject[];
+  allStudySets: StudySet[];
   timetable: TimetableEntry[];
 };
 
-export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, subjects, timetable }: CreateEditLernzettelPageProps) {
+export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, subjects, allStudySets, timetable }: CreateEditLernzettelPageProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       subjectId: "",
+      studySetId: "",
       content: "",
       hasDueDate: false,
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch } = form;
   const hasDueDate = watch("hasDueDate");
   const selectedSubjectId = watch("subjectId");
   const dueDateOption = watch("dueDateOption");
@@ -111,6 +114,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
       form.reset({
         title: lernzettelToEdit.title,
         subjectId: lernzettelToEdit.subjectId || "",
+        studySetId: lernzettelToEdit.studySetId || "",
         content: lernzettelToEdit.content,
         hasDueDate: !!lernzettelToEdit.dueDate,
         customDate: lernzettelToEdit.dueDate ? new Date(lernzettelToEdit.dueDate) : undefined,
@@ -120,6 +124,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
       form.reset({
         title: "",
         subjectId: "",
+        studySetId: "",
         content: "",
         hasDueDate: false,
         dueDateOption: undefined,
@@ -180,31 +185,55 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="subjectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fach (optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Einem Fach zuordnen..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {subjects.map((subject) => (
-                            <SelectItem key={subject.id} value={subject.id}>
-                              {subject.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                 <FormField
+                    control={form.control}
+                    name="subjectId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Fach (optional)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Einem Fach zuordnen..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {subjects.map((subject) => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                {subject.name}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                 />
               </div>
+                <FormField
+                    control={form.control}
+                    name="studySetId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Lernset (optional)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Einem Lernset zuordnen..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {allStudySets.map((set) => (
+                                <SelectItem key={set.id} value={set.id}>
+                                {set.title}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                 />
                <FormField
                 control={form.control}
                 name="hasDueDate"

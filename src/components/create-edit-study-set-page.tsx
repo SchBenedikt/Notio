@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,13 +15,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import type { StudySet, Subject, Lernzettel } from "@/lib/types";
-import { PlusCircle, Trash2, Loader2, ArrowLeft, FilePlus2, Notebook } from "lucide-react";
+import type { StudySet, Subject } from "@/lib/types";
+import { PlusCircle, Trash2, Loader2, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { LernzettelSelectionDialog } from "./lernzettel-selection-dialog";
 
 const cardSchema = z.object({
   id: z.string(),
@@ -34,7 +32,6 @@ const formSchema = z.object({
   description: z.string().max(500).optional(),
   subjectId: z.string().optional(),
   cards: z.array(cardSchema).min(1, "Es muss mindestens eine Karteikarte vorhanden sein."),
-  linkedLernzettelIds: z.array(z.string()).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,11 +41,9 @@ type CreateEditStudySetPageProps = {
   onSave: (values: Omit<StudySet, 'id' | 'gradeLevel'>, setId?: string) => Promise<void>;
   studySetToEdit?: StudySet | null;
   subjects: Subject[];
-  allLernzettel: Lernzettel[];
 };
 
-export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subjects, allLernzettel }: CreateEditStudySetPageProps) {
-  const [isLzSelectorOpen, setLzSelectorOpen] = useState(false);
+export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subjects }: CreateEditStudySetPageProps) {
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -57,7 +52,6 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subject
       description: "",
       subjectId: undefined,
       cards: [{ id: `new-${Date.now()}`, term: "", definition: "" }],
-      linkedLernzettelIds: [],
     },
   });
   
@@ -66,11 +60,6 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subject
     name: "cards",
   });
 
-  const linkedIds = form.watch('linkedLernzettelIds') || [];
-  const linkedLernzettel = useMemo(() => {
-      return allLernzettel.filter(lz => linkedIds.includes(lz.id));
-  }, [allLernzettel, linkedIds]);
-
   useEffect(() => {
     if (studySetToEdit) {
       form.reset({
@@ -78,7 +67,6 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subject
         description: studySetToEdit.description || "",
         subjectId: studySetToEdit.subjectId || undefined,
         cards: studySetToEdit.cards,
-        linkedLernzettelIds: studySetToEdit.linkedLernzettelIds || [],
       });
     } else {
       form.reset({
@@ -86,7 +74,6 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subject
         description: "",
         subjectId: undefined,
         cards: [{ id: `new-${Date.now()}`, term: "", definition: "" }],
-        linkedLernzettelIds: [],
       });
     }
   }, [studySetToEdit, form]);
@@ -167,27 +154,6 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subject
                         />
                         <Separator />
 
-                        <div>
-                            <Label>Verknüpfte Lernzettel</Label>
-                            <div className="mt-2 space-y-2">
-                                {linkedLernzettel.length > 0 && (
-                                    <div className="p-3 border rounded-lg space-y-2">
-                                        {linkedLernzettel.map(lz => (
-                                            <div key={lz.id} className="flex items-center gap-2 text-sm">
-                                                <Notebook className="h-4 w-4 text-muted-foreground" />
-                                                <span>{lz.title}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <Button type="button" variant="outline" className="w-full" onClick={() => setLzSelectorOpen(true)}>
-                                    <FilePlus2 className="mr-2 h-4 w-4" />
-                                    Lernzettel auswählen oder verknüpfen
-                                </Button>
-                            </div>
-                        </div>
-                        <Separator />
-
                         <div className="space-y-4">
                             {fields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-3 relative bg-muted/50">
@@ -234,13 +200,6 @@ export function CreateEditStudySetPage({ onBack, onSave, studySetToEdit, subject
             </CardContent>
         </Card>
     </div>
-    <LernzettelSelectionDialog 
-        isOpen={isLzSelectorOpen}
-        onOpenChange={setLzSelectorOpen}
-        allLernzettel={allLernzettel}
-        initialSelectedIds={form.getValues('linkedLernzettelIds')}
-        onLernzettelSelected={(ids) => form.setValue('linkedLernzettelIds', ids)}
-    />
     </>
   );
 }

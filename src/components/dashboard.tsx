@@ -309,7 +309,7 @@ export default function Dashboard() {
     unsubscribers.push(studySetsUnsub);
     
     // --- Lernzettel listener ---
-    const lernzettelQuery = query(collection(db, 'users', user.uid, 'lernzettel'), where('gradeLevel', '==', selectedGradeLevel), orderBy('updatedAt', 'desc'));
+    const lernzettelQuery = query(collection(db, 'users', user.uid, 'lernzettel'), where('gradeLevel', '==', selectedGradeLevel));
     const lernzettelUnsub = onSnapshot(lernzettelQuery, (snapshot) => {
         const lernzettelData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Lernzettel[];
         setLernzettel(lernzettelData);
@@ -595,7 +595,6 @@ export default function Dashboard() {
         ...values,
         gradeLevel: selectedGradeLevel,
         subjectId: values.subjectId || null,
-        linkedLernzettelIds: values.linkedLernzettelIds || [],
     };
     try {
         if (setId) {
@@ -647,6 +646,7 @@ export default function Dashboard() {
           title: values.title,
           content: values.content,
           subjectId: values.subjectId || null,
+          studySetId: values.studySetId || null,
           dueDate: values.dueDate?.toISOString() || null,
           isDone: values.dueDate ? (values.isDone ?? false) : null,
         };
@@ -1211,6 +1211,7 @@ export default function Dashboard() {
       case 'lernzettel-create':
         return <CreateEditLernzettelPage 
             subjects={subjectsForGradeLevel}
+            allStudySets={studySets}
             timetable={timetable}
             onBack={() => setView('lernzettel')}
             onSave={handleSaveLernzettel}
@@ -1219,6 +1220,7 @@ export default function Dashboard() {
         return <CreateEditLernzettelPage 
             lernzettelToEdit={editingLernzettel}
             subjects={subjectsForGradeLevel}
+            allStudySets={studySets}
             timetable={timetable}
             onBack={() => setView('lernzettel')}
             onSave={handleSaveLernzettel}
@@ -1248,7 +1250,6 @@ export default function Dashboard() {
             subjects={subjectsForGradeLevel}
             onBack={() => setView('studysets')}
             onSave={handleSaveStudySet}
-            allLernzettel={lernzettel}
         />;
       case 'studyset-edit':
         return <CreateEditStudySetPage 
@@ -1256,7 +1257,6 @@ export default function Dashboard() {
             subjects={subjectsForGradeLevel}
             onBack={() => setView('studysets')}
             onSave={handleSaveStudySet}
-            allLernzettel={lernzettel}
         />;
       case 'studyset-detail':
         const set = studySets.find(s => s.id === viewingStudySetId);

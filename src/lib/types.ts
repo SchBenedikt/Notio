@@ -108,7 +108,6 @@ export interface StudySet {
   cards: StudyCard[];
   gradeLevel: number;
   subjectId?: string;
-  linkedLernzettelIds?: string[];
 }
 
 export interface Lernzettel {
@@ -116,6 +115,7 @@ export interface Lernzettel {
   title: string;
   content: string; // Markdown
   subjectId?: string;
+  studySetId?: string;
   gradeLevel: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;

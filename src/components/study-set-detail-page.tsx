@@ -30,8 +30,8 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
   const hasCards = studySet.cards.length > 0;
   
   const linkedLernzettel = useMemo(() => {
-    return studySet.linkedLernzettelIds?.map(id => allLernzettel.find(lz => lz.id === id)).filter(Boolean) as Lernzettel[];
-  }, [studySet.linkedLernzettelIds, allLernzettel]);
+    return allLernzettel.filter(lz => lz.studySetId === studySet.id);
+  }, [studySet.id, allLernzettel]);
 
   return (
     <div className="space-y-6">
