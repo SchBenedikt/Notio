@@ -96,20 +96,6 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
         </div>
       </div>
       
-      {lernzettel.summary && (
-        <Card className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800 animate-fade-in-down">
-            <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                    <Sparkles className="h-4 w-4" />
-                    KI-Zusammenfassung
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-amber-900 dark:text-amber-200">{lernzettel.summary}</p>
-            </CardContent>
-        </Card>
-      )}
-
        {linkedStudySets.length > 0 && (
           <Card>
               <CardHeader>
@@ -133,6 +119,21 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
         <CardContent className="p-6">
           <article className="prose prose-sm dark:prose-invert max-w-none">
             <h1>{lernzettel.title}</h1>
+            
+            {lernzettel.summary && (
+              <div className="mb-8 p-4 rounded-lg border bg-muted/50 not-prose">
+                 <h2 className="!mt-0 text-lg font-semibold flex items-center gap-2 prose dark:prose-invert">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    KI-Zusammenfassung
+                </h2>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {lernzettel.summary}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
+
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{

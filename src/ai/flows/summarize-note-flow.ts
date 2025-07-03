@@ -17,7 +17,7 @@ const SummarizeNoteInputSchema = z.object({
 export type SummarizeNoteInput = z.infer<typeof SummarizeNoteInputSchema>;
 
 const SummarizeNoteOutputSchema = z.object({
-  summary: z.string().describe('A concise summary of the note in 2-4 sentences, written in German.'),
+  summary: z.string().describe('A concise summary of the note in German, formatted as a Markdown list with bullet points.'),
 });
 export type SummarizeNoteOutput = z.infer<typeof SummarizeNoteOutputSchema>;
 
@@ -31,7 +31,8 @@ const prompt = ai.definePrompt({
   output: {schema: SummarizeNoteOutputSchema},
   prompt: `Du bist ein Experte für das Zusammenfassen von Lerninhalten.
 Deine Aufgabe ist es, aus dem folgenden Lernzettel eine prägnante Zusammenfassung zu erstellen.
-Die Zusammenfassung sollte die wichtigsten Kernaussagen in 2-4 leicht verständlichen Sätzen auf Deutsch wiedergeben.
+Formatiere die Zusammenfassung als Markdown-Liste mit den wichtigsten Kernaussagen, Fakten und Konzepten.
+Verwende Stichpunkte, um die Informationen übersichtlich zu gliedern. Die Zusammenfassung sollte auf Deutsch sein.
 
 Hier ist der Lernzettel:
 ---
