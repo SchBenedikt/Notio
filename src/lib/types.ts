@@ -13,31 +13,31 @@ export interface Subject {
   name: string;
   category: SubjectCategory;
   gradeLevel: number;
-  writtenWeight?: number;
-  oralWeight?: number;
-  targetGrade?: number;
+  writtenWeight?: number | null;
+  oralWeight?: number | null;
+  targetGrade?: number | null;
 }
 
 export interface Grade {
   id:string;
   subjectId: string;
   type: GradeType;
-  name?: string;
-  value?: number;
+  name?: string | null;
+  value?: number | null;
   weight: number;
   date: string;
-  notes?: string;
-  attachments?: Attachment[];
+  notes?: string | null;
+  attachments?: Attachment[] | null;
 }
 
 export type AddGradeData = {
   date: Date;
   type: GradeType;
-  name?: string;
-  value?: number;
+  name?: string | null;
+  value?: number | null;
   weight: number;
-  notes?: string;
-  attachments?: Attachment[];
+  notes?: string | null;
+  attachments?: Attachment[] | null;
 }
 
 export type AddSubjectData = {
@@ -50,7 +50,7 @@ export interface Profile {
   uid: string;
   name: string;
   email: string;
-  bio?: string;
+  bio?: string | null;
   following?: string[];
   followers?: string[];
 }
@@ -104,23 +104,23 @@ export interface StudyCard {
 export interface StudySet {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   cards: StudyCard[];
   gradeLevel: number;
-  subjectId?: string;
+  subjectId?: string | null;
 }
 
 export interface Lernzettel {
   id: string;
   title: string;
   content: string; // Markdown
-  subjectId?: string;
-  studySetId?: string;
+  subjectId?: string | null;
+  studySetIds?: string[] | null;
   gradeLevel: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  dueDate?: string; // ISO String
-  isDone?: boolean;
+  dueDate?: string | null; // ISO String
+  isDone?: boolean | null;
 }
 
 export interface QuizQuestion {
@@ -167,12 +167,12 @@ export interface SchoolEvent {
   authorId: string;
   authorName: string;
   title: string;
-  description?: string;
+  description?: string | null;
   date: string; // ISO String for start date
-  endDate?: string; // Optional ISO String for end date
+  endDate?: string | null; // Optional ISO String for end date
   type: SchoolEventType;
   target: 'school' | 'gradeLevel';
-  gradeLevel?: number; // Only if target is 'gradeLevel'
+  gradeLevel?: number | null; // Only if target is 'gradeLevel'
   createdAt: Timestamp;
 }
 
@@ -195,7 +195,7 @@ export interface TimetableEntry {
   day: number; // 0 for Monday, 4 for Friday
   period: number;
   subjectId: string;
-  room?: string;
+  room?: string | null;
 }
 
 export type TaskType = 'homework' | 'todo';
@@ -204,7 +204,7 @@ export interface Task {
   subjectId: string;
   type: TaskType;
   content: string;
-  dueDate?: string; // ISO String
+  dueDate?: string | null; // ISO String
   isDone: boolean;
   createdAt: Timestamp;
 }

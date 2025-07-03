@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lernzettel, Subject, TimetableEntry, StudySet } from "@/lib/types";
-import { Loader2, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar as CalendarIcon, Link as LinkIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
@@ -21,11 +21,12 @@ import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { StudySetMultiSelectionDialog } from "./study-set-multi-selection-dialog";
 
 const formSchema = z.object({
   title: z.string().min(1, "Titel darf nicht leer sein.").max(100),
   subjectId: z.string().optional(),
-  studySetId: z.string().optional(),
+  studySetIds: z.array(z.string()).optional(),
   content: z.string().min(1, "Inhalt darf nicht leer sein."),
   hasDueDate: z.boolean().default(false),
   dueDateOption: z.enum(["next", "second", "custom"]).optional(),
@@ -83,7 +84,7 @@ const getNthLessonDate = (subjectId: string, timetable: TimetableEntry[], n: num
 
 type CreateEditLernzettelPageProps = {
   onBack: () => void;
-  onSave: (values: Omit<FormValues, 'id'>, lernzettelId?: string) => Promise<void>;
+  onSave: (values: Omit<Lernzettel, 'id' | 'gradeLevel' | 'createdAt' | 'updatedAt' | 'isDone'>, lernzettelId?: string) => Promise<void>;
   lernzettelToEdit?: Lernzettel | null;
   subjects: Subject[];
   allStudySets: StudySet[];
@@ -96,7 +97,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
     defaultValues: {
       title: "",
       subjectId: "",
-      studySetId: "",
+      studySetIds: [],
       content: "",
       hasDueDate: false,
     },
@@ -106,6 +107,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
   const hasDueDate = watch("hasDueDate");
   const selectedSubjectId = watch("subjectId");
   const dueDateOption = watch("dueDateOption");
+  const [isStudySetDialogOpen, setStudySetDialogOpen] = useState(false);
   const [nextLessonDate, setNextLessonDate] = useState(new Date());
   const [secondNextLessonDate, setSecondNextLessonDate] = useState(new Date());
 
@@ -113,8 +115,8 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
     if (lernzettelToEdit) {
       form.reset({
         title: lernzettelToEdit.title,
-        subjectId: lernzettelToEdit.subjectId || "",
-        studySetId: lernzettelToEdit.studySetId || "",
+        subjectId: lernzettelToEdit.subjectId || undefined,
+        studySetIds: lernzettelToEdit.studySetIds || [],
         content: lernzettelToEdit.content,
         hasDueDate: !!lernzettelToEdit.dueDate,
         customDate: lernzettelToEdit.dueDate ? new Date(lernzettelToEdit.dueDate) : undefined,
@@ -123,8 +125,8 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
     } else {
       form.reset({
         title: "",
-        subjectId: "",
-        studySetId: "",
+        subjectId: undefined,
+        studySetIds: [],
         content: "",
         hasDueDate: false,
         dueDateOption: undefined,
@@ -149,7 +151,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
             case 'custom': finalDueDate = values.customDate; break;
         }
     }
-    await onSave({ ...values, dueDate: finalDueDate }, lernzettelToEdit?.id);
+    await onSave({ ...values, dueDate: finalDueDate, studySetIds: values.studySetIds || [] }, lernzettelToEdit?.id);
   };
 
   const { isSubmitting } = form.formState;
@@ -158,6 +160,7 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
   const pageDescription = lernzettelToEdit ? 'Ändere die Details deines Lernzettels.' : 'Fasse hier dein Wissen zusammen. Du kannst Markdown für die Formatierung verwenden.';
 
   return (
+    <>
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <Button variant="ghost" onClick={onBack} disabled={isSubmitting}>
@@ -212,28 +215,25 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
               </div>
                 <FormField
                     control={form.control}
-                    name="studySetId"
+                    name="studySetIds"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Lernset (optional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormLabel>Lernsets (optional)</FormLabel>
                             <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Einem Lernset zuordnen..." />
-                            </SelectTrigger>
+                                <div>
+                                    <Button type="button" variant="outline" onClick={() => setStudySetDialogOpen(true)}>
+                                        <LinkIcon className="mr-2 h-4 w-4"/>
+                                        Lernsets verknüpfen
+                                    </Button>
+                                    <div className="mt-2 text-sm text-muted-foreground">
+                                        {field.value?.length || 0} Lernset(s) verknüpft.
+                                    </div>
+                                </div>
                             </FormControl>
-                            <SelectContent>
-                            {allStudySets.map((set) => (
-                                <SelectItem key={set.id} value={set.id}>
-                                {set.title}
-                                </SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
+                            <FormMessage />
                         </FormItem>
                     )}
-                 />
+                />
                <FormField
                 control={form.control}
                 name="hasDueDate"
@@ -345,5 +345,15 @@ export function CreateEditLernzettelPage({ onBack, onSave, lernzettelToEdit, sub
         </CardContent>
       </Card>
     </div>
+    <StudySetMultiSelectionDialog
+        isOpen={isStudySetDialogOpen}
+        onOpenChange={setStudySetDialogOpen}
+        allStudySets={allStudySets}
+        initialSelectedIds={form.getValues('studySetIds') || []}
+        onConfirm={(selectedIds) => {
+            form.setValue('studySetIds', selectedIds);
+        }}
+    />
+    </>
   );
 }

@@ -44,6 +44,7 @@ import { DashboardSettingsDialog } from "./dashboard-settings-dialog";
 import { LernzettelPage } from "./lernzettel-page";
 import { CreateEditLernzettelPage } from "./create-edit-lernzettel-page";
 import { LernzettelDetailPage } from "./lernzettel-detail-page";
+import { generateStudySetFromNote } from "@/ai/flows/create-studyset-from-note-flow";
 
 
 const DashboardSkeleton = () => (
@@ -468,7 +469,7 @@ export default function Dashboard() {
 
   const handleUpdateSubject = async (subjectId: string, updatedValues: Partial<Omit<Subject, 'id' | 'gradeLevel'>>) => {
     if (!isFirebaseEnabled || !user) {
-        setSubjects(currentSubjects => currentSubjects.map(s => s.id === subjectId ? { ...s, ...updatedValues } : s));
+        setSubjects(currentSubjects => currentSubjects.map(s => s.id === subjectId ? { ...s, ...updatedValues } as Subject : s));
         toast({ title: "Fach aktualisiert (Demo)" });
         setEditSubjectState({ isOpen: false, subject: null });
         return;
@@ -586,7 +587,7 @@ export default function Dashboard() {
     }
   };
   
-  const handleSaveStudySet = async (values: Omit<StudySet, 'id' | 'gradeLevel'>, setId?: string) => {
+  const handleSaveStudySet = async (values: Omit<StudySet, 'id' | 'gradeLevel'>, setId?: string): Promise<string | undefined> => {
     if (!user || !isFirebaseEnabled) {
         toast({ title: "Funktion nicht verfügbar", description: "Lernsets sind im Demo-Modus nicht verfügbar.", variant: "destructive" });
         return;
@@ -601,15 +602,16 @@ export default function Dashboard() {
             const setRef = doc(db, 'users', user.uid, 'studySets', setId);
             await setDoc(setRef, data, { merge: true });
             toast({ title: "Lernset aktualisiert" });
+            return setId;
         } else {
-            await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
+            const docRef = await addDoc(collection(db, 'users', user.uid, 'studySets'), data);
             toast({ title: "Lernset erstellt" });
+            return docRef.id;
         }
     } catch (error) {
         console.error("Error saving study set:", error);
         toast({ title: "Fehler beim Speichern des Lernsets", variant: "destructive" });
     }
-    setView('studysets');
   };
 
   const handleUpdateStudySetCards = async (setId: string, updatedCards: StudyCard[]) => {
@@ -635,7 +637,7 @@ export default function Dashboard() {
     }
   };
   
-  const handleSaveLernzettel = async (values: Omit<Lernzettel, 'id' | 'gradeLevel' | 'createdAt' | 'updatedAt' | 'isDone'> & {dueDate?: Date}, lernzettelId?: string) => {
+  const handleSaveLernzettel = async (values: Omit<Lernzettel, 'id' | 'gradeLevel' | 'createdAt' | 'updatedAt' | 'isDone'>, lernzettelId?: string) => {
     if (!user || !isFirebaseEnabled) {
         toast({ title: "Funktion nicht verfügbar", description: "Lernzettel sind im Demo-Modus nicht verfügbar.", variant: "destructive" });
         return;
@@ -646,8 +648,8 @@ export default function Dashboard() {
           title: values.title,
           content: values.content,
           subjectId: values.subjectId || null,
-          studySetId: values.studySetId || null,
-          dueDate: values.dueDate?.toISOString() || null,
+          studySetIds: values.studySetIds || [],
+          dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
           isDone: values.dueDate ? (values.isDone ?? false) : null,
         };
 
@@ -665,6 +667,30 @@ export default function Dashboard() {
         toast({ title: "Fehler beim Speichern des Lernzettels", variant: "destructive" });
     }
     setView('lernzettel');
+  };
+
+  const handleCreateStudySetFromAI = async (note: Lernzettel) => {
+    if (!user) return;
+    toast({ title: "Lernset wird generiert...", description: "Die KI erstellt die Karteikarten. Dies kann einen Moment dauern." });
+    try {
+        const generatedData = await generateStudySetFromNote({
+            noteTitle: note.title,
+            noteContent: note.content,
+        });
+
+        const setId = await handleSaveStudySet({ ...generatedData, subjectId: note.subjectId || null }, undefined);
+        
+        if (setId) {
+            const updatedIds = [...(note.studySetIds || []), setId];
+            await handleSaveLernzettel({ ...note, studySetIds: updatedIds }, note.id);
+
+            toast({ title: "Lernset erstellt!", description: "Dein neues Lernset ist bereit." });
+            handleViewStudySet(setId);
+        }
+    } catch (error) {
+        console.error("Error creating study set from note:", error);
+        toast({ title: "Fehler", description: "Das Lernset konnte nicht erstellt werden.", variant: "destructive" });
+    }
   };
 
   const handleDeleteLernzettel = async (lernzettelId: string) => {
@@ -1233,6 +1259,9 @@ export default function Dashboard() {
             onBack={() => setView('lernzettel')}
             onEdit={handleNavigateToEditLernzettel}
             onNavigateToNote={handleViewLernzettel}
+            allStudySets={studySets}
+            onViewStudySet={handleViewStudySet}
+            onCreateStudySetFromAI={handleCreateStudySetFromAI}
           />;
         }
         return null;
@@ -1248,15 +1277,21 @@ export default function Dashboard() {
       case 'studyset-create':
         return <CreateEditStudySetPage 
             subjects={subjectsForGradeLevel}
-            onBack={() => setView('studysets')}
-            onSave={handleSaveStudySet}
+            onBack={() => { setView('studysets'); }}
+            onSave={async (values, id) => {
+              await handleSaveStudySet(values, id);
+              setView('studysets');
+            }}
         />;
       case 'studyset-edit':
         return <CreateEditStudySetPage 
             studySetToEdit={editingStudySet}
             subjects={subjectsForGradeLevel}
-            onBack={() => setView('studysets')}
-            onSave={handleSaveStudySet}
+            onBack={() => { setView('studysets'); }}
+            onSave={async (values, id) => {
+              await handleSaveStudySet(values, id);
+              setView('studysets');
+            }}
         />;
       case 'studyset-detail':
         const set = studySets.find(s => s.id === viewingStudySetId);
@@ -1313,10 +1348,12 @@ export default function Dashboard() {
         return <ProfilePage 
                   profile={profile}
                   onUserNameChange={(name) => {
+                    if (!user) return;
                     setUserName(name);
-                    saveSetting('name', name);
+                    const profileRef = doc(db, 'profiles', user.uid);
+                    setDoc(profileRef, { name }, { merge: true });
                   }}
-                  onToggleFollow={onToggleFollow}
+                  onToggleFollow={handleToggleFollow}
                   userRole={userRole}
                   onUserRoleChange={(role) => {
                       setUserRole(role);

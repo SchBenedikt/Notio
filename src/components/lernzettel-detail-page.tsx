@@ -1,9 +1,10 @@
 "use client";
 
-import type { Lernzettel } from "@/lib/types";
+import { useState, useMemo } from 'react';
+import type { Lernzettel, StudySet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -12,9 +13,13 @@ type LernzettelDetailPageProps = {
   onBack: () => void;
   onEdit: (lernzettel: Lernzettel) => void;
   onNavigateToNote: (noteId: string) => void;
+  allStudySets: StudySet[];
+  onViewStudySet: (setId: string) => void;
+  onCreateStudySetFromAI: (note: Lernzettel) => Promise<void>;
 };
 
-export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToNote }: LernzettelDetailPageProps) {
+export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI }: LernzettelDetailPageProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string | undefined) => {
     if (href && href.startsWith('/lernzettel/')) {
@@ -26,18 +31,54 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onNavigateToN
     }
   };
 
+  const linkedStudySets = useMemo(() => {
+    if (!lernzettel.studySetIds || lernzettel.studySetIds.length === 0) return [];
+    return allStudySets.filter(set => lernzettel.studySetIds!.includes(set.id));
+  }, [lernzettel.studySetIds, allStudySets]);
+
+  const handleGenerateSet = async () => {
+    setIsGenerating(true);
+    await onCreateStudySetFromAI(lernzettel);
+    setIsGenerating(false);
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start flex-wrap gap-2">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Zurück zu allen Lernzetteln
         </Button>
-        <Button variant="outline" onClick={() => onEdit(lernzettel)}>
-          <Pencil className="mr-2 h-4 w-4" />
-          Bearbeiten
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onEdit(lernzettel)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Bearbeiten
+            </Button>
+            <Button onClick={handleGenerateSet} disabled={isGenerating}>
+                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                Lernset mit KI erstellen
+            </Button>
+        </div>
       </div>
+
+       {linkedStudySets.length > 0 && (
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                      <LinkIcon className="h-4 w-4" />
+                      Verknüpfte Lernsets
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                  {linkedStudySets.map(set => (
+                      <Button key={set.id} variant="secondary" size="sm" onClick={() => onViewStudySet(set.id)}>
+                          <BrainCircuit className="mr-2 h-4 w-4" />
+                          {set.title}
+                      </Button>
+                  ))}
+              </CardContent>
+          </Card>
+      )}
 
       <Card>
         <CardContent className="p-6">

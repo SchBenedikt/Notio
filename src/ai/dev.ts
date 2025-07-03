@@ -5,3 +5,4 @@ import './flows/study-set-quiz-flow';
 import './flows/evaluate-answer-flow';
 import './flows/study-set-test-flow';
 import './flows/study-session-flow';
+import './flows/create-studyset-from-note-flow';
