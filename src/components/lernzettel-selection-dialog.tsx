@@ -12,12 +12,12 @@ import { Search, Notebook } from "lucide-react";
 type LernzettelSelectionDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onLernzettelSelected: (lernzettelIds: string[]) => void;
+  onConfirm: (lernzettelIds: string[]) => void;
   allLernzettel: Lernzettel[];
   initialSelectedIds?: string[];
 };
 
-export function LernzettelSelectionDialog({ isOpen, onOpenChange, onLernzettelSelected, allLernzettel, initialSelectedIds = [] }: LernzettelSelectionDialogProps) {
+export function LernzettelSelectionDialog({ isOpen, onOpenChange, onConfirm, allLernzettel, initialSelectedIds = [] }: LernzettelSelectionDialogProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -35,7 +35,7 @@ export function LernzettelSelectionDialog({ isOpen, onOpenChange, onLernzettelSe
   };
 
   const handleConfirmSelection = () => {
-    onLernzettelSelected(selectedIds);
+    onConfirm(selectedIds);
     onOpenChange(false);
   };
 

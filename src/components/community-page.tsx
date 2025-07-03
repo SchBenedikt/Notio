@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
-import type { Post, Profile, Subject, Grade, Attachment } from '@/lib/types';
+import type { Post, Profile, Subject, Grade, Attachment, FileSystemItem } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,9 +49,10 @@ type CommunityPageProps = {
   onToggleFollow: (targetUserId: string) => void;
   subjects: Subject[];
   grades: Grade[];
+  userFiles: FileSystemItem[];
 }
 
-export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollow, subjects, grades }: CommunityPageProps) {
+export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollow, subjects, grades, userFiles }: CommunityPageProps) {
   const { user, isFirebaseEnabled } = useAuth();
   const { toast } = useToast();
   const [newPostContent, setNewPostContent] = useState('');
@@ -184,8 +185,8 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
   };
 
   const hasAnyAttachmentsInApp = useMemo(() => {
-    return grades.some(g => g.attachments && g.attachments.length > 0);
-  }, [grades]);
+    return userFiles.some(f => f.type === 'file');
+  }, [userFiles]);
 
   const profilesMap = new Map(profiles.map(p => [p.uid, p]));
   
@@ -380,8 +381,7 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
         isOpen={isFileSelectorOpen}
         onOpenChange={setFileSelectorOpen}
         onFilesSelected={(files) => setNewPostAttachments(prev => [...prev, ...files])}
-        subjects={subjects}
-        grades={grades}
+        userFiles={userFiles}
       />
     </div>
   );

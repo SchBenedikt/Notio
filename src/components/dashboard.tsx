@@ -1507,6 +1507,7 @@ export default function Dashboard() {
             subjects={subjectsForGradeLevel}
             allGrades={grades}
             studySets={studySets}
+            lernzettel={lernzettel}
           />
         );
       case 'calculator':
@@ -1566,6 +1567,7 @@ export default function Dashboard() {
                   onToggleFollow={handleToggleFollow}
                   subjects={subjectsForGradeLevel}
                   grades={grades}
+                  userFiles={userFiles}
                />;
       case 'user-profile':
         if (viewingProfileId) {
