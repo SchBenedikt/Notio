@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AppView, Grade, Subject, Task, SchoolEvent, Lernzettel, StudySet } from "@/lib/types";
@@ -119,6 +120,33 @@ export function DashboardOverview({
     onOpenSettings,
 }: DashboardOverviewProps) {
   
+  const [greeting, setGreeting] = useState("Hallo,");
+
+  useEffect(() => {
+    const greetings = {
+      morning: ["Guten Morgen,", "Ein fröhliches Hallo am Morgen,", "Moin Moin,"],
+      afternoon: ["Guten Tag,", "Schönen Nachmittag,", "Hallo,"],
+      evening: ["Guten Abend,", "Einen schönen Abend,", "Hallo,"],
+      night: ["Späte Grüße,", "Noch wach?", "N'Abend,"],
+    };
+
+    const hour = new Date().getHours();
+    let timeOfDay: keyof typeof greetings;
+
+    if (hour >= 5 && hour < 12) {
+      timeOfDay = 'morning';
+    } else if (hour >= 12 && hour < 18) {
+      timeOfDay = 'afternoon';
+    } else if (hour >= 18 && hour < 22) {
+      timeOfDay = 'evening';
+    } else {
+      timeOfDay = 'night';
+    }
+
+    const randomGreeting = greetings[timeOfDay][Math.floor(Math.random() * greetings[timeOfDay].length)];
+    setGreeting(randomGreeting);
+  }, []);
+
   const subjectsMap = new Map(subjects.map(s => [s.id, s.name]));
   const upcomingTasks = tasks
     .filter(hw => !hw.isDone && hw.dueDate)
@@ -364,7 +392,7 @@ export function DashboardOverview({
     <div className="container mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-1">
-                <h1 className="text-2xl md:text-3xl font-bold">Hallo, {userName || 'Entdecker'}!</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">{greeting} {userName || 'Entdecker'}!</h1>
                 <p className="text-muted-foreground">Willkommen zurück in deinem Noten-Cockpit.</p>
             </div>
             <Button variant="outline" onClick={onOpenSettings}>
