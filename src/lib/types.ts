@@ -110,6 +110,16 @@ export interface StudySet {
   subjectId?: string;
 }
 
+export interface Lernzettel {
+  id: string;
+  title: string;
+  content: string; // Markdown
+  subjectId?: string;
+  gradeLevel: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 export interface QuizQuestion {
     question: string;
     options: string[];
@@ -197,4 +207,4 @@ export interface Task {
 }
 
 
-export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'planner' | 'school-calendar';
+export type AppView = 'dashboard' | 'subjects' | 'tutor' | 'calculator' | 'data' | 'files' | 'awards' | 'profile' | 'community' | 'user-profile' | 'settings' | 'studysets' | 'studyset-detail' | 'studyset-create' | 'studyset-edit' | 'planner' | 'school-calendar' | 'lernzettel' | 'lernzettel-create' | 'lernzettel-edit' | 'lernzettel-detail';

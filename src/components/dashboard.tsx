@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, ChangeEvent } from "react";
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, writeBatch, query, where, setDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType } from "@/lib/types";
+import { Subject, Grade, AddSubjectData, AddGradeData, Award, AppView, Profile, StudySet, School, FileSystemItem, TimetableEntry, Task, SchoolEvent, StudyCard, TaskType, Lernzettel } from "@/lib/types";
 import { AppHeader } from "./header";
 import { AddSubjectDialog } from "./add-subject-dialog";
 import { SubjectList } from "./subject-list";
@@ -41,6 +41,9 @@ import { AddTaskDialog } from "./add-homework-dialog";
 import { SchoolCalendarPage } from "./school-calendar-page";
 import { AddSchoolEventDialog } from "./AddSchoolEventDialog";
 import { DashboardSettingsDialog } from "./dashboard-settings-dialog";
+import { LernzettelPage } from "./lernzettel-page";
+import { CreateEditLernzettelPage } from "./create-edit-lernzettel-page";
+import { LernzettelDetailPage } from "./lernzettel-detail-page";
 
 
 const DashboardSkeleton = () => (
@@ -74,6 +77,7 @@ export default function Dashboard() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
+  const [lernzettel, setLernzettel] = useState<Lernzettel[]>([]);
   const [userFiles, setUserFiles] = useState<FileSystemItem[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -102,6 +106,8 @@ export default function Dashboard() {
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [viewingStudySetId, setViewingStudySetId] = useState<string | null>(null);
   const [editingStudySet, setEditingStudySet] = useState<StudySet | null>(null);
+  const [viewingLernzettelId, setViewingLernzettelId] = useState<string | null>(null);
+  const [editingLernzettel, setEditingLernzettel] = useState<Lernzettel | null>(null);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
   const [gradeDialogState, setGradeDialogState] = useState<{isOpen: boolean, subjectId: string | null, gradeToEdit?: Grade | null}>({isOpen: false, subjectId: null});
@@ -133,6 +139,7 @@ export default function Dashboard() {
       setSubjects([]);
       setGrades([]);
       setStudySets([]);
+      setLernzettel([]);
       setUserFiles([]);
       setTimetable([]);
       setTasks([]);
@@ -274,7 +281,7 @@ export default function Dashboard() {
     return () => eventsUnsub();
   }, [isFirebaseEnabled, user, userSchoolId, toast]);
 
-  // Effect for grade-level dependent data (subjects, study sets)
+  // Effect for grade-level dependent data
   useEffect(() => {
     if (!isFirebaseEnabled || !user) return;
     
@@ -301,11 +308,22 @@ export default function Dashboard() {
         console.error("Error fetching study sets:", error);
     });
     unsubscribers.push(studySetsUnsub);
+    
+    // --- Lernzettel listener ---
+    const lernzettelQuery = query(collection(db, 'users', user.uid, 'lernzettel'), where('gradeLevel', '==', selectedGradeLevel), orderBy('updatedAt', 'desc'));
+    const lernzettelUnsub = onSnapshot(lernzettelQuery, (snapshot) => {
+        const lernzettelData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Lernzettel[];
+        setLernzettel(lernzettelData);
+    }, (error) => {
+        console.error("Error fetching lernzettel:", error);
+    });
+    unsubscribers.push(lernzettelUnsub);
 
     return () => {
       unsubscribers.forEach(unsub => unsub());
       setSubjects([]);
       setStudySets([]);
+      setLernzettel([]);
     };
   }, [isFirebaseEnabled, user, selectedGradeLevel, toast]);
 
@@ -607,6 +625,43 @@ export default function Dashboard() {
     } catch (error) {
         console.error("Error deleting study set:", error);
         toast({ title: "Fehler beim Löschen des Lernsets", variant: "destructive" });
+    }
+  };
+  
+  const handleSaveLernzettel = async (values: Omit<Lernzettel, 'id' | 'gradeLevel' | 'createdAt' | 'updatedAt'>, lernzettelId?: string) => {
+    if (!user || !isFirebaseEnabled) {
+        toast({ title: "Funktion nicht verfügbar", description: "Lernzettel sind im Demo-Modus nicht verfügbar.", variant: "destructive" });
+        return;
+    }
+    
+    try {
+        if (lernzettelId) {
+            const lernzettelRef = doc(db, 'users', user.uid, 'lernzettel', lernzettelId);
+            const data = { ...values, updatedAt: serverTimestamp() };
+            const sanitizedData = JSON.parse(JSON.stringify(data));
+            await updateDoc(lernzettelRef, sanitizedData);
+            toast({ title: "Lernzettel aktualisiert" });
+        } else {
+            const data = { ...values, gradeLevel: selectedGradeLevel, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+            const sanitizedData = JSON.parse(JSON.stringify(data));
+            await addDoc(collection(db, 'users', user.uid, 'lernzettel'), sanitizedData);
+            toast({ title: "Lernzettel erstellt" });
+        }
+    } catch (error) {
+        console.error("Error saving Lernzettel:", error);
+        toast({ title: "Fehler beim Speichern des Lernzettels", variant: "destructive" });
+    }
+    setView('lernzettel');
+  };
+
+  const handleDeleteLernzettel = async (lernzettelId: string) => {
+    if (!user || !isFirebaseEnabled) return;
+    try {
+        await deleteDoc(doc(db, 'users', user.uid, 'lernzettel', lernzettelId));
+        toast({ title: "Lernzettel gelöscht", variant: "destructive" });
+    } catch (error) {
+        console.error("Error deleting Lernzettel:", error);
+        toast({ title: "Fehler beim Löschen des Lernzettels", variant: "destructive" });
     }
   };
 
@@ -930,9 +985,13 @@ export default function Dashboard() {
   
   const setAppView = (view: AppView) => {
     if (view !== 'user-profile') setViewingProfileId(null);
-    if (view !== 'studyset-detail' && view !== 'studyset-create' && view !== 'studyset-edit') {
+    if (!['studyset-detail', 'studyset-create', 'studyset-edit'].includes(view)) {
       setViewingStudySetId(null);
       setEditingStudySet(null);
+    }
+     if (!['lernzettel-detail', 'lernzettel-create', 'lernzettel-edit'].includes(view)) {
+      setViewingLernzettelId(null);
+      setEditingLernzettel(null);
     }
     setView(view);
   }
@@ -945,6 +1004,21 @@ export default function Dashboard() {
   const handleViewStudySet = (setId: string) => {
     setViewingStudySetId(setId);
     setView('studyset-detail');
+  };
+  
+  const handleViewLernzettel = (id: string) => {
+    setViewingLernzettelId(id);
+    setView('lernzettel-detail');
+  };
+  
+  const handleNavigateToCreateLernzettel = () => {
+    setEditingLernzettel(null);
+    setView('lernzettel-create');
+  };
+
+  const handleNavigateToEditLernzettel = (lernzettel: Lernzettel) => {
+    setEditingLernzettel(lernzettel);
+    setView('lernzettel-edit');
   };
 
   const handleNavigateToCreateStudySet = () => {
@@ -1082,6 +1156,39 @@ export default function Dashboard() {
             onEditEvent={(event) => setSchoolEventDialogState({isOpen: true, eventToEdit: event})}
             onDeleteEvent={handleDeleteSchoolEvent}
         />;
+      case 'lernzettel':
+        return <LernzettelPage 
+            lernzettel={lernzettel}
+            subjects={subjectsForGradeLevel}
+            onViewLernzettel={handleViewLernzettel}
+            onEditLernzettel={handleNavigateToEditLernzettel}
+            onDeleteLernzettel={handleDeleteLernzettel}
+            onAddNew={handleNavigateToCreateLernzettel}
+        />;
+      case 'lernzettel-create':
+        return <CreateEditLernzettelPage 
+            subjects={subjectsForGradeLevel}
+            onBack={() => setView('lernzettel')}
+            onSave={handleSaveLernzettel}
+        />;
+      case 'lernzettel-edit':
+        return <CreateEditLernzettelPage 
+            lernzettelToEdit={editingLernzettel}
+            subjects={subjectsForGradeLevel}
+            onBack={() => setView('lernzettel')}
+            onSave={handleSaveLernzettel}
+        />;
+      case 'lernzettel-detail':
+        const lz = lernzettel.find(l => l.id === viewingLernzettelId);
+        if (lz) {
+          return <LernzettelDetailPage 
+            lernzettel={lz}
+            onBack={() => setView('lernzettel')}
+            onEdit={handleNavigateToEditLernzettel}
+            onNavigateToNote={handleViewLernzettel}
+          />;
+        }
+        return null;
       case 'studysets':
         return <StudySetsPage 
             studySets={studySets} 

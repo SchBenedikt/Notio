@@ -17,6 +17,7 @@ import {
   Settings,
   CalendarClock,
   CalendarDays,
+  Notebook,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -35,7 +36,7 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "planner" | "school-calendar") => void;
+  onNavigate: (view: "dashboard" | "subjects" | "tutor" | "calculator" | "data" | "files" | "awards" | "profile" | "community" | "settings" | "studysets" | "planner" | "school-calendar" | "lernzettel") => void;
   onAddSubject: () => void;
   onAddGrade: (subjectId: string) => void;
   onExport: () => void;
@@ -89,6 +90,10 @@ export function CommandPalette({
                  <CommandItem onSelect={() => runCommand(() => onNavigate("school-calendar"))}>
                     <CalendarDays className="mr-2 h-4 w-4" />
                     <span>Schulkalender</span>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => onNavigate("lernzettel"))}>
+                    <Notebook className="mr-2 h-4 w-4" />
+                    <span>Lernzettel</span>
                 </CommandItem>
                  <CommandItem onSelect={() => runCommand(() => onNavigate("studysets"))}>
                     <BrainCircuit className="mr-2 h-4 w-4" />
