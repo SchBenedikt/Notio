@@ -137,6 +137,7 @@ export default function LoginPage() {
             
             await updateProfile(user, { displayName: signupName });
 
+            const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             // Create settings document
             await setDoc(doc(db, 'users', user.uid, 'settings', 'main'), {
                 selectedGradeLevel: 10,
@@ -144,7 +145,7 @@ export default function LoginPage() {
                 minorSubjectWeight: 1,
                 maxPeriods: 10,
                 theme: 'blue',
-                isDarkMode: false,
+                isDarkMode: systemIsDark,
                 role: signupRole,
                 schoolId: signupSchoolId,
                 dashboardLayouts: defaultLayouts,
@@ -193,6 +194,7 @@ export default function LoginPage() {
                     throw new Error("Dein Google-Benutzername ist bereits vergeben. Bitte registriere dich mit E-Mail und Passwort, um einen einzigartigen Namen zu wählen.");
                 }
 
+                const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
                 await setDoc(settingsRef, {
                     selectedGradeLevel: 10,
@@ -200,7 +202,7 @@ export default function LoginPage() {
                     minorSubjectWeight: 1,
                     maxPeriods: 10,
                     theme: 'blue',
-                    isDarkMode: false,
+                    isDarkMode: systemIsDark,
                     role: 'student',
                     schoolId: '',
                     dashboardLayouts: defaultLayouts,

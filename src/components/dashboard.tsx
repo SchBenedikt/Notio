@@ -175,14 +175,18 @@ export default function Dashboard() {
     const settingsUnsub = onSnapshot(settingsRef, (settingsSnap) => {
       if (settingsSnap.exists()) {
         const settingsData = settingsSnap.data();
-        setSelectedGradeLevel(settingsData.selectedGradeLevel || 10);
-        setMainSubjectWeight(settingsData.mainSubjectWeight || 2);
-        setMinorSubjectWeight(settingsData.minorSubjectWeight || 1);
-        setMaxPeriods(settingsData.maxPeriods || 10);
-        setTheme(settingsData.theme || 'blue');
-        setIsDarkMode(settingsData.isDarkMode || false);
-        setUserRole(settingsData.role || 'student');
-        setUserSchoolId(settingsData.schoolId || '');
+        setSelectedGradeLevel(settingsData.selectedGradeLevel ?? 10);
+        setMainSubjectWeight(settingsData.mainSubjectWeight ?? 2);
+        setMinorSubjectWeight(settingsData.minorSubjectWeight ?? 1);
+        setMaxPeriods(settingsData.maxPeriods ?? 10);
+        setTheme(settingsData.theme ?? 'blue');
+        
+        if (typeof settingsData.isDarkMode === 'boolean') {
+          setIsDarkMode(settingsData.isDarkMode);
+        } else {
+          setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+
         setDashboardWidgets({ ...defaultWidgets, ...(settingsData.dashboardWidgets || {}) });
         const savedLayouts = settingsData.dashboardLayouts;
         if (savedLayouts && Object.keys(savedLayouts).length > 0) {
@@ -199,14 +203,18 @@ export default function Dashboard() {
         } else {
             setLayouts(defaultLayouts);
         }
+        
+        setUserRole(settingsData.role || 'student');
+        setUserSchoolId(settingsData.schoolId || '');
       } else {
+        const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const defaultSettings = {
           selectedGradeLevel: 10,
           mainSubjectWeight: 2,
           minorSubjectWeight: 1,
           maxPeriods: 10,
           theme: 'blue',
-          isDarkMode: false,
+          isDarkMode: systemIsDark,
           role: 'student',
           schoolId: '',
           dashboardLayouts: defaultLayouts,

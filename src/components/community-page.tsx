@@ -279,8 +279,8 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
             <div className="flex justify-between items-center">
                 <div className="flex gap-1">
                     <Button variant="outline" size="icon" onClick={() => setFileSelectorOpen(true)} disabled={!hasAnyAttachmentsInApp || isSubmitting} title="Datei anhängen"><Paperclip className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => setLernzettelSelectorOpen(true)} disabled={lernzettel.length === 0 || isSubmitting || !!sharedStudySet} title="Lernzettel anhängen"><Notebook className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => setStudySetSelectorOpen(true)} disabled={studySets.length === 0 || isSubmitting || !!sharedLernzettel} title="Lernset anhängen"><BrainCircuit className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" onClick={() => setLernzettelSelectorOpen(true)} disabled={lernzettel.length === 0 || isSubmitting} title="Lernzettel anhängen"><Notebook className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" onClick={() => setStudySetSelectorOpen(true)} disabled={studySets.length === 0 || isSubmitting} title="Lernset anhängen"><BrainCircuit className="h-4 w-4" /></Button>
                 </div>
                 <Button onClick={handlePostSubmit} disabled={isSubmitting || (!newPostContent.trim() && newPostAttachments.length === 0 && !sharedStudySet && !sharedLernzettel) || !user}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -381,7 +381,7 @@ export function CommunityPage({ currentUserProfile, onViewProfile, onToggleFollo
                         )}
                         <div className="flex items-center gap-1 mt-4 pt-4 border-t">
                             <Button variant="ghost" size="sm" onClick={() => handleLikePost(post.id)} disabled={!user}><Heart className={`mr-2 h-4 w-4 ${hasLiked ? 'text-red-500 fill-current' : ''}`} /><span>{post.likes.length}</span></Button>
-                             <Button variant="ghost" size="sm" onClick={() => toggleComments(post.id)}><MessageSquare className="mr-2 h-4 w-4" /><span>{post.commentCount || 0}</span></Button>
+                             <Button variant="ghost" size="sm" onClick={() => setVisibleComments(prev => prev === post.id ? null : post.id)}><MessageSquare className="mr-2 h-4 w-4" /><span>{post.commentCount || 0}</span></Button>
                              <Button variant="ghost" size="sm" onClick={() => handleSharePost(post)}><Share2 className="mr-2 h-4 w-4" />Teilen</Button>
                         </div>
                         {visibleComments === post.id && <PostComments postId={post.id} profilesMap={profilesMap} />}

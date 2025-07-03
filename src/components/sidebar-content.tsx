@@ -42,6 +42,7 @@ export function SidebarContent({
             <ScrollArea className="flex-1 -mx-6">
                 <div className="px-6 space-y-4 py-4">
                     <div className="space-y-1">
+                        <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Übersicht</p>
                         <Button 
                             variant={currentView === 'dashboard' ? "secondary" : "ghost"} 
                             className="justify-start w-full"
@@ -77,6 +78,10 @@ export function SidebarContent({
                             <CalendarDays className="mr-2 h-4 w-4" />
                             Schulkalender
                         </Button>
+                    </div>
+                     <Separator className="my-2" />
+                    <div className="space-y-1">
+                         <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lern-Tools</p>
                          <Button 
                             variant={currentView === 'lernzettel' ? "secondary" : "ghost"} 
                             className="justify-start w-full"
@@ -92,19 +97,23 @@ export function SidebarContent({
                             Lernsets
                         </Button>
                         <Button 
-                            variant={currentView === 'calculator' ? "secondary" : "ghost"} 
-                            className="justify-start w-full"
-                            onClick={() => handleViewChange('calculator')}>
-                            <Calculator className="mr-2 h-4 w-4" />
-                            Notenrechner
-                        </Button>
-                        <Button 
                             variant={currentView === 'tutor' ? "secondary" : "ghost"} 
                             className="justify-start w-full"
                             onClick={() => handleViewChange('tutor')}>
                             <MessageCircle className="mr-2 h-4 w-4" />
                             KI-Tutor & Coach
                         </Button>
+                         <Button 
+                            variant={currentView === 'calculator' ? "secondary" : "ghost"} 
+                            className="justify-start w-full"
+                            onClick={() => handleViewChange('calculator')}>
+                            <Calculator className="mr-2 h-4 w-4" />
+                            Notenrechner
+                        </Button>
+                    </div>
+                     <Separator className="my-2" />
+                    <div className="space-y-1">
+                        <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Community</p>
                         <Button 
                             variant={currentView === 'community' ? "secondary" : "ghost"} 
                             className="justify-start w-full"
@@ -119,6 +128,10 @@ export function SidebarContent({
                             <Award className="mr-2 h-4 w-4" />
                             Auszeichnungen
                         </Button>
+                    </div>
+                     <Separator className="my-2" />
+                     <div className="space-y-1">
+                        <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Verwaltung</p>
                         <Button 
                             variant={currentView === 'files' ? "secondary" : "ghost"} 
                             className="justify-start w-full"
