@@ -78,9 +78,8 @@ export function SettingsPage({
     const handleUpgradeClick = () => {
         setIsStripeLoading(true);
 
-        // TODO: Ersetze dies durch deinen echten Stripe Payment Link.
-        // Diesen Link erhältst du in deinem Stripe Dashboard unter "Produkte".
-        const checkoutUrl = 'https://buy.stripe.com/test_...';
+        // This is your actual Stripe Payment Link.
+        const checkoutUrl = 'https://buy.stripe.com/test_aFa14f3U11s40tK3Cg5wI00';
 
         if (!checkoutUrl.includes('buy.stripe.com')) {
         toast({
