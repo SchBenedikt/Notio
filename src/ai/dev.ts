@@ -7,3 +7,4 @@ import './flows/study-set-test-flow';
 import './flows/study-session-flow';
 import './flows/create-studyset-from-note-flow';
 import './flows/summarize-note-flow';
+import './flows/generate-grading-scale-flow';

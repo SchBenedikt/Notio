@@ -6,10 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Weight, Palette, CalendarClock, KeyRound, Star, ShoppingCart, Loader2 } from 'lucide-react';
+import { Settings, Weight, Palette, CalendarClock, KeyRound } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 
 type SettingsPageProps = {
@@ -25,7 +23,6 @@ type SettingsPageProps = {
   onIsDarkModeChange: (isDark: boolean) => void;
   googleAiApiKey: string;
   onGoogleAiApiKeyChange: (key: string) => void;
-  isPro: boolean;
 };
 
 const themes = [
@@ -52,11 +49,7 @@ export function SettingsPage({
     onIsDarkModeChange,
     googleAiApiKey,
     onGoogleAiApiKeyChange,
-    isPro,
 }: SettingsPageProps) {
-
-    const { toast } = useToast();
-    const [isCheckingOut, setIsCheckingOut] = useState(false);
 
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
         const num = Number(value);
@@ -72,24 +65,6 @@ export function SettingsPage({
         }
     };
 
-    const handleCheckout = async () => {
-        setIsCheckingOut(true);
-        // Wichtig: Ersetze diesen Platzhalter durch deinen echten Stripe Payment Link!
-        // Du kannst diesen Link in deinem Stripe Dashboard unter "Produkte" > "Payment Links" erstellen.
-        const stripePaymentLink = 'https://buy.stripe.com/test_...'; // <-- HIER DEINEN LINK EINFÜGEN
-
-        if (!stripePaymentLink.startsWith('https://buy.stripe.com/')) {
-            toast({
-                variant: 'destructive',
-                title: 'Fehler: Stripe Link nicht konfiguriert',
-                description: 'Der Entwickler muss zuerst einen gültigen Payment Link in den Einstellungen hinterlegen.',
-            });
-            setIsCheckingOut(false);
-            return;
-        }
-        window.location.href = stripePaymentLink;
-    };
-
     return (
         <div className="max-w-2xl mx-auto space-y-8">
             <div className="text-center">
@@ -103,27 +78,6 @@ export function SettingsPage({
                     Passe die App an deine Bedürfnisse an. Änderungen werden automatisch gespeichert.
                 </p>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-amber-500" />Notio Pro</CardTitle>
-                    <CardDescription>
-                        Schalte alle KI-Funktionen frei, um dein Lernen auf das nächste Level zu bringen.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isPro ? (
-                        <div className="p-4 bg-green-500/10 text-green-700 rounded-md border border-green-500/20 text-center">
-                            <p className="font-semibold">Du bist Pro-Mitglied. Alle Funktionen sind freigeschaltet.</p>
-                        </div>
-                    ) : (
-                        <Button onClick={handleCheckout} className="w-full" disabled={isCheckingOut}>
-                            {isCheckingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
-                            Jetzt upgraden
-                        </Button>
-                    )}
-                </CardContent>
-            </Card>
 
             <Card>
                 <CardHeader>

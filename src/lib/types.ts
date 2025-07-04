@@ -29,6 +29,11 @@ export interface Grade {
   date: string;
   notes?: string | null;
   attachments?: Attachment[] | null;
+  achievedPoints?: number | null;
+  maxPoints?: number | null;
+  classAverage?: number | null;
+  gradeDistribution?: Record<string, number> | null; // e.g., { "1": 5, "2": 10, ... }
+  gradingScale?: Record<string, number> | null; // e.g., { "1": 92, "2": 81, ... }
 }
 
 export type AddGradeData = {
@@ -39,6 +44,11 @@ export type AddGradeData = {
   weight: number;
   notes?: string | null;
   attachments?: Attachment[] | null;
+  achievedPoints?: number | null;
+  maxPoints?: number | null;
+  classAverage?: number | null;
+  gradeDistribution?: Record<string, number> | null;
+  gradingScale?: Record<string, number> | null;
 }
 
 export type AddSubjectData = {

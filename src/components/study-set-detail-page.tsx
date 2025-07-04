@@ -21,18 +21,6 @@ import { de } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { cn } from "@/lib/utils";
 
-const ProFeatureLock = () => (
-    <Card className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <div className="p-3 bg-primary/10 rounded-full mb-4">
-            <Star className="h-8 w-8 text-primary" />
-        </div>
-        <h3 className="text-xl font-semibold">Pro-Funktion</h3>
-        <p className="text-muted-foreground mt-1 max-w-sm">
-            KI-Quiz und -Tests sind Teil von Notio Pro. Führe ein Upgrade in den Einstellungen durch.
-        </p>
-    </Card>
-);
-
 type StudySetDetailPageProps = {
   studySet: StudySet;
   onBack: () => void;
@@ -42,10 +30,9 @@ type StudySetDetailPageProps = {
   onViewLernzettel: (id: string) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   googleAiApiKey: string;
-  isPro: boolean;
 };
 
-export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite, googleAiApiKey, isPro }: StudySetDetailPageProps) {
+export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite, googleAiApiKey }: StudySetDetailPageProps) {
   const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'match' | 'quiz' | 'test' | 'learn'>('learn');
 
   const hasCards = studySet.cards.length > 0;
@@ -129,8 +116,8 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
             <TabsTrigger value="flashcards" disabled={!hasCards}><Layers className="mr-2 h-4 w-4" />Karten</TabsTrigger>
             <TabsTrigger value="write" disabled={!hasCards}><PenSquare className="mr-2 h-4 w-4" />Schreiben</TabsTrigger>
             <TabsTrigger value="match" disabled={!hasCards}><Puzzle className="mr-2 h-4 w-4" />Zuordnen</TabsTrigger>
-            <TabsTrigger value="quiz" disabled={!hasCards || !isPro}><BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz</TabsTrigger>
-            <TabsTrigger value="test" disabled={!hasCards || !isPro}><FileQuestion className="mr-2 h-4 w-4"/>Test</TabsTrigger>
+            <TabsTrigger value="quiz" disabled={!hasCards}><BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz</TabsTrigger>
+            <TabsTrigger value="test" disabled={!hasCards}><FileQuestion className="mr-2 h-4 w-4"/>Test</TabsTrigger>
         </TabsList>
 
         <TabsContent value="learn" className="mt-4">
@@ -183,10 +170,10 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
             {hasCards ? <MatchView cards={studySet.cards} /> : null}
         </TabsContent>
          <TabsContent value="quiz" className="mt-4">
-            {hasCards && isPro ? <StudySetQuizView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : <ProFeatureLock />}
+            {hasCards ? <StudySetQuizView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
         <TabsContent value="test" className="mt-4">
-            {hasCards && isPro ? <StudySetTestView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : <ProFeatureLock />}
+            {hasCards ? <StudySetTestView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
       </Tabs>
     </div>
