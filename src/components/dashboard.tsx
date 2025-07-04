@@ -104,6 +104,7 @@ export default function Dashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [dashboardWidgets, setDashboardWidgets] = useState<Record<string, boolean>>(defaultWidgets);
   const [googleAiApiKey, setGoogleAiApiKey] = useState<string>('');
+  const [isPro, setIsPro] = useState(false);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -235,6 +236,7 @@ export default function Dashboard() {
         const profileData = profileSnap.data() as Profile;
         setProfile(profileData);
         setUserName(profileData.name);
+        setIsPro(profileData.isPro || false);
       } else {
         const newProfileData = {
           uid: user.uid,
@@ -242,7 +244,9 @@ export default function Dashboard() {
           email: user.email,
           bio: `Hallo! Ich benutze Notio, um meinen Schulerfolg zu organisieren.`,
           followers: [],
-          following: []
+          following: [],
+          isPro: false,
+          stripeCustomerId: null
         };
         setDoc(profileRef, newProfileData);
       }
@@ -302,6 +306,30 @@ export default function Dashboard() {
       unsubscribers.forEach(unsub => unsub());
     };
   }, [isFirebaseEnabled, user]);
+
+  // Effect for Stripe redirect
+  useEffect(() => {
+    if (!user) return;
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get('success')) {
+        toast({
+            title: 'Zahlung erfolgreich!',
+            description: 'Willkommen bei Notio Pro! Alle KI-Funktionen sind jetzt freigeschaltet.',
+        });
+        const profileRef = doc(db, 'profiles', user.uid);
+        setDoc(profileRef, { isPro: true }, { merge: true });
+        setIsPro(true);
+        router.replace('/dashboard');
+    }
+    if (queryParams.get('canceled')) {
+        toast({
+            variant: 'destructive',
+            title: 'Zahlung abgebrochen',
+            description: 'Der Bezahlvorgang wurde abgebrochen. Du kannst es jederzeit erneut versuchen.',
+        });
+        router.replace('/dashboard');
+    }
+  }, [user, toast, router]);
 
   // Effect for school-specific data (events)
   useEffect(() => {
@@ -1502,6 +1530,7 @@ export default function Dashboard() {
             onCreateStudySetFromAI={handleCreateStudySetFromAI}
             onCreateSummary={handleCreateLernzettelSummary}
             onToggleFavorite={handleToggleLernzettelFavorite}
+            isPro={isPro}
           />;
         }
         return null;
@@ -1546,6 +1575,7 @@ export default function Dashboard() {
             onViewLernzettel={handleViewLernzettel}
             onToggleFavorite={handleToggleStudySetFavorite}
             googleAiApiKey={googleAiApiKey}
+            isPro={isPro}
           />;
         }
         return null;
@@ -1557,6 +1587,7 @@ export default function Dashboard() {
             studySets={studySets}
             lernzettel={lernzettel}
             googleAiApiKey={googleAiApiKey}
+            isPro={isPro}
           />
         );
       case 'calculator':
@@ -1664,6 +1695,8 @@ export default function Dashboard() {
                 setGoogleAiApiKey(key);
                 saveSetting('googleAiApiKey', key);
             }}
+            isPro={isPro}
+            profile={profile}
         />;
       default:
         return null;

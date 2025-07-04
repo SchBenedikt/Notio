@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion, Brain, Link as LinkIcon, Notebook, Star } from "lucide-react";
+import { ArrowLeft, BookOpen, Layers, Pencil, BrainCircuit, PenSquare, Puzzle, FileQuestion, Brain, Link as LinkIcon, Notebook, Star, Zap } from "lucide-react";
 import { FlashcardsView } from "./flashcards-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { WriteView } from "./write-view";
@@ -20,6 +20,8 @@ import { format, isToday, isPast } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 type StudySetDetailPageProps = {
   studySet: StudySet;
@@ -30,9 +32,10 @@ type StudySetDetailPageProps = {
   onViewLernzettel: (id: string) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   googleAiApiKey: string;
+  isPro: boolean;
 };
 
-export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite, googleAiApiKey }: StudySetDetailPageProps) {
+export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinish, allLernzettel, onViewLernzettel, onToggleFavorite, googleAiApiKey, isPro }: StudySetDetailPageProps) {
   const [mode, setMode] = useState<'list' | 'flashcards' | 'write' | 'match' | 'quiz' | 'test' | 'learn'>('learn');
 
   const hasCards = studySet.cards.length > 0;
@@ -116,8 +119,34 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
             <TabsTrigger value="flashcards" disabled={!hasCards}><Layers className="mr-2 h-4 w-4" />Karten</TabsTrigger>
             <TabsTrigger value="write" disabled={!hasCards}><PenSquare className="mr-2 h-4 w-4" />Schreiben</TabsTrigger>
             <TabsTrigger value="match" disabled={!hasCards}><Puzzle className="mr-2 h-4 w-4" />Zuordnen</TabsTrigger>
-            <TabsTrigger value="quiz" disabled={!hasCards}><BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz</TabsTrigger>
-            <TabsTrigger value="test" disabled={!hasCards}><FileQuestion className="mr-2 h-4 w-4"/>Test</TabsTrigger>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <TabsTrigger value="quiz" disabled={!hasCards || !isPro} className="relative">
+                            <BrainCircuit className="mr-2 h-4 w-4" />KI-Quiz
+                            {!isPro && <Zap className="absolute -top-1 -right-1 h-3 w-3 text-yellow-400" />}
+                        </TabsTrigger>
+                    </TooltipTrigger>
+                    {!isPro && (
+                        <TooltipContent>
+                        <p>Dieses Feature ist nur für Pro-Mitglieder verfügbar.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <TabsTrigger value="test" disabled={!hasCards || !isPro} className="relative">
+                            <FileQuestion className="mr-2 h-4 w-4"/>Test
+                            {!isPro && <Zap className="absolute -top-1 -right-1 h-3 w-3 text-yellow-400" />}
+                        </TabsTrigger>
+                    </TooltipTrigger>
+                     {!isPro && (
+                        <TooltipContent>
+                        <p>Dieses Feature ist nur für Pro-Mitglieder verfügbar.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
         </TabsList>
 
         <TabsContent value="learn" className="mt-4">
@@ -170,10 +199,10 @@ export function StudySetDetailPage({ studySet, onBack, onEditSet, onSessionFinis
             {hasCards ? <MatchView cards={studySet.cards} /> : null}
         </TabsContent>
          <TabsContent value="quiz" className="mt-4">
-            {hasCards ? <StudySetQuizView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
+            {hasCards && isPro ? <StudySetQuizView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
         <TabsContent value="test" className="mt-4">
-            {hasCards ? <StudySetTestView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
+            {hasCards && isPro ? <StudySetTestView studySet={studySet} googleAiApiKey={googleAiApiKey} /> : null}
         </TabsContent>
       </Tabs>
     </div>

@@ -6,8 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Weight, Palette, CalendarClock, KeyRound } from 'lucide-react';
+import { Settings, Weight, Palette, CalendarClock, KeyRound, Zap, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import type { Profile } from "@/lib/types";
 
 
 type SettingsPageProps = {
@@ -23,6 +27,8 @@ type SettingsPageProps = {
   onIsDarkModeChange: (isDark: boolean) => void;
   googleAiApiKey: string;
   onGoogleAiApiKeyChange: (key: string) => void;
+  isPro: boolean;
+  profile: Profile | null;
 };
 
 const themes = [
@@ -49,7 +55,11 @@ export function SettingsPage({
     onIsDarkModeChange,
     googleAiApiKey,
     onGoogleAiApiKeyChange,
+    isPro,
+    profile
 }: SettingsPageProps) {
+    const [isStripeLoading, setIsStripeLoading] = useState(false);
+    const { toast } = useToast();
 
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
         const num = Number(value);
@@ -64,6 +74,40 @@ export function SettingsPage({
             setter(num);
         }
     };
+    
+    const handleUpgradeClick = () => {
+        setIsStripeLoading(true);
+
+        // TODO: Ersetze dies durch deinen echten Stripe Payment Link.
+        // Diesen Link erhältst du in deinem Stripe Dashboard unter "Produkte".
+        const checkoutUrl = 'https://buy.stripe.com/test_...';
+
+        if (!checkoutUrl.includes('buy.stripe.com')) {
+        toast({
+            variant: 'destructive',
+            title: 'Konfigurationsfehler',
+            description: 'Der Stripe Payment Link ist nicht konfiguriert.',
+        });
+        setIsStripeLoading(false);
+        return;
+        }
+
+        window.location.href = checkoutUrl;
+    };
+
+    const handleManageSubscription = async () => {
+        setIsStripeLoading(true);
+        toast({
+            title: "Funktion in Entwicklung",
+            description: "In einer echten App würde hier eine Server-Funktion aufgerufen, um eine Stripe Customer Portal Session zu erstellen."
+        });
+        // In einer echten App:
+        // const response = await fetch('/api/create-portal-session', { method: 'POST' });
+        // const { url } = await response.json();
+        // window.location.assign(url);
+        setIsStripeLoading(false);
+    }
+
 
     return (
         <div className="max-w-2xl mx-auto space-y-8">
@@ -78,6 +122,39 @@ export function SettingsPage({
                     Passe die App an deine Bedürfnisse an. Änderungen werden automatisch gespeichert.
                 </p>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-muted-foreground" />Pro-Mitgliedschaft</CardTitle>
+                    <CardDescription>Verwalte deine Mitgliedschaft und schalte alle KI-Funktionen frei.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                    <div>
+                    <p className="font-semibold">Aktueller Status</p>
+                    {isPro ? (
+                        <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700">Pro-Mitglied</Badge>
+                    ) : (
+                        <Badge variant="secondary">Kostenlos</Badge>
+                    )}
+                    </div>
+                    {isPro ? (
+                    <Button onClick={handleManageSubscription} disabled={isStripeLoading}>
+                        {isStripeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Abonnement verwalten
+                    </Button>
+                    ) : (
+                    <Button onClick={handleUpgradeClick} disabled={isStripeLoading} className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg hover:shadow-xl transition-shadow">
+                        {isStripeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Jetzt upgraden
+                    </Button>
+                    )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-4">
+                    Die Zahlungsabwicklung erfolgt sicher über Stripe. Wir speichern keine deiner Zahlungsdaten.
+                </p>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>

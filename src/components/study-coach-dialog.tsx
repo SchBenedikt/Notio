@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Send, Bot, User, Loader2, Paperclip, X } from "lucide-react";
+import { Send, Bot, User, Loader2, Paperclip, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,9 +18,10 @@ import { Card } from "./ui/card";
 type TutorChatProps = {
   subjects: Subject[];
   allGrades: Grade[];
+  isPro: boolean;
 };
 
-export function TutorChat({ subjects, allGrades }: TutorChatProps) {
+export function TutorChat({ subjects, allGrades, isPro }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'model', content: "Hallo! Ich bin dein KI-Tutor. Ich kenne deine Fächer und Noten. Wie kann ich dir heute helfen? Du kannst mir auch Dateien zum Analysieren geben." }
   ]);
@@ -97,8 +99,15 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
             <TabsTrigger value="coach">Lern-Coach</TabsTrigger>
         </TabsList>
         <TabsContent value="tutor">
-             <Card className="flex flex-col" style={{height: 'calc(100vh - 200px)'}}>
-                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+             <Card className="flex flex-col relative" style={{height: 'calc(100vh - 200px)'}}>
+                {!isPro && (
+                    <div className="absolute inset-0 bg-background/80 z-10 flex flex-col items-center justify-center p-8 text-center">
+                        <Zap className="h-10 w-10 text-primary mb-4" />
+                        <h3 className="text-xl font-bold">Exklusiv für Pro-Mitglieder</h3>
+                        <p className="text-muted-foreground mt-2">Der KI-Tutor ist ein Premium-Feature. Führe ein Upgrade durch, um ihn freizuschalten.</p>
+                    </div>
+                )}
+                <ScrollArea className={cn("flex-1 p-4", !isPro && "blur-sm")} ref={scrollAreaRef}>
                   <div className="space-y-4">
                     {messages.map((message, index) => (
                       <div
@@ -196,7 +205,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       placeholder="Stelle eine Frage oder füge eine Datei hinzu..."
-                      disabled={loading}
+                      disabled={loading || !isPro}
                       className="flex-1"
                       onKeyDown={(e) => {
                           if(e.key === 'Enter' && !e.shiftKey) {
@@ -205,7 +214,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
                           }
                       }}
                     />
-                    <Button type="submit" size="icon" disabled={loading || (!input.trim() && selectedAttachments.length === 0)}>
+                    <Button type="submit" size="icon" disabled={loading || (!input.trim() && selectedAttachments.length === 0) || !isPro}>
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       <span className="sr-only">Senden</span>
                     </Button>
@@ -221,7 +230,7 @@ export function TutorChat({ subjects, allGrades }: TutorChatProps) {
             />
         </TabsContent>
         <TabsContent value="coach">
-            <StudyCoachPage subjects={subjects} allGrades={allGrades} />
+            <StudyCoachPage subjects={subjects} allGrades={allGrades} isPro={isPro} />
         </TabsContent>
     </Tabs>
   );

@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import type { Lernzettel, StudySet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles, Trash2, Star } from "lucide-react";
+import { ArrowLeft, Pencil, BrainCircuit, Loader2, Link as LinkIcon, Notebook, Sparkles, Trash2, Star, Zap } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -23,11 +23,12 @@ type LernzettelDetailPageProps = {
   onCreateStudySetFromAI: (note: Lernzettel) => Promise<void>;
   onCreateSummary: (note: Lernzettel) => Promise<void>;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
+  isPro: boolean;
 };
 
 const YouTubeEmbed = ({ href }: { href?: string }) => {
     if (!href) return null;
-    const videoIdRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const videoIdRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu.be\/)([a-zA-Z0-9_-]{11})/;
     const match = href.match(videoIdRegex);
     const videoId = match ? match[1] : null;
 
@@ -48,7 +49,7 @@ const YouTubeEmbed = ({ href }: { href?: string }) => {
     );
 };
 
-export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary, onToggleFavorite }: LernzettelDetailPageProps) {
+export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary, onToggleFavorite, isPro }: LernzettelDetailPageProps) {
   const [isGeneratingSet, setIsGeneratingSet] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   
@@ -87,37 +88,63 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onN
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zurück zu allen Lernzetteln
           </Button>
-          <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="icon" title="Favorisieren" onClick={() => onToggleFavorite(lernzettel.id, !!lernzettel.isFavorite)}>
-                  <Star className={cn("h-4 w-4", lernzettel.isFavorite ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground")} />
-              </Button>
-              <Button variant="outline" onClick={() => onEdit(lernzettel)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Bearbeiten
-              </Button>
-              <Button onClick={handleGenerateSet} disabled={isGeneratingSet}>
-                  {isGeneratingSet ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                  Lernset mit KI erstellen
-              </Button>
-              <Button onClick={handleGenerateSummary} disabled={isSummarizing || !!lernzettel.summary}>
-                  {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  {lernzettel.summary ? 'Zusammenfassung generiert' : 'KI-Zusammenfassung'}
-              </Button>
-              <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="icon" title="Löschen">
-                          <Trash2 className="h-4 w-4" />
-                      </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>Lernzettel wirklich löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter>
-                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDelete(lernzettel.id)} className="bg-destructive hover:bg-destructive/90">Endgültig löschen</AlertDialogAction>
-                      </AlertDialogFooter>
-                  </AlertDialogContent>
-              </AlertDialog>
-          </div>
+          <TooltipProvider>
+            <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="icon" title="Favorisieren" onClick={() => onToggleFavorite(lernzettel.id, !!lernzettel.isFavorite)}>
+                    <Star className={cn("h-4 w-4", lernzettel.isFavorite ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground")} />
+                </Button>
+                <Button variant="outline" onClick={() => onEdit(lernzettel)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Bearbeiten
+                </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div tabIndex={0}> {/* Wrapper for disabled button */}
+                            <Button onClick={handleGenerateSet} disabled={isGeneratingSet || !isPro}>
+                                {isGeneratingSet ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                Lernset mit KI erstellen
+                                {!isPro && <Zap className="ml-2 h-3 w-3 text-yellow-400" />}
+                            </Button>
+                        </div>
+                    </TooltipTrigger>
+                    {!isPro && (
+                        <TooltipContent>
+                            <p>Dieses Feature ist nur für Pro-Mitglieder verfügbar.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div tabIndex={0}>
+                            <Button onClick={handleGenerateSummary} disabled={isSummarizing || !!lernzettel.summary || !isPro}>
+                                {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                {lernzettel.summary ? 'Zusammenfassung generiert' : 'KI-Zusammenfassung'}
+                                {!isPro && <Zap className="ml-2 h-3 w-3 text-yellow-400" />}
+                            </Button>
+                        </div>
+                    </TooltipTrigger>
+                    {!isPro && (
+                        <TooltipContent>
+                            <p>Dieses Feature ist nur für Pro-Mitglieder verfügbar.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon" title="Löschen">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Lernzettel wirklich löschen?</AlertDialogTitle><AlertDialogDescription>Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(lernzettel.id)} className="bg-destructive hover:bg-destructive/90">Endgültig löschen</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+          </TooltipProvider>
         </div>
         
          {linkedStudySets.length > 0 && (

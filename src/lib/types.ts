@@ -65,6 +65,8 @@ export interface Profile {
   bio?: string | null;
   following?: string[];
   followers?: string[];
+  isPro?: boolean;
+  stripeCustomerId?: string | null;
 }
 
 export interface Comment {

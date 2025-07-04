@@ -5,17 +5,23 @@ import { useState, useMemo, useEffect } from 'react';
 import { Subject, Grade } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BrainCircuit, Sparkles, Lightbulb } from 'lucide-react';
+import { BrainCircuit, Sparkles, Lightbulb, Zap } from 'lucide-react';
 import { getStudyCoachTips, StudyCoachOutput } from "@/ai/flows/study-coach-flow";
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "./ui/badge";
 
-const StudyCoachResult = ({ subject, grades, apiKey }: { subject: Subject; grades: Grade[]; apiKey: string }) => {
+const StudyCoachResult = ({ subject, grades, apiKey, isPro }: { subject: Subject; grades: Grade[]; apiKey: string, isPro: boolean }) => {
   const [loading, setLoading] = useState(true);
   const [response, setResponse] = useState<StudyCoachOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isPro) {
+        setLoading(false);
+        setError("Der Lern-Coach ist ein Premium-Feature. Führe ein Upgrade durch, um ihn freizuschalten.");
+        return;
+    }
+
     setLoading(true);
     setError(null);
     setResponse(null);
@@ -47,7 +53,7 @@ const StudyCoachResult = ({ subject, grades, apiKey }: { subject: Subject; grade
       .finally(() => {
         setLoading(false);
       });
-  }, [subject, grades, apiKey]);
+  }, [subject, grades, apiKey, isPro]);
 
   if (loading) {
     return (
@@ -100,9 +106,10 @@ type StudyCoachPageProps = {
   subjects: Subject[];
   allGrades: Grade[];
   googleAiApiKey: string;
+  isPro: boolean;
 };
 
-export function StudyCoachPage({ subjects, allGrades, googleAiApiKey }: StudyCoachPageProps) {
+export function StudyCoachPage({ subjects, allGrades, googleAiApiKey, isPro }: StudyCoachPageProps) {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
 
   const selectedSubject = useMemo(() => {
@@ -168,7 +175,7 @@ export function StudyCoachPage({ subjects, allGrades, googleAiApiKey }: StudyCoa
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <StudyCoachResult subject={selectedSubject} grades={gradesForSelectedSubject} apiKey={googleAiApiKey} />
+            <StudyCoachResult subject={selectedSubject} grades={gradesForSelectedSubject} apiKey={googleAiApiKey} isPro={isPro} />
           </CardContent>
         </Card>
       )}
