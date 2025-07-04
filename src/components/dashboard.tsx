@@ -104,6 +104,7 @@ export default function Dashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [dashboardWidgets, setDashboardWidgets] = useState<Record<string, boolean>>(defaultWidgets);
   const [googleAiApiKey, setGoogleAiApiKey] = useState<string>('');
+  const [isPro, setIsPro] = useState(false);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -182,6 +183,7 @@ export default function Dashboard() {
         setMaxPeriods(settingsData.maxPeriods ?? 10);
         setTheme(settingsData.theme ?? 'blue');
         setGoogleAiApiKey(settingsData.googleAiApiKey || '');
+        setIsPro(settingsData.isPro ?? false);
         
         if (typeof settingsData.isDarkMode === 'boolean') {
           setIsDarkMode(settingsData.isDarkMode);
@@ -222,6 +224,7 @@ export default function Dashboard() {
           dashboardLayouts: defaultLayouts,
           dashboardWidgets: defaultWidgets,
           googleAiApiKey: '',
+          isPro: false,
         };
         setDoc(settingsRef, defaultSettings);
       }
@@ -1164,6 +1167,16 @@ export default function Dashboard() {
     }
   };
 
+  const handleUpgradeToPro = async () => {
+    if (!user) return;
+    const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
+    try {
+        await setDoc(settingsRef, { isPro: true }, { merge: true });
+        toast({ title: "Upgrade erfolgreich!", description: "Willkommen bei Notio Pro. Alle KI-Features sind jetzt freigeschaltet." });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Fehler beim Upgrade' });
+    }
+  };
 
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
@@ -1498,6 +1511,7 @@ export default function Dashboard() {
             onCreateStudySetFromAI={handleCreateStudySetFromAI}
             onCreateSummary={handleCreateLernzettelSummary}
             onToggleFavorite={handleToggleLernzettelFavorite}
+            isPro={isPro}
           />;
         }
         return null;
@@ -1542,6 +1556,7 @@ export default function Dashboard() {
             onViewLernzettel={handleViewLernzettel}
             onToggleFavorite={handleToggleStudySetFavorite}
             googleAiApiKey={googleAiApiKey}
+            isPro={isPro}
           />;
         }
         return null;
@@ -1553,6 +1568,7 @@ export default function Dashboard() {
             studySets={studySets}
             lernzettel={lernzettel}
             googleAiApiKey={googleAiApiKey}
+            isPro={isPro}
           />
         );
       case 'calculator':
@@ -1660,6 +1676,8 @@ export default function Dashboard() {
                 setGoogleAiApiKey(key);
                 saveSetting('googleAiApiKey', key);
             }}
+            isPro={isPro}
+            onUpgradeToPro={handleUpgradeToPro}
         />;
       default:
         return null;

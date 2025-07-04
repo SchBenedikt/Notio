@@ -150,6 +150,7 @@ export default function LoginPage() {
                 schoolId: signupSchoolId,
                 dashboardLayouts: defaultLayouts,
                 dashboardWidgets: defaultWidgets,
+                isPro: false,
             });
 
             // Create profile document
@@ -207,6 +208,7 @@ export default function LoginPage() {
                     schoolId: '',
                     dashboardLayouts: defaultLayouts,
                     dashboardWidgets: defaultWidgets,
+                    isPro: false,
                 });
                 
                 await setDoc(profileRef, {

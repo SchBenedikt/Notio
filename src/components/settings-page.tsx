@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Weight, Palette, CalendarClock, KeyRound } from 'lucide-react';
+import { Settings, Weight, Palette, CalendarClock, KeyRound, Star } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 
 type SettingsPageProps = {
@@ -22,6 +23,8 @@ type SettingsPageProps = {
   onIsDarkModeChange: (isDark: boolean) => void;
   googleAiApiKey: string;
   onGoogleAiApiKeyChange: (key: string) => void;
+  isPro: boolean;
+  onUpgradeToPro: () => void;
 };
 
 const themes = [
@@ -47,7 +50,9 @@ export function SettingsPage({
     isDarkMode,
     onIsDarkModeChange,
     googleAiApiKey,
-    onGoogleAiApiKeyChange
+    onGoogleAiApiKeyChange,
+    isPro,
+    onUpgradeToPro
 }: SettingsPageProps) {
 
     const handleWeightChange = (setter: (weight: number) => void, value: string) => {
@@ -77,6 +82,26 @@ export function SettingsPage({
                     Passe die App an deine Bedürfnisse an. Änderungen werden automatisch gespeichert.
                 </p>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-amber-500" />Notio Pro</CardTitle>
+                    <CardDescription>
+                        Schalte alle KI-Funktionen frei, um dein Lernen auf das nächste Level zu bringen.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isPro ? (
+                        <div className="p-4 bg-green-500/10 text-green-700 rounded-md border border-green-500/20">
+                            <p className="font-semibold">Du bist Pro-Mitglied. Alle Funktionen sind freigeschaltet.</p>
+                        </div>
+                    ) : (
+                        <Button onClick={onUpgradeToPro} className="w-full">
+                            Upgrade auf Pro
+                        </Button>
+                    )}
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>

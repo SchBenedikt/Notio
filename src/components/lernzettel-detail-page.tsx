@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type LernzettelDetailPageProps = {
   lernzettel: Lernzettel;
@@ -22,6 +23,7 @@ type LernzettelDetailPageProps = {
   onCreateStudySetFromAI: (note: Lernzettel) => Promise<void>;
   onCreateSummary: (note: Lernzettel) => Promise<void>;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
+  isPro: boolean;
 };
 
 const YouTubeEmbed = ({ href }: { href?: string }) => {
@@ -47,7 +49,7 @@ const YouTubeEmbed = ({ href }: { href?: string }) => {
     );
 };
 
-export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary, onToggleFavorite }: LernzettelDetailPageProps) {
+export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onNavigateToNote, allStudySets, onViewStudySet, onCreateStudySetFromAI, onCreateSummary, onToggleFavorite, isPro }: LernzettelDetailPageProps) {
   const [isGeneratingSet, setIsGeneratingSet] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   
@@ -94,14 +96,38 @@ export function LernzettelDetailPage({ lernzettel, onBack, onEdit, onDelete, onN
                   <Pencil className="mr-2 h-4 w-4" />
                   Bearbeiten
               </Button>
-              <Button onClick={handleGenerateSet} disabled={isGeneratingSet}>
-                  {isGeneratingSet ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                  Lernset mit KI erstellen
-              </Button>
-               <Button onClick={handleGenerateSummary} disabled={isSummarizing || !!lernzettel.summary}>
-                  {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  {lernzettel.summary ? 'Zusammenfassung generiert' : 'KI-Zusammenfassung'}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <div tabIndex={0}>
+                        <Button onClick={handleGenerateSet} disabled={isGeneratingSet || !isPro}>
+                            {isGeneratingSet ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                            Lernset mit KI erstellen
+                        </Button>
+                    </div>
+                    </TooltipTrigger>
+                    {!isPro && (
+                    <TooltipContent>
+                        <p>Dies ist eine Pro-Funktion.</p>
+                    </TooltipContent>
+                    )}
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <div tabIndex={0}>
+                        <Button onClick={handleGenerateSummary} disabled={isSummarizing || !!lernzettel.summary || !isPro}>
+                            {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            {lernzettel.summary ? 'Zusammenfassung generiert' : 'KI-Zusammenfassung'}
+                        </Button>
+                    </div>
+                    </TooltipTrigger>
+                    {!isPro && (
+                    <TooltipContent>
+                        <p>Dies ist eine Pro-Funktion.</p>
+                    </TooltipContent>
+                    )}
+                </Tooltip>
+              </TooltipProvider>
               <AlertDialog>
                   <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="icon" title="Löschen">
