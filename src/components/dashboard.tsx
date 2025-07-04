@@ -1167,17 +1167,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpgradeToPro = async () => {
-    if (!user) return;
-    const settingsRef = doc(db, 'users', user.uid, 'settings', 'main');
-    try {
-        await setDoc(settingsRef, { isPro: true }, { merge: true });
-        toast({ title: "Upgrade erfolgreich!", description: "Willkommen bei Notio Pro. Alle KI-Features sind jetzt freigeschaltet." });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Fehler beim Upgrade' });
-    }
-  };
-
   const handleOpenAddGradeDialog = (subjectId: string) => {
     setGradeDialogState({ isOpen: true, subjectId: subjectId, gradeToEdit: null });
   };
@@ -1677,7 +1666,6 @@ export default function Dashboard() {
                 saveSetting('googleAiApiKey', key);
             }}
             isPro={isPro}
-            onUpgradeToPro={handleUpgradeToPro}
         />;
       default:
         return null;

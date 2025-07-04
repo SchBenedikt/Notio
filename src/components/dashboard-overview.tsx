@@ -165,7 +165,7 @@ export function DashboardOverview({
           <div><CardTitle>Deine Leistungsübersicht</CardTitle></div>
           <GripVertical className="text-muted-foreground" />
         </CardHeader>
-        <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <CardContent className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6">
           <div className="p-4 sm:p-6 bg-primary/5 rounded-xl flex flex-col justify-center items-center text-center">
             <p className="text-sm font-medium text-primary">Gesamtschnitt</p>
             <p className="text-5xl sm:text-6xl font-extrabold text-primary tracking-tight">{overallAverage}</p>
