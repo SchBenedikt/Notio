@@ -95,7 +95,7 @@ export function GradeInfoDialog({
     return null;
   }
   
-  const hasExtraData = grade.maxPoints != null || grade.classAverage != null || grade.gradeDistribution != null;
+  const hasExtraData = grade.maxPoints != null || grade.classAverage != null || (grade.gradeDistribution && Object.values(grade.gradeDistribution).some(v => v != null));
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -122,11 +122,11 @@ export function GradeInfoDialog({
                 {grade.classAverage != null && (
                     <InfoRow icon={<Percent className="h-4 w-4" />} label="Klassenschnitt" value={grade.classAverage.toFixed(2)} />
                 )}
-                {grade.gradeDistribution && (
+                {grade.gradeDistribution && Object.values(grade.gradeDistribution).some(v => v != null) && (
                      <InfoRow icon={<List className="h-4 w-4" />} label="Notenverteilung" alignTop value={
                         <div className="grid grid-cols-6 gap-1 mt-1">
                             {Object.entries(grade.gradeDistribution).map(([note, count]) => (
-                                <div key={note} className="text-center p-1 bg-muted/50 rounded-md">
+                                (count != null) && <div key={note} className="text-center p-1 bg-muted/50 rounded-md">
                                     <p className="text-xs text-muted-foreground">{note}</p>
                                     <p className="font-bold">{count}</p>
                                 </div>
@@ -139,7 +139,9 @@ export function GradeInfoDialog({
                          <Table className="mt-1 text-xs">
                              <TableHeader><TableRow><TableHead className="h-6">Note</TableHead><TableHead className="h-6 text-right">min. Punkte</TableHead></TableRow></TableHeader>
                              <TableBody>
-                                 {Object.entries(grade.gradingScale).map(([note, points]) => (
+                                 {Object.entries(grade.gradingScale)
+                                    .sort(([gradeA], [gradeB]) => parseInt(gradeA) - parseInt(gradeB))
+                                    .map(([note, points]) => (
                                      <TableRow key={note}><TableCell className="py-1 font-medium">{note}</TableCell><TableCell className="py-1 text-right">{points}</TableCell></TableRow>
                                  ))}
                              </TableBody>

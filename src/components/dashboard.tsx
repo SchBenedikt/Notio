@@ -104,7 +104,6 @@ export default function Dashboard() {
   const [layouts, setLayouts] = useState<Layouts>(defaultLayouts);
   const [dashboardWidgets, setDashboardWidgets] = useState<Record<string, boolean>>(defaultWidgets);
   const [googleAiApiKey, setGoogleAiApiKey] = useState<string>('');
-  const [isPro, setIsPro] = useState(false);
 
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -183,7 +182,6 @@ export default function Dashboard() {
         setMaxPeriods(settingsData.maxPeriods ?? 10);
         setTheme(settingsData.theme ?? 'blue');
         setGoogleAiApiKey(settingsData.googleAiApiKey || '');
-        setIsPro(settingsData.isPro ?? false);
         
         if (typeof settingsData.isDarkMode === 'boolean') {
           setIsDarkMode(settingsData.isDarkMode);
@@ -224,7 +222,6 @@ export default function Dashboard() {
           dashboardLayouts: defaultLayouts,
           dashboardWidgets: defaultWidgets,
           googleAiApiKey: '',
-          isPro: false,
         };
         setDoc(settingsRef, defaultSettings);
       }
@@ -588,6 +585,11 @@ export default function Dashboard() {
       date: values.date.toISOString(),
       notes: values.notes || null,
       attachments: values.attachments || [],
+      achievedPoints: values.achievedPoints ?? null,
+      maxPoints: values.maxPoints ?? null,
+      classAverage: values.classAverage ?? null,
+      gradeDistribution: values.gradeDistribution ?? null,
+      gradingScale: values.gradingScale ?? null,
     };
     
     if (!isFirebaseEnabled || !user) {
@@ -1500,7 +1502,6 @@ export default function Dashboard() {
             onCreateStudySetFromAI={handleCreateStudySetFromAI}
             onCreateSummary={handleCreateLernzettelSummary}
             onToggleFavorite={handleToggleLernzettelFavorite}
-            isPro={isPro}
           />;
         }
         return null;
@@ -1545,7 +1546,6 @@ export default function Dashboard() {
             onViewLernzettel={handleViewLernzettel}
             onToggleFavorite={handleToggleStudySetFavorite}
             googleAiApiKey={googleAiApiKey}
-            isPro={isPro}
           />;
         }
         return null;
@@ -1557,7 +1557,6 @@ export default function Dashboard() {
             studySets={studySets}
             lernzettel={lernzettel}
             googleAiApiKey={googleAiApiKey}
-            isPro={isPro}
           />
         );
       case 'calculator':
@@ -1665,7 +1664,6 @@ export default function Dashboard() {
                 setGoogleAiApiKey(key);
                 saveSetting('googleAiApiKey', key);
             }}
-            isPro={isPro}
         />;
       default:
         return null;
@@ -1730,6 +1728,7 @@ export default function Dashboard() {
         }}
         subjectName={subjects.find(s => s.id === gradeDialogState.subjectId)?.name || ''}
         gradeToEdit={gradeDialogState.gradeToEdit}
+        googleAiApiKey={googleAiApiKey}
       />
       {editSubjectState.subject && (
         <EditSubjectDialog

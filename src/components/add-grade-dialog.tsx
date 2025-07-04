@@ -169,6 +169,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
     try {
       const result = await generateGradingScale({ maxPoints, apiKey: googleAiApiKey });
       const scaleText = Object.entries(result.scale)
+        .sort(([gradeA], [gradeB]) => parseInt(gradeA) - parseInt(gradeB))
         .map(([grade, points]) => `${grade}: ${points} Pkt.`)
         .join('\n');
       form.setValue('gradingScale', scaleText);
@@ -181,18 +182,31 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
   };
   
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    let finalGradingScale = null;
+    let finalGradingScale: Record<string, number> | null = null;
     if (values.gradingScale) {
         try {
+            // First, assume it's valid JSON
             finalGradingScale = JSON.parse(values.gradingScale);
         } catch {
              // If parsing fails, try to convert the text format
-             finalGradingScale = Object.fromEntries(
-                values.gradingScale.split('\n').map(line => {
-                    const parts = line.split(':');
-                    return [parts[0].trim(), parseInt(parts[1], 10)];
-                }).filter(([,val]) => !isNaN(val))
-             );
+             try {
+                finalGradingScale = Object.fromEntries(
+                    values.gradingScale.split('\n').map(line => {
+                        const parts = line.split(':');
+                        if (parts.length === 2) {
+                            const grade = parts[0].trim();
+                            const points = parseInt(parts[1].replace(/[^0-9]/g, ''));
+                            if (grade && !isNaN(points)) {
+                                return [grade, points];
+                            }
+                        }
+                        return null;
+                    }).filter(Boolean) as [string, number][]
+                );
+             } catch {
+                console.error("Could not parse gradingScale string.");
+                finalGradingScale = null;
+             }
         }
     }
 
@@ -285,7 +299,7 @@ export function AddGradeDialog({ isOpen, onOpenChange, onSubmit, subjectName, gr
             
             <Collapsible>
                 <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full text-muted-foreground">
+                    <Button type="button" variant="ghost" className="w-full text-muted-foreground">
                         Zusätzliche Leistungsdaten
                         <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
